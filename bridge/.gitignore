@@ -1,0 +1,17 @@
+# Flutter
+build/
+.flutter-plugins
+.packages
+.pub-cache/
+.pub/
+.idea/
+.vscode/
+*.iml
+
+# Docker
+**/docker-compose.override.yml
+**/docker/*.log
+
+# OS
+.DS_Store
+Thumbs.db
