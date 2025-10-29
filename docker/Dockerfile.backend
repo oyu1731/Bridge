@@ -1,0 +1,40 @@
+# Dockerfile.backend
+# このファイルは、Spring BootバックエンドアプリケーションのDockerイメージをビルドするための手順を定義します。
+#
+# チームメンバーへ:
+#   - Dockerイメージは、アプリケーションとその実行に必要なすべてのものをパッケージ化したものです。
+#   - このDockerfileは、Java開発キット (JDK) を含むベースイメージから始まり、
+#     Mavenを使ってアプリケーションをビルドし、最終的に実行可能なJARファイルをコンテナ内で起動します。
+
+# ベースイメージの指定: OpenJDK 17 (Alpine Linuxベース) を使用
+# Alpine Linuxは軽量なディストリビューションで、イメージサイズを小さく保つのに役立ちます。
+FROM openjdk:17-jdk-alpine
+
+# 作業ディレクトリの設定
+# コンテナ内でコマンドが実行されるデフォルトのディレクトリを設定します。
+WORKDIR /app
+
+# Mavenラッパー (mvnw) とpom.xmlをコンテナにコピー
+# これらはMavenプロジェクトのビルドに必要なファイルです。
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+
+# 依存関係をダウンロード
+# アプリケーションのソースコードをコピーする前に依存関係をダウンロードすることで、
+# Dockerのキャッシュを効率的に利用し、ビルド時間を短縮します。
+RUN chmod +x ./mvnw # mvnwスクリプトに実行権限を付与
+RUN ./mvnw dependency:go-offline -B # 依存関係をダウンロードし、オフラインモードで利用可能にする
+
+# ソースコードをコンテナにコピー
+COPY src ./src
+
+# アプリケーションをビルド
+# Mavenを使ってアプリケーションをパッケージ化し、実行可能なJARファイルを生成します。
+# `-DskipTests` はテストの実行をスキップします。
+RUN ./mvnw clean package -DskipTests
+
+# JARファイルを実行
+# コンテナが起動したときに実行されるコマンドを定義します。
+# ビルドされたJARファイルをJavaで実行します。
+ENTRYPOINT ["java","-jar","/app/target/backend-0.0.1-SNAPSHOT.jar"]
