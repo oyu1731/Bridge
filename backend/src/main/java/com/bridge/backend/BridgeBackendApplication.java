@@ -3,6 +3,7 @@ package com.bridge.backend;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+
 /**
  * BridgeBackendApplication
  * このクラスはSpring Bootアプリケーションのエントリポイントです。
@@ -16,5 +17,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class BridgeBackendApplication {
     public static void main(String[] args) {
         SpringApplication.run(BridgeBackendApplication.class, args);
+        
     }
 }
+

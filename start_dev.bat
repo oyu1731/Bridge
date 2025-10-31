@@ -9,12 +9,23 @@ REM   - Flutterのホットリロードを有効にするため、Flutterのウ�
 echo Dockerコンテナ (MySQLとSpring Bootバックエンド) を起動中...
 cd docker
 docker-compose up --build -d
+echo Dockerコンテナの状態:
+docker-compose ps
 cd ..
 
-echo バックエンドが起動するまで待機中... (約15秒)
+echo バックエンドが起動するまで待機中... (約30秒)
 REM この待機時間は、Spring Bootバックエンドが完全に起動するまでの目安です。
 REM 環境によっては調整が必要な場合があります。
-timeout /t 15 /nobreak > NUL
+timeout /t 30 /nobreak > NUL
+
+echo Spring Bootバックエンドの起動状況を確認中...
+curl -s http://localhost:8080/actuator/health | findstr /c:"UP" > NUL
+if %errorlevel% equ 0 (
+    echo Spring Bootバックエンドは正常に起動しました。
+) else (
+    echo Spring Bootバックエンドの起動に失敗したか、まだ起動していません。
+    echo ログを確認してください: docker-compose logs backend
+)
 
 echo Flutterアプリケーションをローカルで起動中...
 cd frontend

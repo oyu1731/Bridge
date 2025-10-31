@@ -4,32 +4,14 @@ import 'package:bridge/02_sign_up_student.dart';
 import 'package:bridge/03_sign_up_worker.dart';
 import 'package:bridge/04_sign_up_company.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Bridge App',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlue),
-      ),
-      home: const MyHomePage(title: 'Bridge'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key, required this.title});
   final String title;
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _SplashScreenState extends State<SplashScreen> {
   void _onCircleTap(String label, BuildContext context) {
     HapticFeedback.selectionClick(); // 軽い振動
     print('$label が押されました'); // デバッグ用
