@@ -1,6 +1,12 @@
 @echo off
 chcp 65001 > NUL
 
+REM -------------------------------------------
+REM my.cnf を読み取り専用に設定
+REM -------------------------------------------
+echo MySQL設定ファイルを読み取り専用に設定中...
+attrib +R C:\Bridge\bridge\docker\mysql\my.cnf
+
 echo Dockerコンテナ (MySQLとSpring Bootバックエンド) を起動中...
 cd docker
 docker-compose build --no-cache
