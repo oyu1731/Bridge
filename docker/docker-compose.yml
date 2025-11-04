@@ -22,10 +22,11 @@ services:
       MYSQL_PASSWORD: bridgepass # アプリケーションが使用するパスワード
     ports:
       - "3306:3306" # ホストの3306ポートをコンテナの3306ポートにマッピング
-    volumes: # 永続化のためのボリューム設定
-      - mysql_data:/var/lib/mysql # データベースのデータをホストに永続化
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql # コンテナ起動時に実行されるSQLファイル
-      - ./mysql/my.cnf:/etc/mysql/my.cnf
+    volumes:
+    - mysql_data:/var/lib/mysql
+    - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+
 
     networks:
       - bridge-network # サービス間の通信に使用するネットワーク
