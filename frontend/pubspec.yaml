@@ -1,4 +1,4 @@
-name: flutter_application_1
+name: bridge
 description: "A new Flutter project."
 publish_to: 'none'
 
@@ -22,8 +22,8 @@ flutter:
   uses-material-design: true
 
   # 画像やフォントを追加する場合は、以下のコメントアウトを外して使用
-  # assets:
-  #   - images/
+  assets:
+    - lib/images/
 
   # fonts:
   #   - family: CustomFont

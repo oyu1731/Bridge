@@ -13,8 +13,9 @@ CREATE DATABASE IF NOT EXISTS bridgedb;
 -- bridgedbデータベースを使用
 USE bridgedb;
 
--- 既存のusersテーブルがあれば削除 (開発用)
+-- 既存のテーブルがあれば削除 (開発用)
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS industries;
 
 -- ユーザーテーブルの作成
 CREATE TABLE users(
@@ -29,3 +30,13 @@ CREATE TABLE users(
 INSERT INTO users(name, email) VALUES('山田太郎', 'taro.yamada@example.com');
 INSERT INTO users(name, email) VALUES('佐藤花子', 'hanako.sato@example.com');
 INSERT INTO users(name, email) VALUES('鈴木一郎', 'ichiro.suzuki@example.com');
+
+-- 業界テーブルの作成
+CREATE TABLE industries(
+    id BIGINT PRIMARY KEY AUTO_INCREMENT, -- 主キー、自動増分
+    industry VARCHAR(255) UNIQUE NOT NULL -- 業界名 (必須、ユニーク)
+);
+
+-- サンプルデータの挿入
+INSERT INTO industries(industry) VALUES('メーカー');
+INSERT INTO industries(industry) VALUES('商社');
