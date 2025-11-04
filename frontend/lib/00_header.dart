@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '14-company-info-list.dart';
 
 class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
   const BridgeHeader({Key? key}) : super(key: key);
@@ -160,7 +161,13 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                 }),
                 const SizedBox(width: 20),
                 _buildNavButton('企業情報', () {
-                  print('企業情報ページへ遷移');
+                  // 企業情報ページへの遷移
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CompanySearchPage(),
+                    ),
+                  );
                 }),
               ],
             ),
