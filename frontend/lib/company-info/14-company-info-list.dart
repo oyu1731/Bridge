@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '00_header.dart';
+import '../header.dart';
 import '15-company-info-detail.dart';
 
 class CompanySearchPage extends StatefulWidget {

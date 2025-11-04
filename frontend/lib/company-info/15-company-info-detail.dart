@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '00_header.dart';
+import '../header.dart';
 
 class CompanyDetailPage extends StatelessWidget {
   final String companyName;

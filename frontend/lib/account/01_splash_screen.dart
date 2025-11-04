@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // HapticFeedback用
-import 'package:bridge/02_sign_up_student.dart';
-import 'package:bridge/03_sign_up_worker.dart';
-import 'package:bridge/04_sign_up_company.dart';
+import 'package:bridge/account/02_sign_up_student.dart';
+import 'package:bridge/account/03_sign_up_worker.dart';
+import 'package:bridge/account/04_sign_up_company.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key, required this.title});
