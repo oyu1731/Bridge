@@ -25,6 +25,8 @@ services:
     volumes: # 永続化のためのボリューム設定
       - mysql_data:/var/lib/mysql # データベースのデータをホストに永続化
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql # コンテナ起動時に実行されるSQLファイル
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+
     networks:
       - bridge-network # サービス間の通信に使用するネットワーク
     restart: unless-stopped # コンテナが停止した場合に自動的に再起動
@@ -32,7 +34,7 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u$$MYSQL_USER", "-p$$MYSQL_PASSWORD"]
       timeout: 20s
       retries: 10
-      start_period: 10s
+      start_period: 30s
 
   # Spring Bootバックエンドサービス
   # FlutterアプリケーションからのAPIリクエストを処理します。

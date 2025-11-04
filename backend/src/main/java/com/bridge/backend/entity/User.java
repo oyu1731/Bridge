@@ -1,6 +1,7 @@
 package com.bridge.backend.entity;
 
-import jakarta.persistence.*; // JPA (Java Persistence API) のアノテーションをインポート
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 /**
  * Userエンティティ
@@ -21,18 +22,175 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY) // データベースのAUTO_INCREMENTを利用
     private Integer id; // ユーザーID
 
-    private String name; // ユーザー名
-    private String email; // ユーザーメールアドレス
+    @Column(name = "nickname", nullable = false, length = 100)
+    private String nickname;
 
-    // Getter / Setter
-    // これらのメソッドは、フィールドの値を取得・設定するために使用されます。
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    @Column(name = "type", nullable = false)
+    private Integer type; // 1=学生、2=社会人、3=企業、4=管理者
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    @Column(name = "password", nullable = false)
+    private String password; // ハッシュ化
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    @Column(name = "phone_number", nullable = false, length = 15)
+    private String phoneNumber; // ハイフン込の文字列として保存
+
+    @Column(name = "email", nullable = false)
+    private String email;
+
+    @Column(name = "company_id")
+    private Integer companyId;
+
+    @Column(name = "report_count", nullable = false)
+    private Integer reportCount;
+
+    @Column(name = "plan_status", nullable = false, length = 20)
+    private String planStatus;
+
+    @Column(name = "is_withdrawn", nullable = false)
+    private Boolean isWithdrawn;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "society_history")
+    private Integer societyHistory;
+
+    @Column(name = "icon")
+    private Integer icon;
+
+    @Column(name = "announcement_deletion", nullable = false)
+    private Integer announcementDeletion; // 1=新規お知らせなし、2=新規お知らせあり
+
+    public User() {
+    }
+
+    public User(Integer id, String nickname, Integer type, String password, String phoneNumber, String email, Integer companyId, Integer reportCount, String planStatus, Boolean isWithdrawn, LocalDateTime createdAt, Integer societyHistory, Integer icon, Integer announcementDeletion) {
+        this.id = id;
+        this.nickname = nickname;
+        this.type = type;
+        this.password = password;
+        this.phoneNumber = phoneNumber;
+        this.email = email;
+        this.companyId = companyId;
+        this.reportCount = reportCount;
+        this.planStatus = planStatus;
+        this.isWithdrawn = isWithdrawn;
+        this.createdAt = createdAt;
+        this.societyHistory = societyHistory;
+        this.icon = icon;
+        this.announcementDeletion = announcementDeletion;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public Integer getType() {
+        return type;
+    }
+
+    public void setType(Integer type) {
+        this.type = type;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
+    }
+
+    public Integer getReportCount() {
+        return reportCount;
+    }
+
+    public void setReportCount(Integer reportCount) {
+        this.reportCount = reportCount;
+    }
+
+    public String getPlanStatus() {
+        return planStatus;
+    }
+
+    public void setPlanStatus(String planStatus) {
+        this.planStatus = planStatus;
+    }
+
+    public Boolean getIsWithdrawn() {
+        return isWithdrawn;
+    }
+
+    public void setIsWithdrawn(Boolean withdrawn) {
+        isWithdrawn = withdrawn;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Integer getSocietyHistory() {
+        return societyHistory;
+    }
+
+    public void setSocietyHistory(Integer societyHistory) {
+        this.societyHistory = societyHistory;
+    }
+
+    public Integer getIcon() {
+        return icon;
+    }
+
+    public void setIcon(Integer icon) {
+        this.icon = icon;
+    }
+
+    public Integer getAnnouncementDeletion() {
+        return announcementDeletion;
+    }
+
+    public void setAnnouncementDeletion(Integer announcementDeletion) {
+        this.announcementDeletion = announcementDeletion;
+    }
 }
 
