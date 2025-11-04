@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '00_header.dart';
+import '15-company-info-detail.dart';
 
 class CompanySearchPage extends StatefulWidget {
   const CompanySearchPage({Key? key}) : super(key: key);
@@ -261,12 +262,27 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  company['name']!,
-                  style: TextStyle(
-                    color: Color(0xFF1976D2),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                InkWell(
+                  onTap: () {
+                    // 企業詳細ページへの遷移
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CompanyDetailPage(
+                          companyName: company['name']!,
+                          companyId: 'company-${company['name']!.hashCode}',
+                        ),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    company['name']!,
+                    style: TextStyle(
+                      color: Color(0xFF1976D2),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -551,7 +567,7 @@ class CompanySearchResultPage extends StatelessWidget {
             ),
             itemCount: results.length,
             itemBuilder: (context, index) {
-              return _buildCompanyCard(results[index]);
+              return _buildCompanyCard(context, results[index]);
             },
           ),
         ],
@@ -559,7 +575,7 @@ class CompanySearchResultPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCompanyCard(Map<String, String> company) {
+  Widget _buildCompanyCard(BuildContext context, Map<String, String> company) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -595,15 +611,30 @@ class CompanySearchResultPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    company['name']!,
-                    style: TextStyle(
-                      color: Color(0xFF1976D2),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                  InkWell(
+                    onTap: () {
+                      // 企業詳細ページへの遷移
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CompanyDetailPage(
+                            companyName: company['name']!,
+                            companyId: 'company-${company['name']!.hashCode}',
+                          ),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      company['name']!,
+                      style: TextStyle(
+                        color: Color(0xFF1976D2),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        decoration: TextDecoration.underline,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
