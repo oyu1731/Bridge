@@ -1,3 +1,4 @@
+// アプリ起動時の画面
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // HapticFeedback用
 import 'package:bridge/1-account/02_sign_up_student.dart';
