@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bridge/00_header.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -14,6 +15,9 @@ class ThreadCreate extends StatefulWidget {
 class _ThreadCreateState extends State<ThreadCreate> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold();
+    return Scaffold(
+      appBar: BridgeHeader(),
+      body: Column(),
+    );
   }
 }

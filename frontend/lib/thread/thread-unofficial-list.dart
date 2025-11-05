@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bridge/00_header.dart';
 import 'thread-create.dart';
 
 void main() {
@@ -13,10 +14,12 @@ class ThreadUnofficialList extends StatefulWidget {
 }
 
 class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
+  List<String> items = ['1', '2', '3'];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('ユーザー一覧')),
+      appBar: BridgeHeader(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -37,6 +40,20 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
                 child: Text('スレッド作成'),
               ),
             ],
+          ),
+          
+          SizedBox(height: 10),
+
+          Expanded(
+            child: ListView.builder(
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  contentPadding: EdgeInsets.only(left: 40),
+                  title: Text(items[index])
+                );
+              },
+            ),
           ),
         ],
       ),
