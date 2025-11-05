@@ -138,8 +138,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
                 ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // サインアップ処理
+              onPressed: () async {
                 final nickname = _nicknameController.text;
                 final email = _emailController.text;
                 final password = _passwordController.text;
@@ -150,13 +149,37 @@ class _StudentInputPageState extends State<StudentInputPage> {
                         .map((entry) => entry.key)
                         .toList();
 
-                print('ニックネーム: $nickname');
-                print('メールアドレス: $email');
-                print('パスワード: $password');
-                print('電話番号: $phoneNumber');
-                print('希望業界: $desiredIndustries');
+                final url = Uri.parse('http://localhost:8080/api/users');
+                final headers = {
+                  'Content-Type': 'application/json; charset=UTF-8',
+                };
+                final body = jsonEncode({
+                  'nickname': nickname,
+                  'email': email,
+                  'password': password,
+                  'phoneNumber': phoneNumber,
+                  'desiredIndustries': desiredIndustries,
+                });
 
-                Navigator.pop(context); // 前の画面に戻る
+                try {
+                  final response = await http.post(
+                    url,
+                    headers: headers,
+                    body: body,
+                  );
+
+                  if (response.statusCode == 200) {
+                    print('サインアップ成功: ${response.body}');
+                    Navigator.pop(context); // 前の画面に戻る
+                  } else {
+                    print('サインアップ失敗: ${response.statusCode}');
+                    print('エラーメッセージ: ${response.body}');
+                    // エラーメッセージをユーザーに表示するなどの処理
+                  }
+                } catch (e) {
+                  print('エラーが発生しました: $e');
+                  // ネットワークエラーなどをユーザーに表示する処理
+                }
               },
               child: const Text('作成'),
             ),

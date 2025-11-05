@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '14-company-info-list.dart';
+import '4company-info/14-company-info-list.dart';
 
 class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
   const BridgeHeader({Key? key}) : super(key: key);
