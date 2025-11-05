@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bridge/main.dart';
+import 'package:bridge/01-app/main.dart';
 
 class CompanyInputPage extends StatelessWidget {
   const CompanyInputPage({super.key});

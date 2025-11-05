@@ -1,15 +1,16 @@
 @echo off
-REM 開発環境を起動するためのバッチファイルです。
-REM MySQL、Spring Bootバックエンド（Dockerコンテナ）、Flutterフロントエンド（ローカル）を起動します。
-
-REM コマンドプロンプトの文字コードを UTF-8 に変更
 chcp 65001 > NUL
+
+REM -------------------------------------------
+REM my.cnf を読み取り専用に設定
+REM -------------------------------------------
+echo MySQL設定ファイルを読み取り専用に設定中...
+attrib +R C:\Bridge\bridge\docker\mysql\my.cnf
 
 echo Dockerコンテナ (MySQLとSpring Bootバックエンド) を起動中...
 cd docker
 docker-compose build --no-cache
 docker-compose up -d
-echo Dockerコンテナの状態:
 docker-compose ps
 cd ..
 
@@ -35,22 +36,22 @@ if %errorlevel% equ 0 (
 
 echo Flutterアプリケーションをローカルで起動中...
 
-REM Flutter のポート番号
 set PORT=5000
+setlocal enabledelayedexpansion
 
-REM 5000ポートを使用しているプロセスがあれば強制終了
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :%PORT% ^| findstr LISTENING') do (
-    echo ポート %PORT% を使用しているプロセス %%a を終了します...
+REM 5000ポートを使用しているプロセスを強制終了
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :!PORT! ^| findstr LISTENING') do (
+    echo ポート !PORT! を使用しているプロセス %%a を終了します...
     taskkill /PID %%a /F
 )
 
 cd frontend
-REM Flutter を Chrome で起動
-start cmd /k "flutter run -d chrome --web-port %PORT%"
 
-@REM Edgeブラウザで起動したい場合は上記行をコメントアウトし、以下の行を使用
-@REM start cmd /k "flutter run -d edge --web-port %PORT%"
+REM FlutterをChromeで起動
+start cmd /k "flutter run -d chrome --web-port !PORT!"
+
 cd ..
+endlocal
 
 echo 開発環境の起動が完了しました。
 echo Flutterのホットリロードを有効にするため、Flutterのウィンドウは開いたままにしてください。

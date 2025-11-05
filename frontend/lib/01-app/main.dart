@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // HapticFeedback用
-import 'package:bridge/02_sign_up_student.dart';
-import 'package:bridge/03_sign_up_worker.dart';
-import 'package:bridge/04_sign_up_company.dart';
+import 'package:bridge/02-auth/02-sign-up-student.dart';
+import 'package:bridge/02-auth/03-sign-up-worker.dart';
+import 'package:bridge/02-auth/04-sign-up-company.dart';
 
 void main() {
   runApp(const MyApp());
