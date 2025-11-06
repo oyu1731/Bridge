@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../06-company/14-company-info-list.dart';
+import '../06-company/19-article-post.dart';
 import '../08-thread/31-thread-list.dart';
 
 class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
@@ -355,11 +356,11 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         );
         break;
       case 'post_article':
-        // 記事投稿ページへの遷移（張りぼて）
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('記事投稿ページに遷移します'),
-            backgroundColor: Color(0xFF1976D2),
+        // 記事投稿ページへの遷移
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ArticlePostPage(),
           ),
         );
         break;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../11-common/58-header.dart';
+import '18-article-detail.dart';
 
 class ArticleListPage extends StatefulWidget {
   final String? companyName;
@@ -550,11 +551,18 @@ class _ArticleListPageState extends State<ArticleListPage> {
   Widget _buildArticleCard(Map<String, dynamic> article) {
     return InkWell(
       onTap: () {
-        // 記事詳細ページへの遷移（張りぼて）
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('記事詳細ページに遷移します'),
-            backgroundColor: Color(0xFF1976D2),
+        // 記事詳細ページへの遷移
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ArticleDetailPage(
+              articleTitle: article['title'] ?? '記事タイトル',
+              articleId: 'article-${article['title']?.hashCode ?? 0}',
+              companyName: article['company'] ?? '株式会社AAA',
+              description: article['preview'] ?? '',
+              category: article['tag'] ?? '',
+              location: article['location'] ?? '',
+            ),
           ),
         );
       },

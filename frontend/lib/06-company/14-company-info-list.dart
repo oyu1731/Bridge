@@ -5,6 +5,7 @@ import 'dart:html' as html show window;
 import '../11-common/58-header.dart';
 import '15-company-info-detail.dart';
 import '16-article-list.dart';
+import '18-article-detail.dart';
 
 class CompanySearchPage extends StatefulWidget {
   const CompanySearchPage({Key? key}) : super(key: key);
@@ -528,12 +529,31 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            article['title']!,
-            style: TextStyle(
-              color: Color(0xFF1976D2),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+          InkWell(
+            onTap: () {
+              // 記事詳細ページに遷移
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ArticleDetailPage(
+                    articleTitle: article['title']!,
+                    articleId: 'article-${article['title']!.hashCode}',
+                    companyName: '株式会社AAA',
+                    description: article['description'],
+                    category: article['category'],
+                    location: article['location'],
+                  ),
+                ),
+              );
+            },
+            child: Text(
+              article['title']!,
+              style: TextStyle(
+                color: Color(0xFF1976D2),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                decoration: TextDecoration.underline,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -629,7 +649,7 @@ class CompanySearchResultPage extends StatelessWidget {
             _buildSearchResultsSection(searchResults),
 
             // 関連記事セクション
-            _buildRelatedArticlesSection(relatedArticles),
+            _buildRelatedArticlesSection(context, relatedArticles),
           ],
         ),
       ),
@@ -810,7 +830,7 @@ class CompanySearchResultPage extends StatelessWidget {
     );
   }
 
-  Widget _buildRelatedArticlesSection(List<Map<String, String>> articles) {
+  Widget _buildRelatedArticlesSection(BuildContext context, List<Map<String, String>> articles) {
     return Container(
       margin: const EdgeInsets.all(16),
       child: Column(
@@ -827,14 +847,14 @@ class CompanySearchResultPage extends StatelessWidget {
           const SizedBox(height: 16),
           Column(
             children:
-                articles.map((article) => _buildArticleCard(article)).toList(),
+                articles.map((article) => _buildArticleCard(context, article)).toList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildArticleCard(Map<String, String> article) {
+  Widget _buildArticleCard(BuildContext context, Map<String, String> article) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -846,12 +866,31 @@ class CompanySearchResultPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            article['title']!,
-            style: TextStyle(
-              color: Color(0xFF1976D2),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+          InkWell(
+            onTap: () {
+              // 記事詳細ページに遷移
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ArticleDetailPage(
+                    articleTitle: article['title']!,
+                    articleId: 'article-${article['title']!.hashCode}',
+                    companyName: '株式会社AAA',
+                    description: article['description'],
+                    category: article['category'],
+                    location: article['location'],
+                  ),
+                ),
+              );
+            },
+            child: Text(
+              article['title']!,
+              style: TextStyle(
+                color: Color(0xFF1976D2),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                decoration: TextDecoration.underline,
+              ),
             ),
           ),
           const SizedBox(height: 8),

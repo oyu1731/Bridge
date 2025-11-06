@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../11-common/58-header.dart';
+import '18-article-detail.dart';
 import '16-article-list.dart';
 
 class CompanyDetailPage extends StatelessWidget {
@@ -255,11 +256,18 @@ class CompanyDetailPage extends StatelessWidget {
                           margin: EdgeInsets.only(bottom: 16),
                           child: InkWell(
                             onTap: () {
-                              // 記事詳細ページへの遷移（張りぼて）
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('記事詳細ページに遷移します'),
-                                  backgroundColor: Color(0xFF1976D2),
+                              // 記事詳細ページへの遷移
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ArticleDetailPage(
+                                    articleTitle: article['title']!,
+                                    articleId: 'article-${article['title']!.hashCode}',
+                                    companyName: companyName,
+                                    description: article['description'],
+                                    category: article['category'],
+                                    location: article['location'],
+                                  ),
                                 ),
                               );
                             },
@@ -339,11 +347,18 @@ class CompanyDetailPage extends StatelessWidget {
                     margin: EdgeInsets.only(bottom: 16),
                     child: InkWell(
                       onTap: () {
-                        // 記事詳細ページへの遷移（張りぼて）
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('記事詳細ページに遷移します'),
-                            backgroundColor: Color(0xFF1976D2),
+                        // 記事詳細ページへの遷移
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ArticleDetailPage(
+                              articleTitle: article['title']!,
+                              articleId: 'article-${article['title']!.hashCode}',
+                              companyName: companyName,
+                              description: article['description'],
+                              category: article['category'],
+                              location: article['location'],
+                            ),
                           ),
                         );
                       },
