@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Platform;
+import 'dart:html' as html show window;
 import '../11-common/58-header.dart';
 import '15-company-info-detail.dart';
+import '16-article-list.dart';
 
 class CompanySearchPage extends StatefulWidget {
   const CompanySearchPage({Key? key}) : super(key: key);
@@ -14,6 +18,31 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
   String _selectedIndustry = '業種';
   String _selectedProfession = '職種';
   String _selectedArea = 'エリア';
+
+  // プラットフォーム判別ヘルパーメソッド
+  bool get _isMobileDevice {
+    if (kIsWeb) {
+      // Webの場合はユーザーエージェントで判別
+      final userAgent = html.window.navigator.userAgent.toLowerCase();
+      return userAgent.contains('mobile') || 
+             userAgent.contains('android') || 
+             userAgent.contains('iphone') || 
+             userAgent.contains('ipad');
+    } else {
+      // ネイティブアプリの場合はプラットフォームで判別
+      return Platform.isAndroid || Platform.isIOS;
+    }
+  }
+
+  bool get _isTabletOrDesktop {
+    if (kIsWeb) {
+      // Web版でのタブレット/デスクトップ判別
+      final userAgent = html.window.navigator.userAgent.toLowerCase();
+      return !userAgent.contains('mobile') || userAgent.contains('ipad');
+    } else {
+      return !(Platform.isAndroid || Platform.isIOS);
+    }
+  }
 
   // ダミーデータ
   final List<String> _industries = ['業種', 'IT', '製造業', '金融', '医療', '教育'];
@@ -217,13 +246,114 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
             ),
           ),
           const SizedBox(height: 16),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children:
-                  _featuredCompanies
-                      .map((company) => _buildCompanyCard(company))
-                      .toList(),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // プラットフォームと画面幅を組み合わせて表示方法を判定
+              double screenWidth = constraints.maxWidth;
+              
+              // プラットフォームベースの判別を優先
+              if (_isMobileDevice) {
+                // モバイルデバイス（Android/iOS）: シンプルな横スクロール
+                return Container(
+                  height: 180,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.zero,
+                    itemCount: _featuredCompanies.length,
+                    itemBuilder: (context, index) {
+                      return _buildCompanyCard(_featuredCompanies[index], true);
+                    },
+                  ),
+                );
+              } else {
+                // PC・タブレット（Web/Desktop）: 矢印ボタン付きの横スクロール
+                // 画面幅が非常に小さい場合でも矢印ボタンを維持
+                bool isSmallScreen = screenWidth <= 600; // 閾値を下げる
+                return _buildPCHorizontalScroll(isSmallScreen);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPCHorizontalScroll([bool isSmallScreen = false]) {
+    final ScrollController _scrollController = ScrollController();
+    double containerHeight = isSmallScreen ? 180 : 200;
+    double buttonSize = isSmallScreen ? 36 : 40; // 最小サイズを36に
+    double iconSize = isSmallScreen ? 18 : 20; // アイコンサイズも調整
+    
+    return Container(
+      height: containerHeight,
+      child: Row(
+        children: [
+          // 左矢印ボタン
+          Container(
+            width: buttonSize,
+            child: Center(
+              child: IconButton(
+                onPressed: () {
+                  _scrollController.animateTo(
+                    _scrollController.offset - 200,
+                    duration: Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+                icon: Icon(
+                  Icons.arrow_back_ios,
+                  color: Color(0xFF757575),
+                  size: iconSize,
+                ),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  side: BorderSide(color: Color(0xFFE0E0E0)),
+                  shape: CircleBorder(),
+                  padding: EdgeInsets.all(isSmallScreen ? 6 : 8), // パディングも調整
+                  minimumSize: Size(buttonSize, buttonSize), // 最小サイズを保証
+                ),
+              ),
+            ),
+          ),
+          
+          // スクロール可能なカードリスト
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              itemCount: _featuredCompanies.length,
+              itemBuilder: (context, index) {
+                return _buildCompanyCard(_featuredCompanies[index], isSmallScreen);
+              },
+            ),
+          ),
+          
+          // 右矢印ボタン
+          Container(
+            width: buttonSize,
+            child: Center(
+              child: IconButton(
+                onPressed: () {
+                  _scrollController.animateTo(
+                    _scrollController.offset + 200,
+                    duration: Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+                icon: Icon(
+                  Icons.arrow_forward_ios,
+                  color: Color(0xFF757575),
+                  size: iconSize,
+                ),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  side: BorderSide(color: Color(0xFFE0E0E0)),
+                  shape: CircleBorder(),
+                  padding: EdgeInsets.all(isSmallScreen ? 6 : 8), // パディングも調整
+                  minimumSize: Size(buttonSize, buttonSize), // 最小サイズを保証
+                ),
+              ),
             ),
           ),
         ],
@@ -231,20 +361,35 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     );
   }
 
-  Widget _buildCompanyCard(Map<String, String> company) {
+  Widget _buildCompanyCard(Map<String, String> company, [bool isSmallScreen = false]) {
+    // スマートフォンサイズに応じてカードサイズを調整
+    double cardWidth = isSmallScreen ? 140 : 160;
+    double imageHeight = isSmallScreen ? 80 : 100;
+    double fontSize = isSmallScreen ? 13 : 14;
+    double categoryFontSize = isSmallScreen ? 11 : 12;
+    double cardMargin = isSmallScreen ? 8 : 12;
+    
     return Container(
-      width: 160,
-      margin: const EdgeInsets.only(right: 12),
+      width: cardWidth,
+      margin: EdgeInsets.only(right: cardMargin),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Color(0xFFE0E0E0)),
         borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            spreadRadius: 0,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            height: 100,
+            height: imageHeight,
             width: double.infinity,
             decoration: BoxDecoration(
               color: Color(0xFFF5F5F5),
@@ -253,12 +398,15 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
             child: Center(
               child: Text(
                 '画像',
-                style: TextStyle(color: Color(0xFF757575), fontSize: 14),
+                style: TextStyle(
+                  color: Color(0xFF757575), 
+                  fontSize: categoryFontSize,
+                ),
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -268,11 +416,10 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder:
-                            (context) => CompanyDetailPage(
-                              companyName: company['name']!,
-                              companyId: 'company-${company['name']!.hashCode}',
-                            ),
+                        builder: (context) => CompanyDetailPage(
+                          companyName: company['name']!,
+                          companyId: 'company-${company['name']!.hashCode}',
+                        ),
                       ),
                     );
                   },
@@ -280,21 +427,33 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
                     company['name']!,
                     style: TextStyle(
                       color: Color(0xFF1976D2),
-                      fontSize: 14,
+                      fontSize: fontSize,
                       fontWeight: FontWeight.w500,
                       decoration: TextDecoration.underline,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   company['category']!,
-                  style: TextStyle(color: Color(0xFF757575), fontSize: 12),
+                  style: TextStyle(
+                    color: Color(0xFF757575), 
+                    fontSize: categoryFontSize,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   company['location']!,
-                  style: TextStyle(color: Color(0xFF757575), fontSize: 12),
+                  style: TextStyle(
+                    color: Color(0xFF757575), 
+                    fontSize: categoryFontSize,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -310,13 +469,40 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '注目記事',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF424242),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '注目記事',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              InkWell(
+                onTap: () {
+                  // 記事一覧ページに遷移
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ArticleListPage(),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Text(
+                    'もっと見る',
+                    style: TextStyle(
+                      color: Color(0xFF1976D2),
+                      fontSize: 14,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Column(
@@ -518,7 +704,7 @@ class CompanySearchResultPage extends StatelessWidget {
             ),
             itemCount: results.length,
             itemBuilder: (context, index) {
-              return _buildCompanyCard(context, results[index]);
+              return _buildCompanyCardForResults(context, results[index]);
             },
           ),
         ],
@@ -526,12 +712,20 @@ class CompanySearchResultPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCompanyCard(BuildContext context, Map<String, String> company) {
+  Widget _buildCompanyCardForResults(BuildContext context, Map<String, String> company) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Color(0xFFE0E0E0)),
         borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            spreadRadius: 0,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -547,7 +741,10 @@ class CompanySearchResultPage extends StatelessWidget {
               child: Center(
                 child: Text(
                   '画像',
-                  style: TextStyle(color: Color(0xFF757575), fontSize: 14),
+                  style: TextStyle(
+                    color: Color(0xFF757575), 
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ),
@@ -565,12 +762,10 @@ class CompanySearchResultPage extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder:
-                              (context) => CompanyDetailPage(
-                                companyName: company['name']!,
-                                companyId:
-                                    'company-${company['name']!.hashCode}',
-                              ),
+                          builder: (context) => CompanyDetailPage(
+                            companyName: company['name']!,
+                            companyId: 'company-${company['name']!.hashCode}',
+                          ),
                         ),
                       );
                     },
@@ -589,11 +784,20 @@ class CompanySearchResultPage extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     company['category']!,
-                    style: TextStyle(color: Color(0xFF757575), fontSize: 10),
+                    style: TextStyle(
+                      color: Color(0xFF757575), 
+                      fontSize: 10,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 1),
                   Text(
                     company['location']!,
-                    style: TextStyle(color: Color(0xFF757575), fontSize: 10),
+                    style: TextStyle(
+                      color: Color(0xFF757575), 
+                      fontSize: 10,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

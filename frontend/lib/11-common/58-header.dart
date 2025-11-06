@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../06-company/14-company-info-list.dart';
+import '../08-thread/31-thread-list.dart';
 
 class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
   const BridgeHeader({Key? key}) : super(key: key);
@@ -32,8 +33,8 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: Image.asset(
-                    'lib/images/bridge-logo.png',
-                    height: 44, // サイズを少し小さく
+                    'lib/00-images/bridge-logo.png',
+                    height: 55, // サイズを少し小さく
                     width: 110, // 横幅も調整
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
@@ -236,35 +237,52 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
           Container(
             height: 51,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildNavButton('TOPページ', () {
-                  print('TOPページへ遷移');
-                }),
-                const SizedBox(width: 20),
-                _buildNavButton('AI練習', () {
-                  print('AI練習ページへ遷移');
-                }),
-                const SizedBox(width: 20),
-                _buildNavButton('1問1答', () {
-                  print('1問1答ページへ遷移');
-                }),
-                const SizedBox(width: 20),
-                _buildNavButton('スレッド', () {
-                  print('スレッドページへ遷移');
-                }),
-                const SizedBox(width: 20),
-                _buildNavButton('企業情報', () {
-                  // 企業情報ページへの遷移
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CompanySearchPage(),
-                    ),
-                  );
-                }),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // スマートフォンサイズ（幅800px以下）かどうかを判定
+                bool isSmallScreen = constraints.maxWidth <= 800;
+                double buttonSpacing = isSmallScreen ? 8 : 20;
+                
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildNavButton('TOPページ', () {
+                        print('TOPページへ遷移');
+                      }, isSmallScreen),
+                      SizedBox(width: buttonSpacing),
+                      _buildNavButton('AI練習', () {
+                        print('AI練習ページへ遷移');
+                      }, isSmallScreen),
+                      SizedBox(width: buttonSpacing),
+                      _buildNavButton('1問1答', () {
+                        print('1問1答ページへ遷移');
+                      }, isSmallScreen),
+                      SizedBox(width: buttonSpacing),
+                      _buildNavButton('スレッド', () {
+                        // スレッドページへの遷移
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ThreadList(),
+                          ),
+                        );
+                      }, isSmallScreen),
+                      SizedBox(width: buttonSpacing),
+                      _buildNavButton('企業情報', () {
+                        // 企業情報ページへの遷移
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CompanySearchPage(),
+                          ),
+                        );
+                      }, isSmallScreen),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -272,7 +290,13 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  Widget _buildNavButton(String text, VoidCallback onPressed) {
+  Widget _buildNavButton(String text, VoidCallback onPressed, [bool isSmallScreen = false]) {
+    // スマートフォンサイズの場合のサイズ調整
+    double fontSize = isSmallScreen ? 11 : 13;
+    double horizontalPadding = isSmallScreen ? 12 : 18;
+    double verticalPadding = isSmallScreen ? 6 : 8;
+    Size minimumSize = isSmallScreen ? const Size(60, 32) : const Size(75, 36);
+    
     return Container(
       decoration: BoxDecoration(
         color: Color(0xFFF5F5F5), // より淡いグレー背景
@@ -290,17 +314,17 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
       child: TextButton(
         onPressed: onPressed,
         style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(25),
           ),
-          minimumSize: const Size(75, 36),
+          minimumSize: minimumSize,
         ),
         child: Text(
           text,
           style: TextStyle(
             color: Color(0xFF424242), // ダークグレー
-            fontSize: 13,
+            fontSize: fontSize,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
           ),
