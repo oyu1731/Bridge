@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../06-company/14-company-info-list.dart';
+import '../06-company/17-company-article-list.dart';
 import '../06-company/19-article-post.dart';
 import '../08-thread/31-thread-list.dart';
 
@@ -142,6 +143,20 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                                     ),
                                     const SizedBox(width: 12),
                                     Text('記事投稿'),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'article_list',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.list_alt,
+                                      size: 18,
+                                      color: Color(0xFF616161),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text('投稿記事一覧'),
                                   ],
                                 ),
                               ),
@@ -361,6 +376,15 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
           context,
           MaterialPageRoute(
             builder: (context) => ArticlePostPage(),
+          ),
+        );
+        break;
+      case 'article_list':
+        // 投稿記事一覧ページへの遷移
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CompanyArticleListPage(),
           ),
         );
         break;
