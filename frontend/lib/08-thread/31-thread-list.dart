@@ -1,36 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:bridge/11-common/58-header.dart';
+import 'package:bridge/header.dart';
+import '32-thread-official-detail.dart';
 import '33-thread-unofficial-detail.dart';
-import 'dart:math';
-
-void main() {
-  runApp(MaterialApp(home: ThreadList()));
-}
-
-// スレッドモデル
-class Thread {
-  final int id;
-  final String title;
-  final String lastComment; // 最新コメント内容
-  final DateTime lastUpdateDate;
-  final int type; // 1=公式, 2=非公式
-
-  Thread({
-    required this.id,
-    required this.title,
-    required this.lastComment,
-    required this.lastUpdateDate,
-    required this.type,
-  });
-
-  String get timeAgo {
-    final diff = DateTime.now().difference(lastUpdateDate);
-    if (diff.inMinutes < 1) return 'たった今';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}分前';
-    if (diff.inHours < 24) return '${diff.inHours}時間前';
-    return '${diff.inDays}日前';
-  }
-}
+import 'thread-unofficial-list.dart';
 
 class ThreadList extends StatefulWidget {
   @override
@@ -38,215 +10,167 @@ class ThreadList extends StatefulWidget {
 }
 
 class _ThreadListState extends State<ThreadList> {
-  List<Thread> allThreads = [];
+  List<Map<String, String>> officialThreads = [];
+  List<Map<String, String>> hotUnofficialThreads = [];
 
   @override
   void initState() {
     super.initState();
-    _loadThreads(); // ダミーデータ読み込み
+    _fetchThreads();
   }
 
-  void _loadThreads() {
-    final now = DateTime.now();
-    final random = Random();
+  @override
+  void didUpdateWidget(covariant ThreadList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // ホットリロードや再読み込み時にスレッド情報を再取得
+    _fetchThreads();
+  }
 
-    // ダミーデータ生成（公式3件、非公式7件）
-    allThreads = [
-      // 公式スレッド（type=1）
-      Thread(
-        id: 1,
-        title: '公式スレッド①',
-        lastComment: '最新アップデートの情報です！',
-        lastUpdateDate: now.subtract(Duration(minutes: 10)),
-        type: 1,
-      ),
-      Thread(
-        id: 2,
-        title: '公式スレッド②',
-        lastComment: '運営からのお知らせです。',
-        lastUpdateDate: now.subtract(Duration(hours: 1, minutes: 20)),
-        type: 1,
-      ),
-      Thread(
-        id: 3,
-        title: '公式スレッド③',
-        lastComment: 'メンテナンス完了しました。',
-        lastUpdateDate: now.subtract(Duration(hours: 5)),
-        type: 1,
-      ),
-      // 非公式スレッド（type=2）
-      ...List.generate(7, (index) {
-        return Thread(
-          id: index + 4,
-          title: '非公式スレッド ${index + 1}',
-          lastComment: 'コメント${index + 1}：盛り上がってるね！',
-          lastUpdateDate: now.subtract(Duration(minutes: random.nextInt(500))),
-          type: 2,
-        );
-      }),
-    ];
+  // 初回に公式スレッド（固定3件）＋ 非公式スレッド上位5件を取得
+  Future<void> _fetchThreads() async {
+    await Future.delayed(Duration(milliseconds: 300)); // 通信待ち想定
+    setState(() {
+      // 公式スレッド（固定）: ラストコメント＋経過時間を取得
+      officialThreads = [
+        {
+          'id': '1',
+          'title': '学生・社会人',
+          'lastComment': '最近忙しいけど頑張ってる！',
+          'timeAgo': '3分前',
+        },
+        {
+          'id': '2',
+          'title': '学生',
+          'lastComment': 'テスト期間でやばいです…',
+          'timeAgo': '15分前',
+        },
+        {
+          'id': '3',
+          'title': '社会人',
+          'lastComment': '残業が多くてつらい…',
+          'timeAgo': '42分前',
+        },
+      ];
 
-    // 更新日時の新しい順にソート
-    allThreads.sort((a, b) => b.lastUpdateDate.compareTo(a.lastUpdateDate));
+      // 非公式スレッド（最新コメント送信からの経過時間が短い上位5件）
+      hotUnofficialThreads = [
+        {'id': 't1', 'title': '業界別の面接対策', 'timeAgo': '3分前'},
+        {'id': 't2', 'title': '社会人一年目の過ごし方', 'timeAgo': '10分前'},
+        {'id': 't3', 'title': 'おすすめの資格', 'timeAgo': '25分前'},
+        {'id': 't4', 'title': '働きながら転職活動するには', 'timeAgo': '50分前'},
+        {'id': 't5', 'title': '就活で意識すべきこと', 'timeAgo': '1時間前'},
+      ];
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // 公式スレッド3件
-    List<Thread> officialThreads =
-        allThreads.where((t) => t.type == 1).take(3).toList();
-
-    // HOTスレッド（非公式のみ上位5件）
-    List<Thread> hotThreads =
-        allThreads.where((t) => t.type == 2).take(5).toList();
-
     return Scaffold(
       appBar: BridgeHeader(),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 公式スレッドタイトル
+            // 公式スレッド一覧
             Text(
               '公式スレッド',
-              style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
-
             SizedBox(height: 10),
-
-            // 公式スレッド一覧（タイトル + コメント + 時間）
             Column(
-              children:
-                  officialThreads.map((thread) {
-                    return Card(
-                      margin: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    thread.title,
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    thread.lastComment,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              thread.timeAgo,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
+              children: officialThreads.map((thread) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ThreadOfficialDetail(thread: thread),
                       ),
                     );
-                  }).toList(),
+                  },
+                  child: Card(
+                    margin: EdgeInsets.symmetric(vertical: 6),
+                    elevation: 2,
+                    child: ListTile(
+                      title: Text(
+                        thread['title']!,
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        thread['lastComment']!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.black87, fontSize: 14),
+                      ),
+                      trailing: Text(
+                        thread['timeAgo']!,
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
 
-            SizedBox(height: 20),
+            SizedBox(height: 30),
 
-            // HOTスレッドタイトル + リンク
+            // 非公式スレッド（HOTスレッド上位5件）
             Row(
               children: [
                 Text(
-                  'HOTスレッド',
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                  'HOTスレッド（非公式）',
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                 ),
                 Spacer(),
                 TextButton(
                   onPressed: () {
+                    // 非公式スレッド一覧へ遷移
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ThreadUnofficialList(),
-                      ),
+                          builder: (context) => ThreadUnofficialList()),
                     );
                   },
                   child: Text(
-                    'スレッド一覧',
-                    style: TextStyle(fontSize: 18, color: Colors.blueAccent),
+                    'もっと見る',
+                    style: TextStyle(fontSize: 16, color: Colors.orange),
                   ),
                 ),
               ],
             ),
-
             SizedBox(height: 10),
-
-            // HOTスレッド（非公式）
-            Expanded(
-              child: ListView.builder(
-                itemCount: hotThreads.length,
-                itemBuilder: (context, index) {
-                  final thread = hotThreads[index];
-                  return Card(
-                    margin: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+            Column(
+              children: hotUnofficialThreads.map((thread) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ThreadUnofficialDetail(thread: thread),
+                      ),
+                    );
+                  },
+                  child: Card(
+                    margin: EdgeInsets.symmetric(vertical: 6),
                     elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  thread.title,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  thread.lastComment,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            thread.timeAgo,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
+                    child: ListTile(
+                      title: Text(
+                        thread['title']!,
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      trailing: Text(
+                        thread['timeAgo']!,
+                        style: TextStyle(color: Colors.grey),
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              }).toList(),
             ),
           ],
         ),
