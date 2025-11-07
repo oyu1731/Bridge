@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:bridge/main.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 class StudentInputPage extends StatefulWidget {
   const StudentInputPage({super.key});
@@ -17,8 +15,10 @@ class _StudentInputPageState extends State<StudentInputPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _phoneNumberController = TextEditingController();
-  List<String> _industries = [];
-  final Map<String, bool> _selectedIndustries = {};
+
+  List<Map<String, dynamic>> _industries = [];
+  List<int> _selectedIndustryIds = [];
+
   bool _isLoading = true;
   String _errorMessage = '';
 
@@ -28,22 +28,26 @@ class _StudentInputPageState extends State<StudentInputPage> {
     _fetchIndustries();
   }
 
+  /// ✅ 業界を ID + 名前 で取得する
   Future<void> _fetchIndustries() async {
     try {
       final response = await http.get(
         Uri.parse('http://localhost:8080/api/industries'),
       );
+
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
+
         setState(() {
           _industries =
-              data.map((item) => item['industry'].toString()).toList();
-          for (var industry in _industries) {
-            _selectedIndustries[industry] = false;
-          }
+              data
+                  .map((item) => {"id": item["id"], "name": item["industry"]})
+                  .toList();
+
           _isLoading = false;
-          print("取得した中身：$_industries");
         });
+
+        print("✅取得した業界一覧: $_industries");
       } else {
         setState(() {
           _errorMessage = '業界の取得に失敗しました: ${response.statusCode}';
@@ -53,9 +57,9 @@ class _StudentInputPageState extends State<StudentInputPage> {
     } catch (e) {
       setState(() {
         _errorMessage = 'エラーが発生しました: $e';
-        print("エラー内容：$e");
         _isLoading = false;
       });
+      print("❌ 業界取得エラー: $e");
     }
   }
 
@@ -85,6 +89,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
               ),
             ),
             const SizedBox(height: 20),
+
             TextField(
               controller: _emailController,
               decoration: const InputDecoration(
@@ -94,6 +99,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 20),
+
             TextField(
               controller: _passwordController,
               decoration: const InputDecoration(
@@ -103,6 +109,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
               obscureText: true,
             ),
             const SizedBox(height: 20),
+
             TextField(
               controller: _phoneNumberController,
               decoration: const InputDecoration(
@@ -112,54 +119,62 @@ class _StudentInputPageState extends State<StudentInputPage> {
               keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 20),
+
             const Text(
               '希望業界:',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
+
             _isLoading
                 ? const CircularProgressIndicator()
                 : _errorMessage.isNotEmpty
                 ? Text('エラー: $_errorMessage')
                 : Column(
                   children:
-                      _industries
-                          .map(
-                            (industry) => CheckboxListTile(
-                              title: Text(industry),
-                              value: _selectedIndustries[industry],
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  _selectedIndustries[industry] = value!;
-                                });
-                              },
-                            ),
-                          )
-                          .toList(),
+                      _industries.map((industry) {
+                        return CheckboxListTile(
+                          title: Text(industry["name"]),
+                          value: _selectedIndustryIds.contains(industry["id"]),
+                          onChanged: (bool? value) {
+                            setState(() {
+                              if (value == true) {
+                                _selectedIndustryIds.add(industry["id"]);
+                              } else {
+                                _selectedIndustryIds.remove(industry["id"]);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
                 ),
+
             const SizedBox(height: 20),
+
             ElevatedButton(
               onPressed: () async {
                 final nickname = _nicknameController.text;
                 final email = _emailController.text;
                 final password = _passwordController.text;
                 final phoneNumber = _phoneNumberController.text;
-                final desiredIndustries =
-                    _selectedIndustries.entries
-                        .where((entry) => entry.value)
-                        .map((entry) => entry.key)
-                        .toList();
+
+                // ✅ 業界ID（List<int>）を送信
+                final desiredIndustries = _selectedIndustryIds;
 
                 final url = Uri.parse('http://localhost:8080/api/users');
                 final headers = {
                   'Content-Type': 'application/json; charset=UTF-8',
                 };
+
                 final body = jsonEncode({
                   'nickname': nickname,
                   'email': email,
                   'password': password,
                   'phoneNumber': phoneNumber,
                   'desiredIndustries': desiredIndustries,
+                  'type': 1, // 学生
                 });
+
+                print("📤 送信JSON: $body");
 
                 try {
                   final response = await http.post(
@@ -169,16 +184,14 @@ class _StudentInputPageState extends State<StudentInputPage> {
                   );
 
                   if (response.statusCode == 200) {
-                    print('サインアップ成功: ${response.body}');
-                    Navigator.pop(context); // 前の画面に戻る
+                    print('✅ サインアップ成功: ${response.body}');
+                    Navigator.pop(context);
                   } else {
-                    print('サインアップ失敗: ${response.statusCode}');
-                    print('エラーメッセージ: ${response.body}');
-                    // エラーメッセージをユーザーに表示するなどの処理
+                    print('❌ サインアップ失敗: ${response.statusCode}');
+                    print('❌ エラーメッセージ: ${response.body}');
                   }
                 } catch (e) {
-                  print('エラーが発生しました: $e');
-                  // ネットワークエラーなどをユーザーに表示する処理
+                  print('❌ 通信エラー: $e');
                 }
               },
               child: const Text('作成'),

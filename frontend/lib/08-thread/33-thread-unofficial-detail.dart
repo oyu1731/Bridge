@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 Firebase 関連の import やリアルタイムチャット用のコードはコメントアウトしています。
 */
 // import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:bridge/header.dart';
+import 'package:bridge/11-common/58-header.dart';
+import '31-thread-list.dart'; // Thread モデルをインポート
 
 class ThreadUnofficialDetail extends StatefulWidget {
-  final Map<String, dynamic> thread;
+  final Thread thread;
 
   const ThreadUnofficialDetail({required this.thread});
 
@@ -62,7 +63,7 @@ class _ThreadUnofficialDetailState extends State<ThreadUnofficialDetail> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.thread['title'] ?? 'スレッド',
+                    widget.thread.title,
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ),

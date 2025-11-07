@@ -1,8 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:bridge/header.dart';
+import 'package:bridge/11-common/58-header.dart';
 import '32-thread-official-detail.dart';
 import '33-thread-unofficial-detail.dart';
-import 'thread-unofficial-list.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+// Thread モデルの定義 (仮)
+class Thread {
+  final String id;
+  final String title;
+  final String? lastComment; // 公式スレッドのみ
+  final String timeAgo;
+
+  Thread({
+    required this.id,
+    required this.title,
+    this.lastComment,
+    required this.timeAgo,
+  });
+
+  factory Thread.fromJson(Map<String, dynamic> json) {
+    return Thread(
+      id: json['id'].toString(),
+      title: json['title'] as String,
+      lastComment: json['lastComment'] as String?,
+      timeAgo: json['timeAgo'] as String,
+    );
+  }
+}
 
 class ThreadList extends StatefulWidget {
   @override
@@ -10,8 +35,8 @@ class ThreadList extends StatefulWidget {
 }
 
 class _ThreadListState extends State<ThreadList> {
-  List<Map<String, String>> officialThreads = [];
-  List<Map<String, String>> hotUnofficialThreads = [];
+  List<Thread> officialThreads = [];
+  List<Thread> hotUnofficialThreads = [];
 
   @override
   void initState() {
@@ -28,39 +53,39 @@ class _ThreadListState extends State<ThreadList> {
 
   // 初回に公式スレッド（固定3件）＋ 非公式スレッド上位5件を取得
   Future<void> _fetchThreads() async {
-    await Future.delayed(Duration(milliseconds: 300)); // 通信待ち想定
-    setState(() {
-      // 公式スレッド（固定）: ラストコメント＋経過時間を取得
-      officialThreads = [
-        {
-          'id': '1',
-          'title': '学生・社会人',
-          'lastComment': '最近忙しいけど頑張ってる！',
-          'timeAgo': '3分前',
-        },
-        {
-          'id': '2',
-          'title': '学生',
-          'lastComment': 'テスト期間でやばいです…',
-          'timeAgo': '15分前',
-        },
-        {
-          'id': '3',
-          'title': '社会人',
-          'lastComment': '残業が多くてつらい…',
-          'timeAgo': '42分前',
-        },
-      ];
+    try {
+      // 公式スレッドの取得
+      final officialResponse = await http.get(
+        Uri.parse('http://localhost:8080/api/official-threads'),
+      ); // 仮のAPIエンドポイント
+      if (officialResponse.statusCode == 200) {
+        List<dynamic> officialJson = json.decode(officialResponse.body);
+        officialThreads =
+            officialJson.map((json) => Thread.fromJson(json)).toList();
+      } else {
+        print(
+          'Failed to load official threads: ${officialResponse.statusCode}',
+        );
+      }
 
-      // 非公式スレッド（最新コメント送信からの経過時間が短い上位5件）
-      hotUnofficialThreads = [
-        {'id': 't1', 'title': '業界別の面接対策', 'timeAgo': '3分前'},
-        {'id': 't2', 'title': '社会人一年目の過ごし方', 'timeAgo': '10分前'},
-        {'id': 't3', 'title': 'おすすめの資格', 'timeAgo': '25分前'},
-        {'id': 't4', 'title': '働きながら転職活動するには', 'timeAgo': '50分前'},
-        {'id': 't5', 'title': '就活で意識すべきこと', 'timeAgo': '1時間前'},
-      ];
-    });
+      // 非公式スレッドの取得
+      final unofficialResponse = await http.get(
+        Uri.parse('http://localhost:8080/api/unofficial-threads/hot'),
+      ); // 仮のAPIエンドポイント
+      if (unofficialResponse.statusCode == 200) {
+        List<dynamic> unofficialJson = json.decode(unofficialResponse.body);
+        hotUnofficialThreads =
+            unofficialJson.map((json) => Thread.fromJson(json)).toList();
+      } else {
+        print(
+          'Failed to load hot unofficial threads: ${unofficialResponse.statusCode}',
+        );
+      }
+
+      setState(() {});
+    } catch (e) {
+      print('Error fetching threads: $e');
+    }
   }
 
   @override
@@ -79,40 +104,50 @@ class _ThreadListState extends State<ThreadList> {
             ),
             SizedBox(height: 10),
             Column(
-              children: officialThreads.map((thread) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ThreadOfficialDetail(thread: thread),
+              children:
+                  officialThreads.map((thread) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) =>
+                                    ThreadOfficialDetail(thread: thread),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        margin: EdgeInsets.symmetric(vertical: 6),
+                        elevation: 2,
+                        child: ListTile(
+                          title: Text(
+                            thread.title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle:
+                              thread.lastComment != null
+                                  ? Text(
+                                    thread.lastComment!,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 14,
+                                    ),
+                                  )
+                                  : null,
+                          trailing: Text(
+                            thread.timeAgo,
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
                       ),
                     );
-                  },
-                  child: Card(
-                    margin: EdgeInsets.symmetric(vertical: 6),
-                    elevation: 2,
-                    child: ListTile(
-                      title: Text(
-                        thread['title']!,
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        thread['lastComment']!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Colors.black87, fontSize: 14),
-                      ),
-                      trailing: Text(
-                        thread['timeAgo']!,
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                  }).toList(),
             ),
 
             SizedBox(height: 30),
@@ -128,11 +163,14 @@ class _ThreadListState extends State<ThreadList> {
                 TextButton(
                   onPressed: () {
                     // 非公式スレッド一覧へ遷移
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => ThreadUnofficialList()),
-                    );
+                    // TODO: ThreadUnofficialList ページの実装または適切な遷移先を検討
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (context) => ThreadUnofficialList(),
+                    //   ),
+                    // );
+                    print('非公式スレッド一覧ページへの遷移ボタンが押されました。');
                   },
                   child: Text(
                     'もっと見る',
@@ -143,34 +181,38 @@ class _ThreadListState extends State<ThreadList> {
             ),
             SizedBox(height: 10),
             Column(
-              children: hotUnofficialThreads.map((thread) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ThreadUnofficialDetail(thread: thread),
+              children:
+                  hotUnofficialThreads.map((thread) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) =>
+                                    ThreadUnofficialDetail(thread: thread),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        margin: EdgeInsets.symmetric(vertical: 6),
+                        elevation: 2,
+                        child: ListTile(
+                          title: Text(
+                            thread.title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          trailing: Text(
+                            thread.timeAgo,
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
                       ),
                     );
-                  },
-                  child: Card(
-                    margin: EdgeInsets.symmetric(vertical: 6),
-                    elevation: 2,
-                    child: ListTile(
-                      title: Text(
-                        thread['title']!,
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      trailing: Text(
-                        thread['timeAgo']!,
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                  }).toList(),
             ),
           ],
         ),
