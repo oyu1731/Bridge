@@ -23,7 +23,7 @@ flutter:
 
   # 画像やフォントを追加する場合は、以下のコメントアウトを外して使用
   assets:
-    - lib/00-images/
+    - lib/01-images/
 
   # fonts:
   #   - family: CustomFont

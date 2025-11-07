@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bridge/header.dart';
+import 'package:bridge/11-common/58-header.dart';
 
 class ThreadCreate extends StatefulWidget {
   @override
@@ -33,7 +33,10 @@ class _ThreadCreateState extends State<ThreadCreate> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // --- スレッド名 ---
-            Text('スレッド名', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            Text(
+              'スレッド名',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             TextField(
               controller: _titleController,
@@ -46,7 +49,10 @@ class _ThreadCreateState extends State<ThreadCreate> {
             const SizedBox(height: 20),
 
             // --- 説明 ---
-            Text('説明', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            Text(
+              '説明',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             TextField(
               controller: _descriptionController,
@@ -60,7 +66,10 @@ class _ThreadCreateState extends State<ThreadCreate> {
             const SizedBox(height: 20),
 
             // --- 参加条件 ---
-            Text('参加条件', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            Text(
+              '参加条件',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             Column(
               children: [
                 _buildRadioOption('全員'),
@@ -71,22 +80,26 @@ class _ThreadCreateState extends State<ThreadCreate> {
             const SizedBox(height: 20),
 
             // --- 業界 ---
-            Text('業界', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            Text(
+              '業界',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             Wrap(
               spacing: 12,
               runSpacing: 4,
-              children: _industry.keys.map((key) {
-                return FilterChip(
-                  label: Text(key),
-                  selected: _industry[key]!,
-                  onSelected: (val) {
-                    setState(() {
-                      _industry[key] = val;
-                    });
-                  },
-                );
-              }).toList(),
+              children:
+                  _industry.keys.map((key) {
+                    return FilterChip(
+                      label: Text(key),
+                      selected: _industry[key]!,
+                      onSelected: (val) {
+                        setState(() {
+                          _industry[key] = val;
+                        });
+                      },
+                    );
+                  }).toList(),
             ),
             const SizedBox(height: 30),
 
@@ -95,13 +108,19 @@ class _ThreadCreateState extends State<ThreadCreate> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 onPressed: _handleCreate,
-                child: Text('作成', style: TextStyle(fontSize: 20, color: Colors.white)),
+                child: Text(
+                  '作成',
+                  style: TextStyle(fontSize: 20, color: Colors.white),
+                ),
               ),
             ),
           ],
@@ -132,9 +151,9 @@ class _ThreadCreateState extends State<ThreadCreate> {
 
     // タイトルが空ならエラー
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('スレッド名を記入してください')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('スレッド名を記入してください')));
       return;
     }
 
@@ -143,15 +162,16 @@ class _ThreadCreateState extends State<ThreadCreate> {
       'title': title,
       'description': description.isNotEmpty ? description : null, // 空ならnull
       'condition': condition,
-      'industries': selectedIndustries.isNotEmpty ? selectedIndustries : [], // 空配列で送信
+      'industries':
+          selectedIndustries.isNotEmpty ? selectedIndustries : [], // 空配列で送信
       'type': 'unofficial', // フロントでは常に非公式
     };
 
     print(threadData); // デバッグ確認用
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('スレッドを作成しました')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('スレッドを作成しました')));
 
     // 必要なら一覧ページへ戻るなども可
     // Navigator.pop(context, true);
