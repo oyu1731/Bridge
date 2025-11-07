@@ -6,16 +6,16 @@ Firebase 関連の import やリアルタイムチャット用のコードはコ
 // import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bridge/header.dart';
 
-class ThreadUnofficialDetail extends StatefulWidget {
+class ThreadOfficialDetail extends StatefulWidget {
   final Map<String, dynamic> thread;
 
-  const ThreadUnofficialDetail({required this.thread});
+  const ThreadOfficialDetail({required this.thread});
 
   @override
-  _ThreadUnofficialDetailState createState() => _ThreadUnofficialDetailState();
+  _ThreadOfficialDetailState createState() => _ThreadOfficialDetailState();
 }
 
-class _ThreadUnofficialDetailState extends State<ThreadUnofficialDetail> {
+class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   final TextEditingController _messageController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();

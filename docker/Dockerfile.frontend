@@ -1,0 +1,61 @@
+# Dockerfile.frontend
+# このファイルは、FlutterフロントエンドアプリケーションのDockerイメージをビルドするための手順を定義します。
+#
+# チームメンバーへ:
+#   - このDockerfileは、FlutterアプリケーションをWebサーバーとしてDockerコンテナ内で実行するために使用されます。
+#   - 開発中はローカルでFlutterを起動しますが、本番環境やCI/CDパイプラインではこのDockerfileが役立ちます。
+
+# ベースイメージの指定: Debian Bullseye Slimを使用
+# 軽量なLinuxディストリビューションで、イメージサイズを小さく保つのに役立ちます。
+FROM debian:bullseye-slim
+
+# 依存関係のインストール
+# Flutter SDKのダウンロードやビルドに必要なツールをインストールします。
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    unzip \
+    xz-utils \
+    zip \
+    libglu1-mesa \
+    && rm -rf /var/lib/apt/lists/* # 不要なファイルを削除してイメージサイズを削減
+
+# Flutter SDKのインストール
+# GitHubからFlutter SDKをクローンし、PATHに追加します。
+RUN git clone https://github.com/flutter/flutter.git /usr/local/flutter
+# Flutterコマンドがどこからでも実行できるようにPATHを設定
+ENV PATH="$PATH:/usr/local/flutter/bin"
+
+# Flutterの設定
+# Flutterの安定版チャンネルに切り替え、SDKを最新の状態に更新し、Web開発を有効にします。
+RUN flutter channel stable
+RUN flutter upgrade
+RUN flutter config --enable-web # Webアプリケーションのビルドを有効にする
+
+# 作業ディレクトリの設定
+# コンテナ内でコマンドが実行されるデフォルトのディレクトリを設定します。
+WORKDIR /app
+
+# pubspec.yamlをコピーして依存関係を取得
+# アプリケーションのソースコードをコピーする前に依存関係をダウンロードすることで、
+# Dockerのキャッシュを効率的に利用し、ビルド時間を短縮します。
+COPY pubspec.yaml .
+RUN flutter pub get # pubspec.yamlに定義された依存関係をダウンロード
+
+# ソースコードをコピー
+# プロジェクトのすべてのファイルをコンテナの作業ディレクトリにコピーします。
+COPY . .
+
+# 依存関係を再取得してWebアプリケーションをビルド
+# 全てのソースコードがコピーされた後、再度依存関係を確認し、Web用のリリースビルドを作成します。
+RUN flutter pub get
+RUN flutter build web # Flutter Webアプリケーションをビルド
+
+# ポート設定
+# コンテナがリッスンするポートを公開します。
+EXPOSE 5000
+
+# 起動コマンド
+# コンテナが起動したときに実行されるコマンドを定義します。
+# ビルドされたFlutter WebアプリケーションをWebサーバーとして起動します。
+CMD ["flutter", "run", "-d", "web-server", "--web-port", "5000", "--web-hostname", "0.0.0.0", "--release"]
