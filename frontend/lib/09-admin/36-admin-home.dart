@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
+import '37-admin-report-log-list.dart';
 import '38-admin-thread-list.dart';
+import '42-admin-account-list.dart';
 
 class AdminHome extends StatefulWidget {
   @override
@@ -35,7 +37,7 @@ class _AdminHomeState extends State<AdminHome> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => AdminThreadList(),
+                      builder: (context) => AdminReportLogList(),
                     ),
                   );
                 },
@@ -53,7 +55,7 @@ class _AdminHomeState extends State<AdminHome> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => AdminThreadList(),
+                      builder: (context) => AdminAccountList(),
                     ),
                   );
                 },
