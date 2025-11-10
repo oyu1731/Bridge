@@ -22,15 +22,19 @@ class _AdminHomeState extends State<AdminHome> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => AdminThreadList(),
-                    ),
+                    MaterialPageRoute(builder: (context) => AdminThreadList()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 14,
+                  ),
                 ),
-                child: Text('スレッド一覧', style: TextStyle(fontSize: 40, color: Colors.white)),
+                child: Text(
+                  'スレッド一覧',
+                  style: TextStyle(fontSize: 40, color: Colors.white),
+                ),
               ),
               ElevatedButton(
                 onPressed: () {
@@ -42,9 +46,15 @@ class _AdminHomeState extends State<AdminHome> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 14,
+                  ),
                 ),
-                child: Text('通報一覧', style: TextStyle(fontSize: 40, color: Colors.white)),
+                child: Text(
+                  '通報一覧',
+                  style: TextStyle(fontSize: 40, color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -54,29 +64,37 @@ class _AdminHomeState extends State<AdminHome> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => AdminAccountList(),
-                    ),
+                    MaterialPageRoute(builder: (context) => AdminAccountList()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 14,
+                  ),
                 ),
-                child: Text('アカウント管理', style: TextStyle(fontSize: 40, color: Colors.white)),
+                child: Text(
+                  'アカウント管理',
+                  style: TextStyle(fontSize: 40, color: Colors.white),
+                ),
               ),
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => AdminThreadList(),
-                    ),
+                    MaterialPageRoute(builder: (context) => AdminThreadList()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 14,
+                  ),
                 ),
-                child: Text('メール送信', style: TextStyle(fontSize: 40, color: Colors.white)),
+                child: Text(
+                  'メール送信',
+                  style: TextStyle(fontSize: 40, color: Colors.white),
+                ),
               ),
             ],
           ),
