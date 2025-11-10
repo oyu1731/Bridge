@@ -37,7 +37,7 @@ DROP TABLE IF EXISTS tag;
 
 -- テーブル定義書_ユーザー
 CREATE TABLE users (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     nickname VARCHAR(100) NOT NULL,
     type INT(1) NOT NULL COMMENT '1=学生、2=社会人、3=企業、4=管理者',
     password VARCHAR(255) NOT NULL COMMENT 'ハッシュ化',
@@ -53,15 +53,16 @@ CREATE TABLE users (
     announcement_deletion INT(1) NOT NULL DEFAULT 1 COMMENT '1=新規お知らせなし、2=新規お知らせあり'
 );
 
+
 -- テーブル定義書_業界
 CREATE TABLE industries (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     industry VARCHAR(50) NOT NULL
 );
 
 -- テーブル定義書_業界中間
 CREATE TABLE industry_relations (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     type INT(1) NOT NULL COMMENT '1=希望業界、2=所属業界、3=企業所属業界',
     user_id INT(20) NOT NULL,
     target_id INT(20) NOT NULL,
@@ -72,7 +73,7 @@ CREATE TABLE industry_relations (
 
 -- テーブル定義書_サブスク
 CREATE TABLE subscriptions (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     user_id INT(20) NOT NULL,
     plan_name VARCHAR(50) NOT NULL DEFAULT 'プレミアム',
     start_date DATETIME NOT NULL COMMENT 'サブスク加入日',
@@ -84,7 +85,7 @@ CREATE TABLE subscriptions (
 
 -- テーブル定義書_企業情報
 CREATE TABLE companies (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     name VARCHAR(150) NOT NULL,
     address VARCHAR(255) NOT NULL,
     phone_number VARCHAR(15) NOT NULL COMMENT 'ハイフン込の文字列として保存',
@@ -97,7 +98,7 @@ CREATE TABLE companies (
 
 -- テーブル定義書_記事
 CREATE TABLE articles (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     title VARCHAR(40) NOT NULL,
     description TEXT(2000) NOT NULL,
     company_id INT(20) NOT NULL,
@@ -112,7 +113,7 @@ CREATE TABLE articles (
 
 -- テーブル定義書_スレッド
 CREATE TABLE threads (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     user_id INT(20) NOT NULL,
     title VARCHAR(40) NOT NULL,
     type INT(1) NOT NULL COMMENT '1=公式、2=非公式',
@@ -127,7 +128,7 @@ CREATE TABLE threads (
 
 -- テーブル定義書_チャット
 CREATE TABLE chats (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     user_id INT(20) NOT NULL,
     content TEXT(255) NOT NULL,
     thread_id INT(20) NOT NULL,
@@ -141,14 +142,14 @@ CREATE TABLE chats (
 
 -- テーブル定義書_写真
 CREATE TABLE photos (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     photo_path VARCHAR(255) NOT NULL,
     user_id INT(20)
 );
 
 -- テーブル定義書_一問一答
 CREATE TABLE quiz_questions (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     question TEXT(100) NOT NULL,
     is_answer BOOLEAN NOT NULL,
     expanation TEXT(255) NOT NULL
@@ -156,7 +157,7 @@ CREATE TABLE quiz_questions (
 
 -- テーブル定義書_一問一答スコア
 CREATE TABLE quiz_scores (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     user_id INT(20) NOT NULL,
     score INT(2) NOT NULL,
     created_at DATETIME NOT NULL,
@@ -165,21 +166,21 @@ CREATE TABLE quiz_scores (
 
 -- テーブル定義書_面接
 CREATE TABLE interviews (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     question TEXT(255) NOT NULL,
     type INT(1) NOT NULL COMMENT '1=一般、2=カジュアル、3=圧迫'
 );
 
 -- テーブル定義書_電話対応
 CREATE TABLE phone_exercises (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     example TEXT(255) NOT NULL,
     difficulty INT(1) NOT NULL COMMENT '1=簡単、2=普通、3=難しい'
 );
 
 -- テーブル定義書_お知らせテーブル
 CREATE TABLE notifications (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     type INT(1) NOT NULL COMMENT '1=学生, 2=社会人, 3=企業, 4=学生×社会人, 5=学生×企業, 6=社会人×企業, 7=全員, 8=特定のユーザー',
     title VARCHAR(50) NOT NULL,
     content TEXT(2000) NOT NULL,
@@ -193,7 +194,7 @@ CREATE TABLE notifications (
 
 -- テーブル定義書_通報テーブル
 CREATE TABLE notices (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     from_user_id INT(20) NOT NULL,
     to_user_id INT(20) NOT NULL,
     type INT(1) NOT NULL COMMENT '1=スレッド、2=メッセージ',
@@ -208,7 +209,7 @@ CREATE TABLE notices (
 
 -- テーブル定義書_記事タグ中間テーブル
 CREATE TABLE articles_tag (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     article_id INT(20) NOT NULL,
     tag_id INT(20) NOT NULL,
     creation_date DATETIME,
@@ -217,7 +218,7 @@ CREATE TABLE articles_tag (
 
 -- テーブル定義書_タグテーブル
 CREATE TABLE tag (
-    id INT(20) PRIMARY KEY NOT NULL,
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
     tag VARCHAR(50) NOT NULL
 );
 
@@ -245,95 +246,95 @@ ALTER TABLE articles_tag
 ADD CONSTRAINT fk_articles_tag_tag_id FOREIGN KEY (tag_id) REFERENCES tag(id);
 -- 仮データ挿入
 -- photos
-INSERT INTO photos (id, photo_path, user_id) VALUES
-(1, '/path/to/photo1.jpg', 1),
-(2, '/path/to/photo2.jpg', 2),
-(3, '/path/to/photo3.jpg', 3);
+INSERT INTO photos (photo_path, user_id) VALUES
+('/path/to/photo1.jpg', 1),
+('/path/to/photo2.jpg', 2),
+('/path/to/photo3.jpg', 3);
 
 -- users
 -- companies
-INSERT INTO companies (id, name, address, phone_number, description, plan_status, is_withdrawn, created_at, photo_id) VALUES
-(1, '株式会社Bridge', '東京都渋谷区', '03-1234-5678', 'IT企業です', 1, FALSE, NOW(), 1);
+INSERT INTO companies (name, address, phone_number, description, plan_status, is_withdrawn, created_at, photo_id) VALUES
+('株式会社Bridge', '東京都渋谷区', '03-1234-5678', 'IT企業です', 1, FALSE, NOW(), 1);
 
 -- users
-INSERT INTO users (id, nickname, type, password, phone_number, email, company_id, report_count, plan_status, is_withdrawn, created_at, society_history, icon, announcement_deletion) VALUES
-(1, '学生ユーザー', 1, 'hashed_password_student', '090-1111-2222', 'student@example.com', NULL, 0, '無料', FALSE, NOW(), NULL, 1, 1),
-(2, '社会人ユーザー', 2, 'hashed_password_worker', '080-3333-4444', 'worker@example.com', NULL, 0, '無料', FALSE, NOW(), 5, 2, 1),
-(3, '企業ユーザー', 3, 'hashed_password_company', '070-5555-6666', 'company@example.com', 1, 0, '無料', FALSE, NOW(), NULL, 3, 1),
-(4, '管理者ユーザー', 4, 'hashed_password_admin', '060-7777-8888', 'admin@example.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1);
+INSERT INTO users (nickname, type, password, phone_number, email, company_id, report_count, plan_status, is_withdrawn, created_at, society_history, icon, announcement_deletion) VALUES
+('学生ユーザー', 1, 'hashed_password_student', '090-1111-2222', 'student@example.com', NULL, 0, '無料', FALSE, NOW(), NULL, 1, 1),
+('社会人ユーザー', 2, 'hashed_password_worker', '080-3333-4444', 'worker@example.com', NULL, 0, '無料', FALSE, NOW(), 5, 2, 1),
+('企業ユーザー', 3, 'hashed_password_company', '070-5555-6666', 'company@example.com', 1, 0, '無料', FALSE, NOW(), NULL, 3, 1),
+('管理者ユーザー', 4, 'hashed_password_admin', '060-7777-8888', 'admin@example.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1);
 
 -- industries
-INSERT INTO industries (id, industry) VALUES
-(1, 'IT'),
-(2, '製造業'),
-(3, 'サービス業');
+INSERT INTO industries (industry) VALUES
+('IT'),
+('製造業'),
+('サービス業');
 
 -- subscriptions
-INSERT INTO subscriptions (id, user_id, plan_name, start_date, end_date, is_plan_status, created_at) VALUES
-(1, 1, '無料', NOW(), '2026-01-01 00:00:00', TRUE, NOW()),
-(2, 2, 'プレミアム', NOW(), '2026-01-01 00:00:00', TRUE, NOW());
+INSERT INTO subscriptions (user_id, plan_name, start_date, end_date, is_plan_status, created_at) VALUES
+(1, '無料', NOW(), '2026-01-01 00:00:00', TRUE, NOW()),
+(2, 'プレミアム', NOW(), '2026-01-01 00:00:00', TRUE, NOW());
 
 -- articles
-INSERT INTO articles (id, title, description, company_id, is_deleted, total_likes, created_at, photo1_id, photo2_id, photo3_id) VALUES
-(1, '記事タイトル1', '記事説明1', 1, FALSE, 10, NOW(), 1, NULL, NULL),
-(2, '記事タイトル2', '記事説明2', 1, FALSE, 5, NOW(), NULL, 2, NULL);
+INSERT INTO articles (title, description, company_id, is_deleted, total_likes, created_at, photo1_id, photo2_id, photo3_id) VALUES
+('記事タイトル1', '記事説明1', 1, FALSE, 10, NOW(), 1, NULL, NULL),
+('記事タイトル2', '記事説明2', 1, FALSE, 5, NOW(), NULL, 2, NULL);
 
 -- threads
-INSERT INTO threads (id, user_id, title, type, description, entry_criteria, industry, last_update_date, is_deleted, created_at) VALUES
-(1, 1, '公式スレッド', 1, '公式スレッドの説明', 1, 'IT', NOW(), FALSE, NOW()),
-(2, 2, '非公式スレッド', 2, '非公式スレッドの説明', 2, '製造業', NOW(), FALSE, NOW());
+INSERT INTO threads (user_id, title, type, description, entry_criteria, industry, last_update_date, is_deleted, created_at) VALUES
+(1, '公式スレッド', 1, '公式スレッドの説明', 1, 'IT', NOW(), FALSE, NOW()),
+(2, '非公式スレッド', 2, '非公式スレッドの説明', 2, '製造業', NOW(), FALSE, NOW());
 
 -- chats
-INSERT INTO chats (id, user_id, content, thread_id, is_deleted, deleted_at, created_at, photo_id) VALUES
-(1, 1, 'チャットメッセージ1', 1, FALSE, NULL, NOW(), NULL),
-(2, 2, 'チャットメッセージ2', 1, FALSE, NULL, NOW(), NULL);
+INSERT INTO chats (user_id, content, thread_id, is_deleted, deleted_at, created_at, photo_id) VALUES
+(1, 'チャットメッセージ1', 1, FALSE, NULL, NOW(), NULL),
+(2, 'チャットメッセージ2', 1, FALSE, NULL, NOW(), NULL);
 
 -- quiz_questions
-INSERT INTO quiz_questions (id, question, is_answer, expanation) VALUES
-(1, '問題1', TRUE, '解説1'),
-(2, '問題2', FALSE, '解説2');
+INSERT INTO quiz_questions (question, is_answer, expanation) VALUES
+('問題1', TRUE, '解説1'),
+('問題2', FALSE, '解説2');
 
 -- quiz_scores
-INSERT INTO quiz_scores (id, user_id, score, created_at) VALUES
-(1, 1, 80, NOW()),
-(2, 2, 90, NOW());
+INSERT INTO quiz_scores (user_id, score, created_at) VALUES
+(1, 80, NOW()),
+(2, 90, NOW());
 
 -- interviews
-INSERT INTO interviews (id, question, type) VALUES
-(1, '面接質問1', 1),
-(2, '面接質問2', 2);
+INSERT INTO interviews (question, type) VALUES
+('面接質問1', 1),
+('面接質問2', 2);
 
 -- phone_exercises
-INSERT INTO phone_exercises (id, example, difficulty) VALUES
-(1, '電話対応例題1', 1),
-(2, '電話対応例題2', 2);
+INSERT INTO phone_exercises (example, difficulty) VALUES
+('電話対応例題1', 1),
+('電話対応例題2', 2);
 
 -- notifications
-INSERT INTO notifications (id, type, title, content, user_id, created_at, reservation_time, send_flag, send_flag_int) VALUES
-(1, 7, '全体お知らせ', '全体向けのお知らせです', NULL, NOW(), NULL, NULL, 2),
-(2, 1, '学生向けお知らせ', '学生向けのお知らせです', 1, NOW(), '2025-11-05 10:00:00', NULL, 1);
+INSERT INTO notifications (type, title, content, user_id, created_at, reservation_time, send_flag, send_flag_int) VALUES
+(7, '全体お知らせ', '全体向けのお知らせです', NULL, NOW(), NULL, NULL, 2),
+(1, '学生向けお知らせ', '学生向けのお知らせです', 1, NOW(), '2025-11-05 10:00:00', NULL, 1);
 
 -- notices
-INSERT INTO notices (id, from_user_id, to_user_id, type, thread_id, chat_id, created_at) VALUES
-(1, 1, 2, 1, 1, NULL, NOW()),
-(2, 2, 1, 2, NULL, 1, NOW());
+INSERT INTO notices (from_user_id, to_user_id, type, thread_id, chat_id, created_at) VALUES
+(1, 2, 1, 1, NULL, NOW()),
+(2, 1, 2, NULL, 1, NOW());
 
 -- tag
-INSERT INTO tag (id, tag) VALUES
-(1, 'プログラミング'),
-(2, 'デザイン'),
-(3, 'ビジネス');
+INSERT INTO tag (tag) VALUES
+('プログラミング'),
+('デザイン'),
+('ビジネス');
 
 -- articles_tag
-INSERT INTO articles_tag (id, article_id, tag_id, creation_date) VALUES
-(1, 1, 1, NOW()),
-(2, 1, 2, NOW()),
-(3, 2, 3, NOW());
+INSERT INTO articles_tag (article_id, tag_id, creation_date) VALUES
+(1, 1, NOW()),
+(1, 2, NOW()),
+(2, 3, NOW());
 
 -- industry_relations
-INSERT INTO industry_relations (id, type, user_id, target_id, created_at) VALUES
-(1, 1, 1, 1, NOW()),
-(2, 2, 2, 2, NOW()),
-(3, 3, 3, 1, NOW());
+INSERT INTO industry_relations (type, user_id, target_id, created_at) VALUES
+(1, 1, 1, NOW()),
+(2, 2, 2, NOW()),
+(3, 3, 1, NOW());
 
 SET FOREIGN_KEY_CHECKS = 1;
