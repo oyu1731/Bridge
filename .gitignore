@@ -7,6 +7,9 @@ build/
 .idea/
 .vscode/
 *.iml
+# Flutter frontend
+frontend/
+
 
 # Docker
 **/docker-compose.override.yml
