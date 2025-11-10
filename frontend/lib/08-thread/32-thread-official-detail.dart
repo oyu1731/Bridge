@@ -6,9 +6,10 @@ Firebase 関連の import やリアルタイムチャット用のコードはコ
 // import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bridge/11-common/58-header.dart';
 import '31-thread-list.dart'; // Thread モデルをインポート
+import 'dart:async';
 
 class ThreadOfficialDetail extends StatefulWidget {
-  final Thread thread;
+  final Map<String, dynamic> thread;
 
   const ThreadOfficialDetail({required this.thread, Key? key})
       : super(key: key);
@@ -189,8 +190,8 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.thread.title,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    widget.thread['title'] ?? 'スレッド',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(width: 10),

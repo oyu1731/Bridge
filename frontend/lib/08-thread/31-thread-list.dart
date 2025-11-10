@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import '32-thread-official-detail.dart';
 import '33-thread-unofficial-detail.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'thread-unofficial-list.dart';
 
-// Thread モデルの定義 (仮)
+// Thread モデル
 class Thread {
   final String id;
   final String title;
@@ -41,51 +40,42 @@ class _ThreadListState extends State<ThreadList> {
   @override
   void initState() {
     super.initState();
-    _fetchThreads();
+    _loadDummyThreads();
+
+    // DBからデータを持ってくる際、画面更新時に最新スレッド情報を取得
+    // _fetchThreads();
   }
 
-  @override
-  void didUpdateWidget(covariant ThreadList oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // ホットリロードや再読み込み時にスレッド情報を再取得
-    _fetchThreads();
-  }
+  Future<void> _loadDummyThreads() async {
+    await Future.delayed(Duration(milliseconds: 300)); // 疑似通信待ち
 
-  // 初回に公式スレッド（固定3件）＋ 非公式スレッド上位5件を取得
-  Future<void> _fetchThreads() async {
-    try {
-      // 公式スレッドの取得
-      final officialResponse = await http.get(
-        Uri.parse('http://localhost:8080/api/official-threads'),
-      ); // 仮のAPIエンドポイント
-      if (officialResponse.statusCode == 200) {
-        List<dynamic> officialJson = json.decode(officialResponse.body);
-        officialThreads =
-            officialJson.map((json) => Thread.fromJson(json)).toList();
-      } else {
-        print(
-          'Failed to load official threads: ${officialResponse.statusCode}',
-        );
-      }
+    setState(() {
+      officialThreads = [
+        Thread(
+            id: '1',
+            title: '学生・社会人',
+            lastComment: '最近忙しいけど頑張ってる！',
+            timeAgo: '3分前'),
+        Thread(
+            id: '2',
+            title: '学生',
+            lastComment: 'テスト期間でやばいです…',
+            timeAgo: '15分前'),
+        Thread(
+            id: '3',
+            title: '社会人',
+            lastComment: '残業が多くてつらい…',
+            timeAgo: '42分前'),
+      ];
 
-      // 非公式スレッドの取得
-      final unofficialResponse = await http.get(
-        Uri.parse('http://localhost:8080/api/unofficial-threads/hot'),
-      ); // 仮のAPIエンドポイント
-      if (unofficialResponse.statusCode == 200) {
-        List<dynamic> unofficialJson = json.decode(unofficialResponse.body);
-        hotUnofficialThreads =
-            unofficialJson.map((json) => Thread.fromJson(json)).toList();
-      } else {
-        print(
-          'Failed to load hot unofficial threads: ${unofficialResponse.statusCode}',
-        );
-      }
-
-      setState(() {});
-    } catch (e) {
-      print('Error fetching threads: $e');
-    }
+      hotUnofficialThreads = [
+        Thread(id: 't1', title: '業界別の面接対策', timeAgo: '3分前'),
+        Thread(id: 't2', title: '社会人一年目の過ごし方', timeAgo: '10分前'),
+        Thread(id: 't3', title: 'おすすめの資格', timeAgo: '25分前'),
+        Thread(id: 't4', title: '働きながら転職活動するには', timeAgo: '50分前'),
+        Thread(id: 't5', title: '就活で意識すべきこと', timeAgo: '1時間前'),
+      ];
+    });
   }
 
   @override
@@ -93,66 +83,63 @@ class _ThreadListState extends State<ThreadList> {
     return Scaffold(
       appBar: BridgeHeader(),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 公式スレッド一覧
+            // 公式スレッド
             Text(
               '公式スレッド',
               style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 10),
             Column(
-              children:
-                  officialThreads.map((thread) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) =>
-                                    ThreadOfficialDetail(thread: thread),
-                          ),
-                        );
-                      },
-                      child: Card(
-                        margin: EdgeInsets.symmetric(vertical: 6),
-                        elevation: 2,
-                        child: ListTile(
-                          title: Text(
-                            thread.title,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          subtitle:
-                              thread.lastComment != null
-                                  ? Text(
-                                    thread.lastComment!,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 14,
-                                    ),
-                                  )
-                                  : null,
-                          trailing: Text(
-                            thread.timeAgo,
-                            style: TextStyle(color: Colors.grey),
-                          ),
+              children: officialThreads.map((thread) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ThreadOfficialDetail(
+                          thread: {
+                            'id': thread.id,
+                            'title': thread.title,
+                          },
                         ),
                       ),
                     );
-                  }).toList(),
+                  },
+                  child: Card(
+                    margin: EdgeInsets.symmetric(vertical: 6),
+                    elevation: 2,
+                    child: ListTile(
+                      title: Text(
+                        thread.title,
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: thread.lastComment != null
+                          ? Text(
+                              thread.lastComment!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  color: Colors.black87, fontSize: 14),
+                            )
+                          : null,
+                      trailing: Text(
+                        thread.timeAgo,
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
 
             SizedBox(height: 30),
 
-            // 非公式スレッド（HOTスレッド上位5件）
+            // 非公式スレッド
             Row(
               children: [
                 Text(
@@ -162,15 +149,12 @@ class _ThreadListState extends State<ThreadList> {
                 Spacer(),
                 TextButton(
                   onPressed: () {
-                    // 非公式スレッド一覧へ遷移
-                    // TODO: ThreadUnofficialList ページの実装または適切な遷移先を検討
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) => ThreadUnofficialList(),
-                    //   ),
-                    // );
-                    print('非公式スレッド一覧ページへの遷移ボタンが押されました。');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ThreadUnofficialList(),
+                      ),
+                    );
                   },
                   child: Text(
                     'もっと見る',
@@ -181,38 +165,38 @@ class _ThreadListState extends State<ThreadList> {
             ),
             SizedBox(height: 10),
             Column(
-              children:
-                  hotUnofficialThreads.map((thread) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) =>
-                                    ThreadUnofficialDetail(thread: thread),
-                          ),
-                        );
-                      },
-                      child: Card(
-                        margin: EdgeInsets.symmetric(vertical: 6),
-                        elevation: 2,
-                        child: ListTile(
-                          title: Text(
-                            thread.title,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          trailing: Text(
-                            thread.timeAgo,
-                            style: TextStyle(color: Colors.grey),
-                          ),
+              children: hotUnofficialThreads.map((thread) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ThreadUnofficialDetail(
+                          thread: {
+                            'id': thread.id,
+                            'title': thread.title,
+                          },
                         ),
                       ),
                     );
-                  }).toList(),
+                  },
+                  child: Card(
+                    margin: EdgeInsets.symmetric(vertical: 6),
+                    elevation: 2,
+                    child: ListTile(
+                      title: Text(
+                        thread.title,
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      trailing: Text(
+                        thread.timeAgo,
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
           ],
         ),
