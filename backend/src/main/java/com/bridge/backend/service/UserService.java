@@ -34,7 +34,7 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
 
-        Long userId = savedUser.getId().longValue();
+        Integer userId = savedUser.getId();
 
         // ✅ 2. 希望業界（type = 1）を industry_relations に登録
         if (userDto.getDesiredIndustries() != null) {
@@ -43,7 +43,7 @@ public class UserService {
                 IndustryRelation relation = new IndustryRelation();
                 relation.setType(1);              // 希望業界
                 relation.setUserId(userId);       // 登録した user の ID
-                relation.setTargetId(industryId.longValue());
+                relation.setTargetId(industryId);
                 relation.setCreatedAt(LocalDateTime.now());
 
                 industryRelationRepository.save(relation);

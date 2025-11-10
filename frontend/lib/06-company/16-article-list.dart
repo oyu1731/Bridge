@@ -560,8 +560,6 @@ class _ArticleListPageState extends State<ArticleListPage> {
               articleId: 'article-${article['title']?.hashCode ?? 0}',
               companyName: article['company'] ?? '株式会社AAA',
               description: article['preview'] ?? '',
-              category: article['tag'] ?? '',
-              location: article['location'] ?? '',
             ),
           ),
         );

@@ -2,19 +2,186 @@ import 'package:flutter/material.dart';
 import '../11-common/58-header.dart';
 import '18-article-detail.dart';
 import '16-article-list.dart';
+import 'company_api_client.dart';
+import 'article_api_client.dart';
 
-class CompanyDetailPage extends StatelessWidget {
+class CompanyDetailPage extends StatefulWidget {
   final String companyName;
-  final String companyId;
+  final int companyId;
 
   const CompanyDetailPage({
     Key? key,
     required this.companyName,
-    this.companyId = 'dummy-id',
+    required this.companyId,
   }) : super(key: key);
 
   @override
+  _CompanyDetailPageState createState() => _CompanyDetailPageState();
+}
+
+class _CompanyDetailPageState extends State<CompanyDetailPage> {
+  CompanyDTO? _company;
+  List<ArticleDTO> _featuredArticles = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCompanyData();
+  }
+
+  Future<void> _loadCompanyData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      // 企業情報を取得
+      final company = await CompanyApiClient.getCompanyById(widget.companyId);
+      
+      // 企業の記事を取得（いいね数順）
+      final articles = await ArticleApiClient.getArticlesByCompanyId(widget.companyId);
+      
+      // いいね数順にソート（降順）
+      articles.sort((a, b) => (b.totalLikes ?? 0).compareTo(a.totalLikes ?? 0));
+      
+      setState(() {
+        _company = company;
+        _featuredArticles = articles.take(5).toList(); // 上位5件を取得
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _formatDate(String? dateString) {
+    if (dateString == null) return '不明';
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.year}年${date.month}月${date.day}日';
+    } catch (e) {
+      return '不明';
+    }
+  }
+
+  Widget _buildCompanyImage(double height) {
+    if (_company?.photoPath != null && _company!.photoPath!.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          _company!.photoPath!,
+          width: double.infinity,
+          height: height,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.broken_image,
+                    size: height * 0.3,
+                    color: Color(0xFF757575),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    '画像を読み込めません',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF757575),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
+        ),
+      );
+    } else {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.business,
+              size: height * 0.3,
+              color: Color(0xFF757575),
+            ),
+            SizedBox(height: 8),
+            Text(
+              '企業画像',
+              style: TextStyle(
+                fontSize: height > 200 ? 20 : 16,
+                color: Color(0xFF757575),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: BridgeHeader(),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        appBar: BridgeHeader(),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'エラーが発生しました',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text(_error!),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadCompanyData,
+                child: Text('再試行'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_company == null) {
+      return Scaffold(
+        appBar: BridgeHeader(),
+        body: Center(
+          child: Text('企業情報が見つかりません'),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: BridgeHeader(),
       body: Column(
@@ -33,7 +200,7 @@ class CompanyDetailPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '株式会社XXX',
+                        _company!.name,
                         style: TextStyle(
                           fontSize: 24, // スマートフォンでは少し小さく
                           fontWeight: FontWeight.bold,
@@ -42,7 +209,7 @@ class CompanyDetailPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '最終更新：XXX年X月X日',
+                        '最終更新：${_formatDate(_company!.createdAt)}',
                         style: TextStyle(fontSize: 12, color: Color(0xFF757575)),
                       ),
                     ],
@@ -54,7 +221,7 @@ class CompanyDetailPage extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          '株式会社XXX',
+                          _company!.name,
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
@@ -63,7 +230,7 @@ class CompanyDetailPage extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '最終更新：XXX年X月X日',
+                        '最終更新：${_formatDate(_company!.createdAt)}',
                         style: TextStyle(fontSize: 12, color: Color(0xFF757575)),
                       ),
                     ],
@@ -101,15 +268,7 @@ class CompanyDetailPage extends StatelessWidget {
                                   border: Border.all(color: Color(0xFFE0E0E0)),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Center(
-                                  child: Text(
-                                    '画像',
-                                    style: TextStyle(
-                                      fontSize: 20, // スマートフォンでは少し小さく
-                                      color: Color(0xFF757575),
-                                    ),
-                                  ),
-                                ),
+                                child: _buildCompanyImage(200),
                               ),
                               const SizedBox(height: 24),
 
@@ -170,15 +329,7 @@ class CompanyDetailPage extends StatelessWidget {
                                     border: Border.all(color: Color(0xFFE0E0E0)),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Center(
-                                    child: Text(
-                                      '画像',
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        color: Color(0xFF757575),
-                                      ),
-                                    ),
-                                  ),
+                                  child: _buildCompanyImage(250),
                                 ),
                                 const SizedBox(height: 32),
 
@@ -220,12 +371,6 @@ class CompanyDetailPage extends StatelessWidget {
   }
 
   Widget _buildFeaturedArticles() {
-    final articles = [
-      {'title': '【営業職】ITエンジニアとして、このようなことを、してみたい・やってみたい'},
-      {'title': '【9Q分野】オンライン説明会のご案内'},
-      {'title': '【Web説明会】★全国どこからでも参加可能！★2Q分野★'},
-    ];
-
     return Container(
       padding: EdgeInsets.all(20),
       height: 400, // 固定高さ
@@ -248,44 +393,78 @@ class CompanyDetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: articles
-                      .map(
-                        (article) => Container(
-                          margin: EdgeInsets.only(bottom: 16),
-                          child: InkWell(
-                            onTap: () {
-                              // 記事詳細ページへの遷移
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ArticleDetailPage(
-                                    articleTitle: article['title']!,
-                                    articleId: 'article-${article['title']!.hashCode}',
-                                    companyName: companyName,
-                                    description: article['description'],
-                                    category: article['category'],
-                                    location: article['location'],
+              child: _featuredArticles.isEmpty
+                  ? Center(
+                      child: Text(
+                        '記事がありません',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF757575),
+                        ),
+                      ),
+                    )
+                  : SingleChildScrollView(
+                      child: Column(
+                        children: _featuredArticles
+                            .map(
+                              (article) => Container(
+                                margin: EdgeInsets.only(bottom: 16),
+                                child: InkWell(
+                                  onTap: () {
+                                    // 記事詳細ページへの遷移
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ArticleDetailPage(
+                                          articleTitle: article.title,
+                                          articleId: article.id.toString(),
+                                          companyName: widget.companyName,
+                                          description: article.description,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        article.title,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Color(0xFF1976D2),
+                                          decoration: TextDecoration.underline,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                      if (article.totalLikes != null && article.totalLikes! > 0)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.favorite,
+                                                size: 12,
+                                                color: Colors.red,
+                                              ),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                '${article.totalLikes}',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Color(0xFF757575),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ),
-                              );
-                            },
-                            child: Text(
-                              article['title']!,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Color(0xFF1976D2),
-                                decoration: TextDecoration.underline,
-                                height: 1.4,
                               ),
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
             ),
             const SizedBox(height: 8),
             Align(
@@ -297,7 +476,7 @@ class CompanyDetailPage extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) => ArticleListPage(
-                        companyName: companyName,
+                        companyName: widget.companyName,
                       ),
                     ),
                   );
@@ -319,12 +498,6 @@ class CompanyDetailPage extends StatelessWidget {
   }
 
   Widget _buildFeaturedArticlesContent() {
-    final articles = [
-      {'title': '【営業職】ITエンジニアとして、このようなことを、してみたい・やってみたい'},
-      {'title': '【9Q分野】オンライン説明会のご案内'},
-      {'title': '【Web説明会】★全国どこからでも参加可能！★2Q分野★'},
-    ];
-
     return Builder(
       builder: (context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -340,42 +513,79 @@ class CompanyDetailPage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           // Expandedを削除してColumnに変更
-          Column(
-            children: articles
-                .map(
-                  (article) => Container(
-                    margin: EdgeInsets.only(bottom: 16),
-                    child: InkWell(
-                      onTap: () {
-                        // 記事詳細ページへの遷移
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ArticleDetailPage(
-                              articleTitle: article['title']!,
-                              articleId: 'article-${article['title']!.hashCode}',
-                              companyName: companyName,
-                              description: article['description'],
-                              category: article['category'],
-                              location: article['location'],
-                            ),
-                          ),
-                        );
-                      },
-                      child: Text(
-                        article['title']!,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF1976D2),
-                          decoration: TextDecoration.underline,
-                          height: 1.4,
-                        ),
+          _featuredArticles.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Center(
+                    child: Text(
+                      '記事がありません',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF757575),
                       ),
                     ),
                   ),
                 )
-                .toList(),
-          ),
+              : Column(
+                  children: _featuredArticles
+                      .map(
+                        (article) => Container(
+                          margin: EdgeInsets.only(bottom: 16),
+                          child: InkWell(
+                            onTap: () {
+                              // 記事詳細ページへの遷移
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ArticleDetailPage(
+                                    articleTitle: article.title,
+                                    articleId: article.id.toString(),
+                                    companyName: widget.companyName,
+                                    description: article.description,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  article.title,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF1976D2),
+                                    decoration: TextDecoration.underline,
+                                    height: 1.4,
+                                  ),
+                                ),
+                                if (article.totalLikes != null && article.totalLikes! > 0)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.favorite,
+                                          size: 12,
+                                          color: Colors.red,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          '${article.totalLikes}',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Color(0xFF757575),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerRight,
@@ -386,7 +596,7 @@ class CompanyDetailPage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => ArticleListPage(
-                      companyName: companyName,
+                      companyName: widget.companyName,
                     ),
                   ),
                 );
@@ -407,15 +617,29 @@ class CompanyDetailPage extends StatelessWidget {
   }
 
   Widget _buildCompanyInfoTable() {
+    if (_company == null) return Container();
+
     final companyInfo = [
       {
-        'label': 'プロフィール',
-        'value': '株式会社XXXは、テクノロジーの力で人と社会をつなぐ革新的なソリューションを提供する会社です。',
+        'label': '業界',
+        'value': _company!.industry ?? '情報がありません',
       },
-      {'label': '事業内容', 'value': 'クラウド開発、AIシステム設計、Webアプリケーション制作'},
-      {'label': '会社所在地', 'value': 'XX県XX市XX区XX—XXXX XXビル'},
-      {'label': '会社電話番号', 'value': 'XXX-XXXX-XXXX'},
-      {'label': '設立', 'value': 'XXX年X月'},
+      {
+        'label': 'プロフィール',
+        'value': _company!.description ?? '情報がありません',
+      },
+      {
+        'label': '電話番号',
+        'value': _company!.phoneNumber.isNotEmpty ? _company!.phoneNumber : '情報がありません',
+      },
+      {
+        'label': 'email',
+        'value': _company!.email ?? '情報がありません',
+      },
+      {
+        'label': '所在地',
+        'value': _company!.address.isNotEmpty ? _company!.address : '情報がありません',
+      },
     ];
 
     return Container(

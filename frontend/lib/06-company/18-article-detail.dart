@@ -1,13 +1,55 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../11-common/58-header.dart';
+import 'article_api_client.dart';
+import 'api_config.dart';
 
-class ArticleDetailPage extends StatelessWidget {
+class PhotoDTO {
+  final int? id;
+  final String? filePath;
+  final String? fileName;
+
+  PhotoDTO({
+    this.id,
+    this.filePath,
+    this.fileName,
+  });
+
+  factory PhotoDTO.fromJson(Map<String, dynamic> json) {
+    return PhotoDTO(
+      id: json['id'],
+      filePath: json['filePath'],
+      fileName: json['fileName'],
+    );
+  }
+}
+
+class PhotoApiClient {
+  static String get baseUrl => ApiConfig.photosUrl;
+
+  static Future<PhotoDTO?> getPhotoById(int id) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/$id'));
+      
+      if (response.statusCode == 200) {
+        return PhotoDTO.fromJson(json.decode(response.body));
+      } else if (response.statusCode == 404) {
+        return null;
+      } else {
+        throw Exception('Failed to load photo: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching photo: $e');
+    }
+  }
+}
+
+class ArticleDetailPage extends StatefulWidget {
   final String articleTitle;
   final String articleId;
   final String? companyName;
   final String? description;
-  final String? category;
-  final String? location;
 
   const ArticleDetailPage({
     Key? key,
@@ -15,12 +57,136 @@ class ArticleDetailPage extends StatelessWidget {
     required this.articleId,
     this.companyName,
     this.description,
-    this.category,
-    this.location,
   }) : super(key: key);
 
   @override
+  _ArticleDetailPageState createState() => _ArticleDetailPageState();
+}
+
+class _ArticleDetailPageState extends State<ArticleDetailPage> {
+  ArticleDTO? _article;
+  List<PhotoDTO?> _photos = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadArticleData();
+  }
+
+  Future<void> _loadArticleData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      // 記事IDを整数に変換
+      final int? articleId = int.tryParse(widget.articleId);
+      if (articleId == null) {
+        throw Exception('Invalid article ID');
+      }
+
+      // 記事データを取得
+      final article = await ArticleApiClient.getArticleById(articleId);
+      if (article == null) {
+        throw Exception('Article not found');
+      }
+
+      // 写真データを取得（photo1_id、photo2_id、photo3_idの順）
+      List<PhotoDTO?> photos = [];
+      
+      if (article.photo1Id != null) {
+        try {
+          final photo = await PhotoApiClient.getPhotoById(article.photo1Id!);
+          photos.add(photo);
+        } catch (e) {
+          photos.add(null);
+        }
+      } else {
+        photos.add(null);
+      }
+
+      if (article.photo2Id != null) {
+        try {
+          final photo = await PhotoApiClient.getPhotoById(article.photo2Id!);
+          photos.add(photo);
+        } catch (e) {
+          photos.add(null);
+        }
+      } else {
+        photos.add(null);
+      }
+
+      if (article.photo3Id != null) {
+        try {
+          final photo = await PhotoApiClient.getPhotoById(article.photo3Id!);
+          photos.add(photo);
+        } catch (e) {
+          photos.add(null);
+        }
+      } else {
+        photos.add(null);
+      }
+
+      setState(() {
+        _article = article;
+        _photos = photos;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: BridgeHeader(),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        appBar: BridgeHeader(),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'エラーが発生しました',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text(_error!),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadArticleData,
+                child: Text('再試行'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_article == null) {
+      return Scaffold(
+        appBar: BridgeHeader(),
+        body: Center(
+          child: Text('記事が見つかりません'),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: BridgeHeader(),
       body: SingleChildScrollView(
@@ -46,6 +212,11 @@ class ArticleDetailPage extends StatelessWidget {
               
               // 記事内容セクション
               _buildArticleContent(),
+              
+              const SizedBox(height: 24),
+              
+              // いいねセクション
+              _buildLikeSection(),
             ],
           ),
         ),
@@ -57,7 +228,7 @@ class ArticleDetailPage extends StatelessWidget {
     return Container(
       width: double.infinity,
       child: Text(
-        articleTitle,
+        _article?.title ?? widget.articleTitle,
         style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
@@ -94,7 +265,7 @@ class ArticleDetailPage extends StatelessWidget {
         Container(
           padding: EdgeInsets.only(left: 16),
           child: Text(
-            companyName ?? '株式会社AAA',
+            _article?.companyName ?? widget.companyName ?? '株式会社AAA',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -111,7 +282,7 @@ class ArticleDetailPage extends StatelessWidget {
       height: 200,
       child: Row(
         children: [
-          // 画像1
+          // 画像1 (photo1_id)
           Expanded(
             child: Container(
               height: double.infinity,
@@ -121,19 +292,11 @@ class ArticleDetailPage extends StatelessWidget {
                 border: Border.all(color: Color(0xFFE0E0E0)),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Center(
-                child: Text(
-                  '画像1',
-                  style: TextStyle(
-                    color: Color(0xFF757575),
-                    fontSize: 16,
-                  ),
-                ),
-              ),
+              child: _buildPhotoWidget(0, '画像1'),
             ),
           ),
           
-          // 画像2
+          // 画像2 (photo2_id)
           Expanded(
             child: Container(
               height: double.infinity,
@@ -143,19 +306,11 @@ class ArticleDetailPage extends StatelessWidget {
                 border: Border.all(color: Color(0xFFE0E0E0)),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Center(
-                child: Text(
-                  '画像2',
-                  style: TextStyle(
-                    color: Color(0xFF757575),
-                    fontSize: 16,
-                  ),
-                ),
-              ),
+              child: _buildPhotoWidget(1, '画像2'),
             ),
           ),
           
-          // 画像3
+          // 画像3 (photo3_id)
           Expanded(
             child: Container(
               height: double.infinity,
@@ -165,15 +320,81 @@ class ArticleDetailPage extends StatelessWidget {
                 border: Border.all(color: Color(0xFFE0E0E0)),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Center(
-                child: Text(
-                  '画像3',
-                  style: TextStyle(
-                    color: Color(0xFF757575),
-                    fontSize: 16,
-                  ),
+              child: _buildPhotoWidget(2, '画像3'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhotoWidget(int index, String placeholder) {
+    if (index < _photos.length && _photos[index] != null) {
+      final photo = _photos[index]!;
+      if (photo.filePath != null && photo.filePath!.isNotEmpty) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            photo.filePath!,
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.broken_image,
+                      color: Color(0xFF757575),
+                      size: 32,
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '読み込み\nエラー',
+                      style: TextStyle(
+                        color: Color(0xFF757575),
+                        fontSize: 12,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-              ),
+              );
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                      : null,
+                  strokeWidth: 2,
+                ),
+              );
+            },
+          ),
+        );
+      }
+    }
+
+    // 写真がない場合のプレースホルダー
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.image,
+            color: Color(0xFF757575),
+            size: 32,
+          ),
+          SizedBox(height: 4),
+          Text(
+            placeholder,
+            style: TextStyle(
+              color: Color(0xFF757575),
+              fontSize: 12,
             ),
           ),
         ],
@@ -185,39 +406,94 @@ class ArticleDetailPage extends StatelessWidget {
     return Container(
       width: double.infinity,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '弊社では、随時オンライン会社説明会を開催中です。',
+            '記事内容',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
               color: Color(0xFF424242),
-              height: 1.6,
             ),
-            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
           Text(
-            'エントリーについては、マイナビ・リクナビの各サイトよりお申し込みください。',
+            _article?.description ?? widget.description ?? '記事の内容が表示されます。',
             style: TextStyle(
               fontSize: 16,
               color: Color(0xFF424242),
               height: 1.6,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'エントリーお待ちしております！',
-            style: TextStyle(
-              fontSize: 16,
-              color: Color(0xFF424242),
-              height: 1.6,
-            ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildLikeSection() {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          InkWell(
+            onTap: _toggleLike,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: Color(0xFFF5F5F5),
+                border: Border.all(color: Color(0xFFE0E0E0)),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.favorite,
+                    color: Colors.red,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    '${_article?.totalLikes ?? 0}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF424242),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _toggleLike() async {
+    if (_article?.id == null) return;
+
+    try {
+      // いいね機能の実装（後で詳細な実装を追加可能）
+      await ArticleApiClient.likeArticle(_article!.id!);
+      
+      // データを再読み込み
+      _loadArticleData();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('いいねしました'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('エラーが発生しました: $e'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }

@@ -1,0 +1,161 @@
+package com.bridge.backend.controller;
+
+import com.bridge.backend.dto.ArticleDTO;
+import com.bridge.backend.service.ArticleService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * ArticleController
+ * 記事に関するRESTful APIエンドポイントを提供するコントローラーです。
+ */
+@RestController
+@RequestMapping("/api/articles")
+@CrossOrigin(origins = "*")
+public class ArticleController {
+
+    @Autowired
+    private ArticleService articleService;
+
+    /**
+     * 全記事を取得
+     * GET /api/articles
+     * 
+     * @return 記事一覧
+     */
+    @GetMapping
+    public ResponseEntity<List<ArticleDTO>> getAllArticles() {
+        try {
+            List<ArticleDTO> articles = articleService.getAllArticles();
+            return ResponseEntity.ok(articles);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 記事を検索
+     * GET /api/articles/search?keyword=キーワード
+     * 
+     * @param keyword 検索キーワード
+     * @return 検索結果の記事一覧
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<ArticleDTO>> searchArticles(@RequestParam String keyword) {
+        try {
+            List<ArticleDTO> articles = articleService.searchArticles(keyword);
+            return ResponseEntity.ok(articles);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * IDで記事を取得
+     * GET /api/articles/{id}
+     * 
+     * @param id 記事ID
+     * @return 記事データ
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<ArticleDTO> getArticleById(@PathVariable Integer id) {
+        try {
+            ArticleDTO article = articleService.getArticleById(id);
+            if (article != null) {
+                return ResponseEntity.ok(article);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 企業IDで記事を取得
+     * GET /api/articles/company/{companyId}
+     * 
+     * @param companyId 企業ID
+     * @return 企業の記事一覧
+     */
+    @GetMapping("/company/{companyId}")
+    public ResponseEntity<List<ArticleDTO>> getArticlesByCompanyId(@PathVariable Integer companyId) {
+        try {
+            List<ArticleDTO> articles = articleService.getArticlesByCompanyId(companyId);
+            return ResponseEntity.ok(articles);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 記事を作成
+     * POST /api/articles
+     * 
+     * @param articleDTO 作成する記事データ
+     * @return 作成された記事データ
+     */
+    @PostMapping
+    public ResponseEntity<ArticleDTO> createArticle(@RequestBody ArticleDTO articleDTO) {
+        try {
+            ArticleDTO createdArticle = articleService.createArticle(articleDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdArticle);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 記事を更新
+     * PUT /api/articles/{id}
+     * 
+     * @param id 更新する記事のID
+     * @param articleDTO 更新内容
+     * @return 更新された記事データ
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<ArticleDTO> updateArticle(@PathVariable Integer id, @RequestBody ArticleDTO articleDTO) {
+        try {
+            ArticleDTO updatedArticle = articleService.updateArticle(id, articleDTO);
+            if (updatedArticle != null) {
+                return ResponseEntity.ok(updatedArticle);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 記事を削除
+     * DELETE /api/articles/{id}
+     * 
+     * @param id 削除する記事のID
+     * @return 削除結果
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteArticle(@PathVariable Integer id) {
+        try {
+            boolean deleted = articleService.deleteArticle(id);
+            if (deleted) {
+                return ResponseEntity.noContent().build();
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+}
