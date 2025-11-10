@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import '39-admin-thread-detail.dart';
+import 'admin-thread-list.dart';
 
 // Thread モデル
 class Thread {
@@ -147,7 +148,12 @@ class _AdminThreadListState extends State<AdminThreadList> {
                 Spacer(),
                 TextButton(
                   onPressed: () {
-                    print('非公式スレッド一覧ページへ');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ThreadUnofficialList(),
+                      ),
+                    );
                   },
                   child: Text(
                     'もっと見る',
