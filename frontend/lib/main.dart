@@ -3,6 +3,9 @@ import 'package:flutter/services.dart'; // HapticFeedback用
 import 'package:bridge/02-auth/02-sign-up-student.dart';
 import 'package:bridge/02-auth/03-sign-up-worker.dart';
 import 'package:bridge/02-auth/04-sign-up-company.dart';
+import 'package:flutter/material.dart';
+
+String? globalSessionToken;
 
 void main() {
   runApp(const MyApp());
@@ -48,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Navigator.push(context, MaterialPageRoute(builder: (context) => nextPage));
   }
 
-  Widget _buildCircleButton(String label) {
+  Widget _buildCircleButton(String label, IconData icon) {
     return Material(
       color: Colors.transparent, // Materialが必要
       shape: const CircleBorder(),
@@ -72,13 +75,23 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
           ),
           child: Center(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontSize: 32,
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 60,
+                  color: Colors.black,
+                ),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontSize: 32,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -107,9 +120,9 @@ class _MyHomePageState extends State<MyHomePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildCircleButton('学生'),
-                _buildCircleButton('社会人'),
-                _buildCircleButton('企業'),
+                _buildCircleButton('学生', Icons.school),
+                _buildCircleButton('社会人', Icons.work),
+                _buildCircleButton('企業', Icons.business),
               ],
             ),
             TextButton(

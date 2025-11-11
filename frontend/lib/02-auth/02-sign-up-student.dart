@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bridge/main.dart';
+import 'package:bridge/03-home/08-student-worker-home.dart';
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -185,7 +187,10 @@ class _StudentInputPageState extends State<StudentInputPage> {
 
                   if (response.statusCode == 200) {
                     print('✅ サインアップ成功: ${response.body}');
-                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => StudentWorkerHome()),
+                    );
                   } else {
                     print('❌ サインアップ失敗: ${response.statusCode}');
                     print('❌ エラーメッセージ: ${response.body}');

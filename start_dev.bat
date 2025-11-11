@@ -48,7 +48,7 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr :!PORT! ^| findstr LISTENING'
 cd frontend
 
 REM FlutterをChromeで起動
-start cmd /k "flutter run -d chrome --web-port !PORT!"
+start cmd /k "flutter run -d chrome --web-port !PORT! -t ilb/01-app/main.dart"
 
 cd ..
 endlocal
