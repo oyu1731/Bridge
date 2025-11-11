@@ -96,7 +96,10 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Row(
                       children: [
-                        Expanded(flex: 3, child: Center(child: Text(log['date'] ?? ''))),
+                        Expanded(
+                          flex: 3,
+                          child: Center(child: Text(log['date'] ?? '')),
+                        ),
                         // 通報者ID（クリック可能）
                         Expanded(
                           flex: 2,
@@ -152,12 +155,13 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => AdminThreadDetail(
-                                      thread: {
-                                        'id': thread.id,
-                                        'title': thread.title,
-                                      },
-                                    ),
+                                    builder:
+                                        (context) => AdminThreadDetail(
+                                          thread: {
+                                            'id': thread.id,
+                                            'title': thread.title,
+                                          },
+                                        ),
                                   ),
                                 );
                               },
@@ -175,33 +179,38 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
                         Expanded(
                           flex: 4,
                           child: Center(
-                            child: log['chat'] != null
-                                ? GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => AdminThreadDetail(
-                                            thread: {
-                                              'id': thread.id,
-                                              'title': thread.title,
-                                            },
+                            child:
+                                log['chat'] != null
+                                    ? GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => AdminThreadDetail(
+                                                  thread: {
+                                                    'id': thread.id,
+                                                    'title': thread.title,
+                                                  },
+                                                ),
                                           ),
+                                        );
+                                      },
+                                      child: Text(
+                                        chatText,
+                                        style: const TextStyle(
+                                          color: Colors.blue,
+                                          decoration: TextDecoration.underline,
                                         ),
-                                      );
-                                    },
-                                    child: Text(
-                                      chatText,
-                                      style: const TextStyle(
-                                        color: Colors.blue,
-                                        decoration: TextDecoration.underline,
                                       ),
-                                    ),
-                                  )
-                                : Text(chatText),
+                                    )
+                                    : Text(chatText),
                           ),
                         ),
-                        Expanded(flex: 1, child: Center(child: Text(log['total'] ?? ''))),
+                        Expanded(
+                          flex: 1,
+                          child: Center(child: Text(log['total'] ?? '')),
+                        ),
                       ],
                     ),
                   );

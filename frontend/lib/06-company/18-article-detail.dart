@@ -94,39 +94,57 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
         throw Exception('Article not found');
       }
 
+      // デバッグ用：取得した記事データのphoto_idを確認
+      print('Debug: Article data loaded');
+      print('Photo1Id: ${article.photo1Id}');
+      print('Photo2Id: ${article.photo2Id}'); 
+      print('Photo3Id: ${article.photo3Id}');
+
       // 写真データを取得（photo1_id、photo2_id、photo3_idの順）
       List<PhotoDTO?> photos = [];
       
       if (article.photo1Id != null) {
         try {
+          print('Debug: Fetching photo1 with id: ${article.photo1Id}');
           final photo = await PhotoApiClient.getPhotoById(article.photo1Id!);
+          print('Debug: Photo1 result: ${photo?.filePath}');
           photos.add(photo);
         } catch (e) {
+          print('Debug: Error fetching photo1: $e');
           photos.add(null);
         }
       } else {
+        print('Debug: Photo1Id is null');
         photos.add(null);
       }
 
       if (article.photo2Id != null) {
         try {
+          print('Debug: Fetching photo2 with id: ${article.photo2Id}');
           final photo = await PhotoApiClient.getPhotoById(article.photo2Id!);
+          print('Debug: Photo2 result: ${photo?.filePath}');
           photos.add(photo);
         } catch (e) {
+          print('Debug: Error fetching photo2: $e');
           photos.add(null);
         }
       } else {
+        print('Debug: Photo2Id is null');
         photos.add(null);
       }
 
       if (article.photo3Id != null) {
         try {
+          print('Debug: Fetching photo3 with id: ${article.photo3Id}');
           final photo = await PhotoApiClient.getPhotoById(article.photo3Id!);
+          print('Debug: Photo3 result: ${photo?.filePath}');
           photos.add(photo);
         } catch (e) {
+          print('Debug: Error fetching photo3: $e');
           photos.add(null);
         }
       } else {
+        print('Debug: Photo3Id is null');
         photos.add(null);
       }
 
@@ -278,52 +296,72 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
   }
 
   Widget _buildImageSection() {
+    // 存在する写真のリストを作成
+    List<Widget> imageWidgets = [];
+    
+    // 画像1 (photo1_id) - photo1Idが存在し、かつ写真が取得できた場合のみ追加
+    if (_article?.photo1Id != null && _photos.isNotEmpty && _photos[0] != null) {
+      imageWidgets.add(
+        Expanded(
+          child: Container(
+            height: double.infinity,
+            margin: EdgeInsets.only(right: 4),
+            decoration: BoxDecoration(
+              color: Color(0xFFF5F5F5),
+              border: Border.all(color: Color(0xFFE0E0E0)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: _buildPhotoWidget(0, '画像1'),
+          ),
+        ),
+      );
+    }
+    
+    // 画像2 (photo2_id) - photo2Idが存在し、かつ写真が取得できた場合のみ追加
+    if (_article?.photo2Id != null && _photos.length > 1 && _photos[1] != null) {
+      imageWidgets.add(
+        Expanded(
+          child: Container(
+            height: double.infinity,
+            margin: EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: Color(0xFFF5F5F5),
+              border: Border.all(color: Color(0xFFE0E0E0)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: _buildPhotoWidget(1, '画像2'),
+          ),
+        ),
+      );
+    }
+    
+    // 画像3 (photo3_id) - photo3Idが存在し、かつ写真が取得できた場合のみ追加
+    if (_article?.photo3Id != null && _photos.length > 2 && _photos[2] != null) {
+      imageWidgets.add(
+        Expanded(
+          child: Container(
+            height: double.infinity,
+            margin: EdgeInsets.only(left: 4),
+            decoration: BoxDecoration(
+              color: Color(0xFFF5F5F5),
+              border: Border.all(color: Color(0xFFE0E0E0)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: _buildPhotoWidget(2, '画像3'),
+          ),
+        ),
+      );
+    }
+
+    // 画像が一つもない場合は、画像セクション自体を表示しない
+    if (imageWidgets.isEmpty) {
+      return SizedBox.shrink();
+    }
+
     return Container(
       height: 200,
       child: Row(
-        children: [
-          // 画像1 (photo1_id)
-          Expanded(
-            child: Container(
-              height: double.infinity,
-              margin: EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                color: Color(0xFFF5F5F5),
-                border: Border.all(color: Color(0xFFE0E0E0)),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: _buildPhotoWidget(0, '画像1'),
-            ),
-          ),
-          
-          // 画像2 (photo2_id)
-          Expanded(
-            child: Container(
-              height: double.infinity,
-              margin: EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: Color(0xFFF5F5F5),
-                border: Border.all(color: Color(0xFFE0E0E0)),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: _buildPhotoWidget(1, '画像2'),
-            ),
-          ),
-          
-          // 画像3 (photo3_id)
-          Expanded(
-            child: Container(
-              height: double.infinity,
-              margin: EdgeInsets.only(left: 8),
-              decoration: BoxDecoration(
-                color: Color(0xFFF5F5F5),
-                border: Border.all(color: Color(0xFFE0E0E0)),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: _buildPhotoWidget(2, '画像3'),
-            ),
-          ),
-        ],
+        children: imageWidgets,
       ),
     );
   }
@@ -409,7 +447,7 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '記事内容',
+            '記事本文',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
