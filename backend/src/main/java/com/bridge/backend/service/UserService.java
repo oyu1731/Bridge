@@ -6,6 +6,7 @@ import com.bridge.backend.entity.User;
 import com.bridge.backend.repository.IndustryRelationRepository;
 import com.bridge.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -19,6 +20,9 @@ public class UserService {
     @Autowired
     private IndustryRelationRepository industryRelationRepository;
 
+    // パスワードハッシュ用のEncoderを作成
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     /**
      * ユーザー作成 + 希望業界の保存（industry_relations）
      */
@@ -28,7 +32,11 @@ public class UserService {
         User user = new User();
         user.setNickname(userDto.getNickname());
         user.setEmail(userDto.getEmail());
-        user.setPassword(userDto.getPassword());
+
+        // 🔐 パスワードをハッシュ化して保存
+        String hashedPassword = passwordEncoder.encode(userDto.getPassword());
+        user.setPassword(hashedPassword);
+
         user.setPhoneNumber(userDto.getPhoneNumber());
         user.setType(userDto.getType());
 

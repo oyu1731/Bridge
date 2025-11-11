@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:bridge/main.dart';
 import 'package:bridge/03-home/08-student-worker-home.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 
 class StudentInputPage extends StatefulWidget {
@@ -10,6 +11,11 @@ class StudentInputPage extends StatefulWidget {
 
   @override
   State<StudentInputPage> createState() => _StudentInputPageState();
+}
+
+Future<void> saveSession(dynamic userData) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('user_data', jsonEncode(userData));
 }
 
 class _StudentInputPageState extends State<StudentInputPage> {
@@ -157,7 +163,15 @@ class _StudentInputPageState extends State<StudentInputPage> {
                 final nickname = _nicknameController.text;
                 final email = _emailController.text;
                 final password = _passwordController.text;
+
+                // パスワードをハッシュ化
+                final hashedPassword = sha256.convert(utf8.encode(password)).toString();
+
                 final phoneNumber = _phoneNumberController.text;
+
+                // SharedPreferencesインスタンス
+                final prefs = await SharedPreferences.getInstance();
+                
 
                 // ✅ 業界ID（List<int>）を送信
                 final desiredIndustries = _selectedIndustryIds;
@@ -187,13 +201,17 @@ class _StudentInputPageState extends State<StudentInputPage> {
 
                   if (response.statusCode == 200) {
                     print('✅ サインアップ成功: ${response.body}');
+                    final userData = jsonDecode(response.body);
+                    await saveSession(userData);
+                    print('✅ 保存したセッションデータ: ${userData}');
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => StudentWorkerHome()),
                     );
                   } else {
                     print('❌ サインアップ失敗: ${response.statusCode}');
-                    print('❌ エラーメッセージ: ${response.body}');
+                    final errorMessage = jsonDecode(response.body);
+                    print('❌ エラーメッセージ: ${errorMessage}');
                   }
                 } catch (e) {
                   print('❌ 通信エラー: $e');

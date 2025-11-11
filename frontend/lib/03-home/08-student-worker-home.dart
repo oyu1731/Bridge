@@ -15,8 +15,8 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('学生・社会人ホーム'),
+      body: Center(
+        child: Text('学生・社会人ホーム')
       ),
       // body: Center(
       //   child: Column(
