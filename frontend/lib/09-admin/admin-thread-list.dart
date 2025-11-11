@@ -37,12 +37,9 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
   void initState() {
     super.initState();
     _loadDummyThreads();
-
-    // DBからデータを持ってくる際、画面更新時に最新スレッド情報を取得
-    // _fetchThreads();
   }
 
-  // 初回に最新更新順で30件ほど取得（バック側で並び替え・絞り込み想定）
+  // 初回に最新更新順で取得（疑似通信）
   Future<void> _loadDummyThreads() async {
     await Future.delayed(Duration(milliseconds: 300)); // 疑似通信待ち
 
@@ -55,12 +52,11 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
         Thread(id: 't5', title: '就活で意識すべきこと', timeAgo: '1時間前'),
       ];
 
-      // 初期状態では全件表示
       filteredThreads = List.from(unofficialThreads);
     });
   }
 
-  // タイトル検索（バック接続時は検索クエリを送信して結果を再描画）
+  // タイトル検索
   void _searchThreads() {
     final query = _searchController.text.trim();
     setState(() {
@@ -74,6 +70,33 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
     });
   }
 
+  // 削除申請ダイアログ
+  void _showDeleteDialog(Thread thread) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('削除申請'),
+        content: Text('${thread.title} の削除を申請しますか？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                unofficialThreads.remove(thread);
+                filteredThreads.remove(thread);
+              });
+              Navigator.pop(context);
+            },
+            child: const Text('削除申請'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,30 +107,28 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
           children: [
             Row(
               children: [
-                Text(
+                const Text(
                   '非公式スレッド一覧',
                   style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                 ),
-                Spacer(),
-                // スレッドタイトル検索欄
+                const Spacer(),
                 Expanded(
                   child: TextField(
                     controller: _searchController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: '検索',
                       border: OutlineInputBorder(),
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: _searchThreads,
-                  child: Text('検索'),
+                  child: const Text('検索'),
                 ),
               ],
             ),
-            SizedBox(height: 20),
-            // スレッド一覧表示
+            const SizedBox(height: 20),
             Expanded(
               child: ListView.builder(
                 itemCount: filteredThreads.length,
@@ -115,28 +136,39 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
                   final thread = filteredThreads[index];
                   return GestureDetector(
                     onTap: () {
-                      // 非公式スレッド詳細へ遷移
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                            AdminThreadDetail(
-                              thread: {
-                                'id': thread.id,
-                                'title': thread.title,
-                              },
-                            ),
+                          builder: (context) => AdminThreadDetail(
+                            thread: {
+                              'id': thread.id,
+                              'title': thread.title,
+                            },
+                          ),
                         ),
                       );
                     },
                     child: Card(
-                      margin: EdgeInsets.symmetric(vertical: 6),
+                      margin: const EdgeInsets.symmetric(vertical: 6),
                       elevation: 2,
                       child: ListTile(
                         title: Text(thread.title),
-                        trailing: Text(
-                          thread.timeAgo,
-                          style: TextStyle(color: Colors.grey),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              thread.timeAgo,
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () => _showDeleteDialog(thread),
+                              child: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
