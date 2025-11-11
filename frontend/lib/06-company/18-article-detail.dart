@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../11-common/58-header.dart';
 import 'article_api_client.dart';
 import 'api_config.dart';
@@ -68,11 +69,16 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
   List<PhotoDTO?> _photos = [];
   bool _isLoading = true;
   String? _error;
+  
+  // いいね機能の状態
+  bool _isLiked = false;
+  bool _isLikeLoading = false;
 
   @override
   void initState() {
     super.initState();
     _loadArticleData();
+    _loadLikeStatus();
   }
 
   Future<void> _loadArticleData() async {
@@ -158,6 +164,101 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
         _error = e.toString();
         _isLoading = false;
       });
+    }
+  }
+
+  // いいね状態をローカルストレージから読み込み
+  Future<void> _loadLikeStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final likedArticles = prefs.getStringList('liked_articles') ?? [];
+    setState(() {
+      _isLiked = likedArticles.contains(widget.articleId);
+    });
+  }
+
+  // いいね状態をローカルストレージに保存
+  Future<void> _saveLikeStatus(bool isLiked) async {
+    final prefs = await SharedPreferences.getInstance();
+    final likedArticles = prefs.getStringList('liked_articles') ?? [];
+    
+    if (isLiked) {
+      if (!likedArticles.contains(widget.articleId)) {
+        likedArticles.add(widget.articleId);
+      }
+    } else {
+      likedArticles.remove(widget.articleId);
+    }
+    
+    await prefs.setStringList('liked_articles', likedArticles);
+  }
+
+  // いいねトグル機能
+  Future<void> _toggleLike() async {
+    if (_article?.id == null || _isLikeLoading) return;
+
+    setState(() {
+      _isLikeLoading = true;
+    });
+
+    try {
+      final int articleId = _article!.id!;
+      final bool willLike = !_isLiked; // 新しい状態を計算
+      
+      // サーバーに新しい状態を送信
+      await _updateLikeCount(articleId, willLike);
+
+      // ローカル状態を更新
+      setState(() {
+        _isLiked = willLike;
+      });
+      
+      // ローカルストレージに保存
+      await _saveLikeStatus(_isLiked);
+      
+      // 記事データを再読み込みしてサーバーの状態と同期
+      await _loadArticleData();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_isLiked ? 'いいねしました！' : 'いいねを取り消しました'),
+          duration: Duration(seconds: 1),
+          backgroundColor: _isLiked ? Colors.red : Colors.grey,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('エラー: $e'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLikeLoading = false;
+      });
+    }
+  }
+
+  // サーバーのいいね数を更新
+  Future<void> _updateLikeCount(int articleId, bool isLiking) async {
+    print('Debug: _updateLikeCount called with articleId=$articleId, isLiking=$isLiking');
+    print('Debug: Current _isLiked state: $_isLiked');
+    
+    final requestBody = {'liking': isLiking};  // isLiking から liking に変更
+    print('Debug: Sending request body: $requestBody');
+    
+    final response = await http.post(
+      Uri.parse('http://localhost:8080/api/articles/$articleId/like'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(requestBody),
+    );
+    
+    print('Debug: Response status: ${response.statusCode}');
+    print('Debug: Response body: ${response.body}');
+    
+    if (response.statusCode != 200) {
+      throw Exception('いいね操作に失敗しました');
     }
   }
 
@@ -455,12 +556,16 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            _article?.description ?? widget.description ?? '記事の内容が表示されます。',
-            style: TextStyle(
-              fontSize: 16,
-              color: Color(0xFF424242),
-              height: 1.6,
+          Container(
+            width: double.infinity,
+            child: Text(
+              _article?.description ?? widget.description ?? '記事の内容が表示されます。',
+              style: TextStyle(
+                fontSize: 16,
+                color: Color(0xFF424242),
+                height: 1.6,
+              ),
+              textAlign: TextAlign.center, // 中央揃え
             ),
           ),
         ],
@@ -472,32 +577,44 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.end, // 右端に配置
         children: [
           InkWell(
-            onTap: _toggleLike,
+            onTap: _isLikeLoading ? null : _toggleLike,
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: Color(0xFFF5F5F5),
-                border: Border.all(color: Color(0xFFE0E0E0)),
+                color: _isLiked ? Colors.red[50] : Color(0xFFF5F5F5),
+                border: Border.all(
+                  color: _isLiked ? Colors.red : Color(0xFFE0E0E0),
+                  width: _isLiked ? 2 : 1,
+                ),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.favorite,
-                    color: Colors.red,
-                    size: 20,
-                  ),
+                  _isLikeLoading
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                        ),
+                      )
+                    : Icon(
+                        _isLiked ? Icons.favorite : Icons.favorite_border,
+                        color: _isLiked ? Colors.red : Color(0xFF757575),
+                        size: 20,
+                      ),
                   SizedBox(width: 8),
                   Text(
                     '${_article?.totalLikes ?? 0}',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF424242),
+                      color: _isLiked ? Colors.red : Color(0xFF424242),
                     ),
                   ),
                 ],
@@ -507,31 +624,5 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
         ],
       ),
     );
-  }
-
-  Future<void> _toggleLike() async {
-    if (_article?.id == null) return;
-
-    try {
-      // いいね機能の実装（後で詳細な実装を追加可能）
-      await ArticleApiClient.likeArticle(_article!.id!);
-      
-      // データを再読み込み
-      _loadArticleData();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('いいねしました'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('エラーが発生しました: $e'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
   }
 }

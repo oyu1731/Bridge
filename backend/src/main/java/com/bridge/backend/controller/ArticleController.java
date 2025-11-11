@@ -1,6 +1,7 @@
 package com.bridge.backend.controller;
 
 import com.bridge.backend.dto.ArticleDTO;
+import com.bridge.backend.dto.LikeRequestDTO;
 import com.bridge.backend.service.ArticleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -150,6 +151,36 @@ public class ArticleController {
             boolean deleted = articleService.deleteArticle(id);
             if (deleted) {
                 return ResponseEntity.noContent().build();
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 記事にいいねをトグル（追加/削除）
+     * POST /api/articles/{id}/like
+     * 
+     * @param id 記事ID
+     * @param likeRequest いいね操作の詳細
+     * @return いいね操作の結果
+     */
+    @PostMapping("/{id}/like")
+    public ResponseEntity<ArticleDTO> toggleLike(@PathVariable Integer id, @RequestBody LikeRequestDTO likeRequest) {
+        try {
+            System.out.println("Debug: toggleLike called with articleId=" + id + ", isLiking=" + likeRequest.isLiking());
+            
+            // ユーザーIDは固定値1を使用（将来的にはJWTトークンから取得）
+            Integer userId = 1;
+            ArticleDTO article = articleService.toggleLike(id, userId, likeRequest.isLiking());
+            
+            System.out.println("Debug: Updated article total_likes=" + (article != null ? article.getTotalLikes() : "null"));
+            
+            if (article != null) {
+                return ResponseEntity.ok(article);
             } else {
                 return ResponseEntity.notFound().build();
             }
