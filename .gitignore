@@ -7,6 +7,7 @@ build/
 .idea/
 .vscode/
 *.iml
+frontend/android/local.properties
 
 # Docker
 **/docker-compose.override.yml

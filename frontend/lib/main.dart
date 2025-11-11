@@ -45,25 +45,24 @@ class _MyHomePageState extends State<MyHomePage> {
     if (label == '学生') {
       nextPage = const StudentInputPage();
     } else if (label == '社会人') {
-      nextPage = const ProfessionalInputPage(); // 一時的にコメントアウト
+      nextPage = const ProfessionalInputPage();
     } else if (label == '企業') {
-      nextPage = const CompanyInputPage(); // 一時的にコメントアウト
+      nextPage = const CompanyInputPage();
     } else {
-      return;
+      return; // 不明なラベルの場合は何もしない
     }
- 
+
     Navigator.push(context, MaterialPageRoute(builder: (context) => nextPage));
   }
- 
-  /// 円形ボタン作成
-  Widget _buildCircleButton(String label) {
+
+  Widget _buildCircleButton(String label, IconData icon) {
     return Material(
-      color: Colors.transparent,
+      color: Colors.transparent, // Materialが必要
       shape: const CircleBorder(),
       child: InkResponse(
         onTap: () => _onCircleTap(label, context),
         borderRadius: BorderRadius.circular(100),
-        containedInkWell: true,
+        containedInkWell: true, // 円形リップル
         splashColor: Colors.blueAccent.withOpacity(0.5),
         child: Container(
           height: 200,
@@ -80,13 +79,23 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
           ),
           child: Center(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontSize: 32,
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 60,
+                  color: const Color.fromARGB(255, 93, 87, 87),
+                ),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontSize: 32,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -94,6 +103,10 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
  
+
+  /*
+  開発用セッション操作
+  */
   /// 選択したユーザーをSharedPreferencesに保存
   Future<void> saveUserSession(String role) async {
     final prefs = await SharedPreferences.getInstance();
@@ -184,6 +197,7 @@ class _MyHomePageState extends State<MyHomePage> {
       },
     };
   }
+
  
   @override
   Widget build(BuildContext context) {
@@ -201,9 +215,9 @@ class _MyHomePageState extends State<MyHomePage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildCircleButton('学生'),
-                  _buildCircleButton('社会人'),
-                  _buildCircleButton('企業'),
+                  _buildCircleButton('学生', Icons.school),
+                  _buildCircleButton('社会人', Icons.work),
+                  _buildCircleButton('企業', Icons.business),
                 ],
               ),
               const SizedBox(height: 20),
@@ -249,6 +263,3 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
- 
- 
- 
