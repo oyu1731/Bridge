@@ -5,14 +5,42 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bridge/02-auth/02-sign-up-student.dart';
 import 'package:bridge/02-auth/03-sign-up-worker.dart';
 import 'package:bridge/02-auth/04-sign-up-company.dart';
+import 'package:bridge/02-auth/05-sign-in.dart';
+import 'package:bridge/03-home/08-student-worker-home.dart';
+import 'package:bridge/03-home/09-company-home.dart';
+// import 'package:bridge/09-admin/36-admin-home.dart';
 
- 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final prefs = await SharedPreferences.getInstance();
+  final String? jsonString = prefs.getString('current_user');
+
+  Widget initialPage;
+
+  if (jsonString != null) {
+    final Map<String, dynamic> user = jsonDecode(jsonString);
+    final int type = user['type'];
+    if (type == 1 || type == 2) {
+      initialPage = StudentWorkerHome();
+    } else if (type == 3) {
+      initialPage = CompanyHome();
+    // } else if (type == 4) {
+    //   initialPage = AdminHome();
+    } else {
+      initialPage = const MyHomePage(title: 'Bridge');
+    }
+  } else {
+    initialPage = const MyHomePage(title: 'Bridge');
+  }
+
+  runApp(MyApp(initialPage: initialPage));
 }
- 
+
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final Widget initialPage;
+  const MyApp({super.key, required this.initialPage});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -20,27 +48,47 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlue),
       ),
-      home: const MyHomePage(title: 'Bridge'),
+      home: initialPage,
     );
   }
 }
- 
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
+
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
- 
+
 class _MyHomePageState extends State<MyHomePage> {
-  // サンプルユーザー情報
   late final Map<String, Map<String, dynamic>> sampleUsers;
- 
+
   /// 円形ボタンが押されたときの処理
-  void _onCircleTap(String label, BuildContext context) {
-    HapticFeedback.selectionClick(); // 軽い振動
+  Future<void> _onCircleTap(String label, BuildContext context) async {
+    HapticFeedback.selectionClick();
     print('$label が押されました');
- 
+
+    final prefs = await SharedPreferences.getInstance();
+    final String? jsonString = prefs.getString('current_user');
+    if (jsonString != null) {
+      print('セッションが存在するため、ホーム画面に遷移します');
+      final Map<String, dynamic> user = jsonDecode(jsonString);
+      final int type = user['type'];
+      Widget? homePage;
+      if (type == 1 || type == 2) {
+        homePage = StudentWorkerHome();
+      } else if (type == 3) {
+        homePage =  CompanyHome();
+      // } else if (type == 4) {
+      //   homePage = AdminHome();
+      } else {
+        homePage = const MyHomePage(title: 'Bridge');
+      }
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => homePage ?? const MyHomePage(title: 'Bridge')));
+      return;
+    }
+
     Widget nextPage;
     if (label == '学生') {
       nextPage = const StudentInputPage();
@@ -49,20 +97,19 @@ class _MyHomePageState extends State<MyHomePage> {
     } else if (label == '企業') {
       nextPage = const CompanyInputPage();
     } else {
-      return; // 不明なラベルの場合は何もしない
+      return;
     }
-
     Navigator.push(context, MaterialPageRoute(builder: (context) => nextPage));
   }
 
   Widget _buildCircleButton(String label, IconData icon) {
     return Material(
-      color: Colors.transparent, // Materialが必要
+      color: Colors.transparent,
       shape: const CircleBorder(),
       child: InkResponse(
         onTap: () => _onCircleTap(label, context),
         borderRadius: BorderRadius.circular(100),
-        containedInkWell: true, // 円形リップル
+        containedInkWell: true,
         splashColor: Colors.blueAccent.withOpacity(0.5),
         child: Container(
           height: 200,
@@ -85,15 +132,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 Icon(
                   icon,
                   size: 60,
-                  color: const Color.fromARGB(255, 93, 87, 87),
+                  color: Color.fromARGB(255, 93, 87, 87),
                 ),
                 Text(
                   label,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontSize: 32,
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontSize: 32,
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ],
             ),
@@ -102,11 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
- 
 
-  /*
-  開発用セッション操作
-  */
   /// 選択したユーザーをSharedPreferencesに保存
   Future<void> saveUserSession(String role) async {
     final prefs = await SharedPreferences.getInstance();
@@ -117,7 +160,7 @@ class _MyHomePageState extends State<MyHomePage> {
       print('指定されたユーザーは存在しません');
     }
   }
- 
+
   /// SharedPreferencesからユーザー情報を取得
   Future<void> loadUserSession() async {
     final prefs = await SharedPreferences.getInstance();
@@ -130,7 +173,7 @@ class _MyHomePageState extends State<MyHomePage> {
       print('セッションにユーザー情報はありません');
     }
   }
- 
+
   @override
   void initState() {
     super.initState();
@@ -198,7 +241,6 @@ class _MyHomePageState extends State<MyHomePage> {
     };
   }
 
- 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -223,7 +265,6 @@ class _MyHomePageState extends State<MyHomePage> {
               const SizedBox(height: 20),
               const Text("デバッグ用: ユーザーセッション操作"),
               const SizedBox(height: 10),
-              // セッション保存ボタン
               Wrap(
                 spacing: 10,
                 children: [
@@ -251,10 +292,10 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               const SizedBox(height: 20),
               TextButton(
-                onPressed: () {
-                  print("サインインはこちら が押されました");
-                },
                 child: const Text("サインインはこちら"),
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SignInPage()));
+                },
               ),
             ],
           ),

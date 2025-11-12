@@ -28,6 +28,10 @@ public class UserService {
      */
     public User createUser(UserDto userDto) {
 
+        if (userRepository.existsByEmail(userDto.getEmail())) {
+            throw new IllegalArgumentException("このメールアドレスは既に使用されています");
+        }
+
         // ✅ 1. ユーザーを保存
         User user = new User();
         user.setNickname(userDto.getNickname());

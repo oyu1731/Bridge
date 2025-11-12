@@ -4,21 +4,21 @@ import 'package:bridge/03-home/08-student-worker-home.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 class StudentInputPage extends StatefulWidget {
   const StudentInputPage({super.key});
-
   @override
   State<StudentInputPage> createState() => _StudentInputPageState();
 }
-
 Future<void> saveSession(dynamic userData) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('user_data', jsonEncode(userData));
 }
 
 class _StudentInputPageState extends State<StudentInputPage> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _nicknameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -86,45 +86,87 @@ class _StudentInputPageState extends State<StudentInputPage> {
       appBar: AppBar(title: const Text('学生サインアップ')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
               controller: _nicknameController,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 labelText: 'ニックネーム',
               ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'ニックネームを入力してください';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 20),
 
-            TextField(
+            TextFormField(
               controller: _emailController,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 labelText: 'メールアドレス',
               ),
               keyboardType: TextInputType.emailAddress,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'メールアドレスを入力してください';
+                }
+                if (!value.contains('@')) {
+                  return '有効なメールアドレスを入力してください';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 20),
 
-            TextField(
+            TextFormField(
               controller: _passwordController,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 labelText: 'パスワード',
               ),
               obscureText: true,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'パスワードを入力してください';
+                }
+                if (value.length < 8) {
+                  return 'パスワードは8文字以上で入力してください';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 20),
 
-            TextField(
+            TextFormField(
               controller: _phoneNumberController,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 labelText: '電話番号',
+                hintText: '例：090-1234-5678 または 072-123-4567',
               ),
               keyboardType: TextInputType.phone,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9-]')), // 数字とハイフンだけOK
+              ],
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return '電話番号を入力してください';
+                }
+                if (!RegExp(r'^[0-9-]+$').hasMatch(value)) {
+                  return '有効な電話番号を入力してください';
+                }
+                if (value.split('-').length - 1 != 2) {
+                  return 'ハイフンを正しく入力してください';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 20),
 
@@ -135,8 +177,6 @@ class _StudentInputPageState extends State<StudentInputPage> {
 
             _isLoading
                 ? const CircularProgressIndicator()
-                : _errorMessage.isNotEmpty
-                ? Text('エラー: $_errorMessage')
                 : Column(
                   children:
                       _industries.map((industry) {
@@ -160,66 +200,82 @@ class _StudentInputPageState extends State<StudentInputPage> {
 
             ElevatedButton(
               onPressed: () async {
-                final nickname = _nicknameController.text;
-                final email = _emailController.text;
-                final password = _passwordController.text;
+                if (_formKey.currentState!.validate()) {
+                  final nickname = _nicknameController.text;
+                  final email = _emailController.text;
+                  final password = _passwordController.text;
 
-                // パスワードをハッシュ化
-                final hashedPassword = sha256.convert(utf8.encode(password)).toString();
+                  // パスワードをハッシュ化
+                  final hashedPassword = sha256.convert(utf8.encode(password)).toString();
 
-                final phoneNumber = _phoneNumberController.text;
+                  final phoneNumber = _phoneNumberController.text;
 
-                // SharedPreferencesインスタンス
-                final prefs = await SharedPreferences.getInstance();
-                
+                  // SharedPreferencesインスタンス
+                  final prefs = await SharedPreferences.getInstance();
 
-                // ✅ 業界ID（List<int>）を送信
-                final desiredIndustries = _selectedIndustryIds;
+                  // 業界ID（List<int>）を送信
+                  final desiredIndustries = _selectedIndustryIds;
 
-                final url = Uri.parse('http://localhost:8080/api/users');
-                final headers = {
-                  'Content-Type': 'application/json; charset=UTF-8',
-                };
+                  final url = Uri.parse('http://localhost:8080/api/users');
+                  final headers = {
+                    'Content-Type': 'application/json; charset=UTF-8',
+                  };
 
-                final body = jsonEncode({
-                  'nickname': nickname,
-                  'email': email,
-                  'password': password,
-                  'phoneNumber': phoneNumber,
-                  'desiredIndustries': desiredIndustries,
-                  'type': 1, // 学生
-                });
+                  final body = jsonEncode({
+                    'nickname': nickname,
+                    'email': email,
+                    'password': hashedPassword,
+                    'phoneNumber': phoneNumber,
+                    'desiredIndustries': desiredIndustries,
+                    'type': 1, // 学生
+                  });
 
-                print("📤 送信JSON: $body");
+                  print("📤 送信JSON: $body");
 
-                try {
-                  final response = await http.post(
-                    url,
-                    headers: headers,
-                    body: body,
-                  );
-
-                  if (response.statusCode == 200) {
-                    print('✅ サインアップ成功: ${response.body}');
-                    final userData = jsonDecode(response.body);
-                    await saveSession(userData);
-                    print('✅ 保存したセッションデータ: ${userData}');
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => StudentWorkerHome()),
+                  try {
+                    final response = await http.post(
+                      url,
+                      headers: headers,
+                      body: body,
                     );
-                  } else {
-                    print('❌ サインアップ失敗: ${response.statusCode}');
-                    final errorMessage = jsonDecode(response.body);
-                    print('❌ エラーメッセージ: ${errorMessage}');
+
+                    if (response.statusCode == 200) {
+                      print('✅ サインアップ成功: ${response.body}');
+                      final userData = jsonDecode(response.body);
+                      await saveSession(userData);
+                      print('✅ 保存したセッションデータ: ${userData}');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => StudentWorkerHome()),
+                      );
+                    } else {
+                      print('❌ サインアップ失敗: ${response.statusCode}');
+                      final errorMessage = jsonDecode(response.body);
+                      print('❌ エラーメッセージ: ${errorMessage}');
+                      setState(() {
+                        _errorMessage = errorMessage['message'] ?? 'サインアップに失敗しました';
+                      });
+                    }
+                  } catch (e) {
+                    print('❌ 通信エラー: $e');
+                    setState(() {
+                      _errorMessage = '通信エラーが発生しました: $e';
+                    });
                   }
-                } catch (e) {
-                  print('❌ 通信エラー: $e');
                 }
               },
               child: const Text('作成'),
             ),
-          ],
+            if (_errorMessage.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: Text(
+                  _errorMessage,
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
