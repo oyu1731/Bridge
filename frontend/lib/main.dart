@@ -5,12 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bridge/02-auth/02-sign-up-student.dart';
 import 'package:bridge/02-auth/03-sign-up-worker.dart';
 import 'package:bridge/02-auth/04-sign-up-company.dart';
+import 'package:bridge/07-ai-training/21-ai-training-list.dart';
 
- 
 void main() {
   runApp(const MyApp());
 }
- 
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
@@ -24,26 +24,26 @@ class MyApp extends StatelessWidget {
     );
   }
 }
- 
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
- 
+
 class _MyHomePageState extends State<MyHomePage> {
   // サンプルユーザー情報
   late final Map<String, Map<String, dynamic>> sampleUsers;
- 
+
   /// 円形ボタンが押されたときの処理
   void _onCircleTap(String label, BuildContext context) {
     HapticFeedback.selectionClick(); // 軽い振動
     print('$label が押されました');
- 
+
     Widget nextPage;
     if (label == '学生') {
-      nextPage = const StudentInputPage();
+      nextPage = const AiTrainingListPage();
     } else if (label == '社会人') {
       nextPage = const ProfessionalInputPage(); // 一時的にコメントアウト
     } else if (label == '企業') {
@@ -51,10 +51,10 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       return;
     }
- 
+
     Navigator.push(context, MaterialPageRoute(builder: (context) => nextPage));
   }
- 
+
   /// 円形ボタン作成
   Widget _buildCircleButton(String label) {
     return Material(
@@ -93,7 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
- 
+
   /// 選択したユーザーをSharedPreferencesに保存
   Future<void> saveUserSession(String role) async {
     final prefs = await SharedPreferences.getInstance();
@@ -104,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
       print('指定されたユーザーは存在しません');
     }
   }
- 
+
   /// SharedPreferencesからユーザー情報を取得
   Future<void> loadUserSession() async {
     final prefs = await SharedPreferences.getInstance();
@@ -117,7 +117,7 @@ class _MyHomePageState extends State<MyHomePage> {
       print('セッションにユーザー情報はありません');
     }
   }
- 
+
   @override
   void initState() {
     super.initState();
@@ -130,12 +130,13 @@ class _MyHomePageState extends State<MyHomePage> {
         'email': 'student@example.com',
         'company_id': null,
         'report_count': 0,
-        'plan_status': '無料',
+        'plan_status': '学生プレミアム',
         'is_withdrawn': false,
         'created_at': '2025-11-10',
         'society_history': null,
         'icon': 1,
         'announcement_deletion': 1,
+        'token': 100,
       },
       '社会人': {
         'nickname': '社会人ユーザー',
@@ -151,6 +152,7 @@ class _MyHomePageState extends State<MyHomePage> {
         'society_history': 5,
         'icon': 2,
         'announcement_deletion': 1,
+        'token': 100,
       },
       '企業': {
         'nickname': '企業ユーザー',
@@ -166,6 +168,7 @@ class _MyHomePageState extends State<MyHomePage> {
         'society_history': null,
         'icon': 3,
         'announcement_deletion': 1,
+        'token': 100,
       },
       '管理者': {
         'nickname': '管理者ユーザー',
@@ -181,10 +184,11 @@ class _MyHomePageState extends State<MyHomePage> {
         'society_history': null,
         'icon': null,
         'announcement_deletion': 1,
+        'token': 100,
       },
     };
   }
- 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -249,6 +253,3 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
- 
- 
- 

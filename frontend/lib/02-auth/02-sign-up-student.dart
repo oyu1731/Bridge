@@ -194,6 +194,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
                   print('❌ 通信エラー: $e');
                 }
               },
+
               child: const Text('作成'),
             ),
           ],
