@@ -113,9 +113,14 @@ class _AdminThreadListState extends State<AdminThreadList> {
         );
       },
       child: Card(
+        color: Colors.white, // 背景を白に
         margin: EdgeInsets.symmetric(vertical: 6),
         elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: ListTile(
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           title: Text(
             thread.title,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -193,7 +198,7 @@ class _AdminThreadListState extends State<AdminThreadList> {
                   },
                   child: Text(
                     'もっと見る',
-                    style: TextStyle(fontSize: 16, color: Colors.orange),
+                    style: TextStyle(fontSize: 16, color: Colors.black),
                   ),
                 ),
               ],

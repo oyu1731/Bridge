@@ -38,12 +38,8 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
   void initState() {
     super.initState();
     _loadDummyThreads();
-
-    // DBからデータを持ってくる際、画面更新時に最新スレッド情報を取得
-    // _fetchThreads();
   }
 
-  // 初回に最新更新順で30件ほど取得（バック側で並び替え・絞り込み想定）
   Future<void> _loadDummyThreads() async {
     await Future.delayed(Duration(milliseconds: 300)); // 疑似通信待ち
 
@@ -56,12 +52,10 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
         Thread(id: 't5', title: '就活で意識すべきこと', timeAgo: '1時間前'),
       ];
 
-      // 初期状態では全件表示
       filteredThreads = List.from(unofficialThreads);
     });
   }
 
-  // タイトル検索（バック接続時は検索クエリを送信して結果を再描画）
   void _searchThreads() {
     final query = _searchController.text.trim();
     setState(() {
@@ -86,12 +80,19 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
             Row(
               children: [
                 Text(
-                  '非公式スレッド一覧',
+                  'スレッド一覧',
                   style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                 ),
                 Spacer(),
-                // スレッド作成ボタン（ThreadCreateへ遷移）
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white, // 内側を白に
+                    foregroundColor: Colors.black,
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -103,27 +104,24 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
               ],
             ),
             SizedBox(height: 10),
-            Row(
-              children: [
-                // スレッドタイトル検索欄
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: '検索',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
+            // 検索バー
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: '検索',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                SizedBox(width: 8),
-                ElevatedButton(
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.search, color: Colors.grey[700]),
                   onPressed: _searchThreads,
-                  child: Text('検索'),
                 ),
-              ],
+              ),
+              onSubmitted: (_) => _searchThreads(),
             ),
             SizedBox(height: 20),
-            // スレッド一覧表示
             Expanded(
               child: ListView.builder(
                 itemCount: filteredThreads.length,
@@ -131,21 +129,20 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
                   final thread = filteredThreads[index];
                   return GestureDetector(
                     onTap: () {
-                      // 非公式スレッド詳細へ遷移
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                            ThreadUnofficialDetail(
-                              thread: {
-                                'id': thread.id,
-                                'title': thread.title,
-                              },
-                            ),
+                          builder: (context) => ThreadUnofficialDetail(
+                            thread: {
+                              'id': thread.id,
+                              'title': thread.title,
+                            },
+                          ),
                         ),
                       );
                     },
                     child: Card(
+                      color: Colors.white, // カードの背景白
                       margin: EdgeInsets.symmetric(vertical: 6),
                       elevation: 2,
                       child: ListTile(

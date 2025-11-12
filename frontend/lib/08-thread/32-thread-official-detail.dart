@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 /*
-リアルタイムチャットに必要な Firestore パッケージの導入がまだのため、
-Firebase 関連の import やリアルタイムチャット用のコードはコメントアウトしています。
+// Firebase関連はコメントアウト
 */
 // import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bridge/11-common/58-header.dart';
-import '31-thread-list.dart'; // Thread モデルをインポート
 import 'dart:async';
 
 class ThreadOfficialDetail extends StatefulWidget {
   final Map<String, dynamic> thread;
 
-  const ThreadOfficialDetail({required this.thread, Key? key})
-      : super(key: key);
+  const ThreadOfficialDetail({required this.thread, Key? key}) : super(key: key);
 
   @override
   _ThreadOfficialDetailState createState() => _ThreadOfficialDetailState();
@@ -184,6 +181,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
       appBar: BridgeHeader(),
       body: Column(
         children: [
+          // スレッドタイトル + 検索バー
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
@@ -199,12 +197,19 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'コメント検索',
-                      prefixIcon: const Icon(Icons.search),
+                      hintText: '検索',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.search, color: Colors.grey[700]),
+                        onPressed: () {
+                          setState(() {
+                            searchText = _searchController.text.trim();
+                          });
+                        },
+                      ),
                     ),
                     onChanged: (value) {
                       setState(() {
