@@ -169,4 +169,40 @@ public class ArticleService {
                 article.getPhoto3Id()
         );
     }
+
+    /**
+     * 記事のいいねをトグル
+     * フロントエンドから送られるisLikingに基づいてtotal_likesを調整
+     * 
+     * @param articleId 記事ID
+     * @param userId ユーザーID
+     * @param isLiking いいねするかどうか
+     * @return 更新された記事
+     */
+    public ArticleDTO toggleLike(Integer articleId, Integer userId, boolean isLiking) {
+        System.out.println("Debug: ArticleService.toggleLike called with articleId=" + articleId + ", userId=" + userId + ", isLiking=" + isLiking);
+        
+        Article article = articleRepository.findById(articleId).orElse(null);
+        if (article == null) {
+            System.out.println("Debug: Article not found with id=" + articleId);
+            return null;
+        }
+
+        Integer currentLikes = article.getTotalLikes();
+        System.out.println("Debug: Current total_likes=" + currentLikes);
+        
+        if (isLiking) {
+            // いいねを追加：total_likesを+1
+            article.setTotalLikes(currentLikes + 1);
+            System.out.println("Debug: Adding like, new total_likes=" + (currentLikes + 1));
+        } else {
+            // いいねを削除：total_likesを-1（0より下にならないように）
+            article.setTotalLikes(Math.max(0, currentLikes - 1));
+            System.out.println("Debug: Removing like, new total_likes=" + Math.max(0, currentLikes - 1));
+        }
+        
+        articleRepository.save(article);
+        
+        return convertToDTO(article);
+    }
 }

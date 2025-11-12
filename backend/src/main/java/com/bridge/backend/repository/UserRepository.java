@@ -11,4 +11,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
      * 企業IDに基づいてユーザーを検索
      */
     Optional<User> findByCompanyId(Integer companyId);
+    
+    // メールアドレス重複チェック
+    boolean existsByEmail(String email);
 }
