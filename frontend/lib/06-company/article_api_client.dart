@@ -14,6 +14,7 @@ class ArticleDTO {
   final int? photo1Id;
   final int? photo2Id;
   final int? photo3Id;
+  final List<String>? tags; // タグ情報を追加
 
   ArticleDTO({
     this.id,
@@ -27,6 +28,7 @@ class ArticleDTO {
     this.photo1Id,
     this.photo2Id,
     this.photo3Id,
+    this.tags,
   });
 
   factory ArticleDTO.fromJson(Map<String, dynamic> json) {
@@ -42,6 +44,7 @@ class ArticleDTO {
       photo1Id: json['photo1Id'],
       photo2Id: json['photo2Id'],
       photo3Id: json['photo3Id'],
+      tags: json['tags'] != null ? List<String>.from(json['tags']) : null,
     );
   }
 
@@ -58,6 +61,7 @@ class ArticleDTO {
       'photo1Id': photo1Id,
       'photo2Id': photo2Id,
       'photo3Id': photo3Id,
+      'tags': tags,
     };
   }
 }

@@ -2,6 +2,7 @@ package com.bridge.backend.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Articleエンティティ
@@ -41,6 +42,15 @@ public class Article {
 
     @Column(name = "photo3_id")
     private Integer photo3Id; // 写真3ID
+
+    // 多対多の関係：記事とタグ（articles_tag中間テーブル経由）
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "articles_tag",
+        joinColumns = @JoinColumn(name = "article_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private List<Tag> tags;
 
     /**
      * JPAが必要とする引数なしコンストラクタ
@@ -164,5 +174,13 @@ public class Article {
 
     public void setPhoto3Id(Integer photo3Id) {
         this.photo3Id = photo3Id;
+    }
+
+    public List<Tag> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<Tag> tags) {
+        this.tags = tags;
     }
 }
