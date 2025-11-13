@@ -41,13 +41,10 @@ class _ThreadListState extends State<ThreadList> {
   void initState() {
     super.initState();
     _loadDummyThreads();
-
-    // DBからデータを持ってくる際、画面更新時に最新スレッド情報を取得
-    // _fetchThreads();
   }
 
   Future<void> _loadDummyThreads() async {
-    await Future.delayed(Duration(milliseconds: 300)); // 疑似通信待ち
+    await Future.delayed(Duration(milliseconds: 300));
 
     setState(() {
       officialThreads = [
@@ -110,26 +107,53 @@ class _ThreadListState extends State<ThreadList> {
                     );
                   },
                   child: Card(
+                    color: Colors.white, // 背景を白に設定
                     margin: EdgeInsets.symmetric(vertical: 6),
                     elevation: 2,
-                    child: ListTile(
-                      title: Text(
-                        thread.title,
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: thread.lastComment != null
-                          ? Text(
-                              thread.lastComment!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        children: [
+                          // タイトル
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              thread.title,
                               style: TextStyle(
-                                  color: Colors.black87, fontSize: 14),
-                            )
-                          : null,
-                      trailing: Text(
-                        thread.timeAgo,
-                        style: TextStyle(color: Colors.grey),
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+
+                          // 最新コメント
+                          if (thread.lastComment != null)
+                            Expanded(
+                              flex: 5,
+                              child: Text(
+                                thread.lastComment!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black87,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                          SizedBox(width: 8),
+
+                          // 経過時間
+                          Text(
+                            thread.timeAgo,
+                            style: TextStyle(color: Colors.grey, fontSize: 13),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -143,7 +167,7 @@ class _ThreadListState extends State<ThreadList> {
             Row(
               children: [
                 Text(
-                  'HOTスレッド（非公式）',
+                  'HOTスレッド',
                   style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                 ),
                 Spacer(),
@@ -158,7 +182,7 @@ class _ThreadListState extends State<ThreadList> {
                   },
                   child: Text(
                     'もっと見る',
-                    style: TextStyle(fontSize: 16, color: Colors.orange),
+                    style: TextStyle(fontSize: 16, color: Colors.black),
                   ),
                 ),
               ],
@@ -181,8 +205,12 @@ class _ThreadListState extends State<ThreadList> {
                     );
                   },
                   child: Card(
+                    color: Colors.white, // 背景を白に設定
                     margin: EdgeInsets.symmetric(vertical: 6),
                     elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     child: ListTile(
                       title: Text(
                         thread.title,

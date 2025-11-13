@@ -59,8 +59,8 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('削除申請'),
-        content: Text('通報ID ${log['reportId']} の通報ログを削除申請しますか？'),
+        title: const Text('削除確認'),
+        content: Text('通報ID ${log['reportId']} の通報ログを削除しますか？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -76,7 +76,7 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
                 ),
               );
             },
-            child: const Text('申請する'),
+            child: const Text('削除'),
           ),
         ],
       ),

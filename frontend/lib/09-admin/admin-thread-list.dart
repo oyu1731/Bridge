@@ -75,8 +75,8 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('削除申請'),
-        content: Text('${thread.title} の削除を申請しますか？'),
+        title: const Text('削除確認'),
+        content: Text('${thread.title} を削除しますか？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -90,7 +90,7 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
               });
               Navigator.pop(context);
             },
-            child: const Text('削除申請'),
+            child: const Text('削除'),
           ),
         ],
       ),
@@ -115,16 +115,18 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
                 Expanded(
                   child: TextField(
                     controller: _searchController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: '検索',
                       border: OutlineInputBorder(),
+                      isDense: true,
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.search),
+                        onPressed: _searchThreads,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _searchThreads,
-                  child: const Text('検索'),
                 ),
               ],
             ),
@@ -149,6 +151,7 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
                       );
                     },
                     child: Card(
+                      color: Colors.white, // ← 白背景に変更
                       margin: const EdgeInsets.symmetric(vertical: 6),
                       elevation: 2,
                       child: ListTile(
@@ -165,7 +168,7 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
                               onTap: () => _showDeleteDialog(thread),
                               child: const Icon(
                                 Icons.delete_outline,
-                                color: Colors.black,
+                                color: Colors.black, // ← 黒に固定
                               ),
                             ),
                           ],
