@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../11-common/58-header.dart';
 import '18-article-detail.dart';
 import 'article_api_client.dart';
+import 'filter_api_client.dart';
 
 class ArticleListPage extends StatefulWidget {
   final String? companyName;
@@ -25,48 +26,44 @@ class _ArticleListPageState extends State<ArticleListPage> {
   // 実際の記事データ（APIから取得）
   List<ArticleDTO> _allArticles = [];
   List<ArticleDTO> _filteredArticles = [];
+  List<String> _availableTags = []; // 動的タグリスト
+  List<String> _availableIndustries = []; // 動的業界リスト
+  Map<String, int> _industryIdMap = {}; // 業界名かIDのマッピング
   bool _isLoading = true;
   String? _error;
-
-  final List<String> _tags = [
-    '説明会開催中',
-    '会社員の日常',
-    'インターン開催中',
-    '就活イベント情報',
-    '新卒募集中',
-    '全社員のご紹介',
-    'エンジニア採用',
-    '会社紹介',
-    '新卒社員のリアル',
-    '先輩インタビュー',
-    '新人社員インタビュー',
-    '社内イベント',
-    '最新ニュース',
-    'スレッド開設',
-    'キャリアアドバイス',
-    '面接のコツ',
-    '社員の推しポイント',
-  ];
-
-  final List<String> _industries = [
-    'メーカー',
-    '商社',
-    '流通・小売',
-    '金融',
-    'サービス・インフラ',
-    'ソフトウェア・通信',
-    '広告・出版・マスコミ',
-    '官公庁・公社・団体',
-    'IT・ソフトウェア',
-    '製造業',
-    'サービス業',
-    'コンサルティング',
-  ];
 
   @override
   void initState() {
     super.initState();
     _loadArticles();
+    _loadFilterData();
+  }
+
+  Future<void> _loadFilterData() async {
+    try {
+      // タグデータを取得
+      final tags = await FilterApiClient.getAllTags();
+      final industries = await FilterApiClient.getAllIndustries();
+      
+      setState(() {
+        _availableTags = tags.map((tag) => tag.tag).toList();
+        _availableIndustries = industries.map((industry) => industry.industry).toList();
+        
+        // 業界名かIDのマッピングを作成
+        _industryIdMap = {};
+        for (final industry in industries) {
+          _industryIdMap[industry.industry] = industry.id;
+        }
+      });
+    } catch (e) {
+      print('フィルタデータの読み込みエラー: $e');
+      // エラーが発生した場合はデフォルト値を使用
+      setState(() {
+        _availableTags = ['説明会開催中', '会社員の日常', 'インターン開催中'];
+        _availableIndustries = ['IT', '製造業', 'サービス業'];
+        _industryIdMap = {'IT': 1, '製造業': 2, 'サービス業': 3};
+      });
+    }
   }
 
   Future<void> _loadArticles() async {
@@ -91,6 +88,38 @@ class _ArticleListPageState extends State<ArticleListPage> {
     }
   }
 
+  Future<void> _searchArticlesFromAPI() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+      
+      String? keyword = _searchController.text.isEmpty ? null : _searchController.text;
+      int? industryId = _selectedIndustry != null ? _industryIdMap[_selectedIndustry] : null;
+      
+      final articles = await ArticleApiClient.searchArticles(
+        keyword: keyword, 
+        industryId: industryId
+      );
+      
+      setState(() {
+        _allArticles = articles;
+        _filteredArticles = articles;
+        _isLoading = false;
+      });
+      
+      // Apply remaining local filters (tags) after getting API results
+      _applyLocalFilters();
+    } catch (e) {
+      setState(() {
+        _error = '検索エラー: $e';
+        _isLoading = false;
+      });
+      print('検索エラー: $e');
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -98,19 +127,20 @@ class _ArticleListPageState extends State<ArticleListPage> {
   }
 
   void _filterArticles() {
+    // If there's a search keyword or industry filter, use API search
+    if (_searchController.text.isNotEmpty || _selectedIndustry != null) {
+      _searchArticlesFromAPI();
+      return;
+    }
+    
+    // Otherwise, filter locally by tags only
+    _applyLocalFilters();
+  }
+  
+  void _applyLocalFilters() {
     setState(() {
       _filteredArticles = _allArticles.where((article) {
-        bool matchesSearch = true;
         bool matchesTag = true;
-        bool matchesIndustry = true;
-
-        // 検索キーワードでフィルタ
-        if (_searchController.text.isNotEmpty) {
-          final searchText = _searchController.text.toLowerCase();
-          matchesSearch = article.title.toLowerCase().contains(searchText) ||
-              (article.companyName?.toLowerCase().contains(searchText) ?? false) ||
-              article.description.toLowerCase().contains(searchText);
-        }
 
         // タグでフィルタ
         if (_selectedTags.isNotEmpty && article.tags != null) {
@@ -125,12 +155,7 @@ class _ArticleListPageState extends State<ArticleListPage> {
           matchesTag = false;
         }
 
-        // 業界でフィルタ（現在は実装なし、将来的に追加予定）
-        // if (_selectedIndustry != null) {
-        //   matchesIndustry = article.industry == _selectedIndustry;
-        // }
-
-        return matchesSearch && matchesTag && matchesIndustry;
+        return matchesTag;
       }).toList();
     });
   }
@@ -271,7 +296,7 @@ class _ArticleListPageState extends State<ArticleListPage> {
                                     ),
                                     child: SingleChildScrollView(
                                       child: Column(
-                                        children: _industries.map((industry) {
+                                        children: _availableIndustries.map((industry) {
                                           return RadioListTile<String>(
                                             title: Text(
                                               industry,
@@ -321,7 +346,7 @@ class _ArticleListPageState extends State<ArticleListPage> {
                                     ),
                                     child: SingleChildScrollView(
                                       child: Column(
-                                        children: _tags.map((tag) {
+                                        children: _availableTags.map((tag) {
                                           return CheckboxListTile(
                                             title: Text(
                                               tag,
@@ -529,12 +554,20 @@ class _ArticleListPageState extends State<ArticleListPage> {
                           )
                         : LayoutBuilder(
                             builder: (context, constraints) {
-                              // スマートフォンサイズ（幅800px以下）の場合は2列、それ以上は3列
-                              int crossAxisCount = constraints.maxWidth <= 800 ? 2 : 3;
+                              // スマートフォンサイズ（幅600px以下）の場合は1列、タブレット（幅800px以下）は2列、それ以上は3列
+                              int crossAxisCount;
+                              if (constraints.maxWidth <= 600) {
+                                crossAxisCount = 1; // スマートフォン: 1列
+                              } else if (constraints.maxWidth <= 800) {
+                                crossAxisCount = 2; // タブレット: 2列
+                              } else {
+                                crossAxisCount = 3; // デスクトップ: 3列
+                              }
+                              
                               // スマートフォンの場合は横間隔を狭くする
                               double crossAxisSpacing = constraints.maxWidth <= 800 ? 12 : 16;
                               // 記事カードの縦横比を調整（値が大きいほど横長、小さいほど縦長）
-                              double childAspectRatio = constraints.maxWidth <= 800 ? 1.4 : 1.6;
+                              double childAspectRatio = constraints.maxWidth <= 600 ? 2.2 : (constraints.maxWidth <= 800 ? 1.4 : 1.6);
                               
                               return GridView.builder(
                                 padding: EdgeInsets.symmetric(horizontal: 24),
@@ -631,16 +664,31 @@ class _ArticleListPageState extends State<ArticleListPage> {
             if (article.tags != null && article.tags!.isNotEmpty)
               SizedBox(height: 8),
 
-            // 会社名
+            // 会社名と業界名
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                article.companyName ?? '会社名不明',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      article.companyName ?? '会社名不明',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF424242),
+                      ),
+                    ),
+                  ),
+                  if (article.industry != null && article.industry!.isNotEmpty)
+                    Text(
+                      article.industry!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF757575),
+                      ),
+                    ),
+                ],
               ),
             ),
             SizedBox(height: 8),

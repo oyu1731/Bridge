@@ -6,6 +6,7 @@ import com.bridge.backend.entity.Company;
 import com.bridge.backend.entity.Tag;
 import com.bridge.backend.repository.ArticleRepository;
 import com.bridge.backend.repository.CompanyRepository;
+import com.bridge.backend.service.CompanyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,9 @@ public class ArticleService {
     @Autowired
     private CompanyRepository companyRepository;
 
+    @Autowired
+    private CompanyService companyService;
+
     /**
      * 全ての記事を取得（削除されていないもの）
      * 
@@ -41,18 +45,48 @@ public class ArticleService {
     }
 
     /**
-     * キーワードで記事を検索
+     * キーワードや業界IDで記事を検索
      * 
      * @param keyword 検索キーワード
+     * @param industryId 業界ID
      * @return ArticleDTOのリスト
      */
-    public List<ArticleDTO> searchArticles(String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
+    public List<ArticleDTO> searchArticles(String keyword, Integer industryId) {
+        if (keyword == null && industryId == null) {
             return getAllArticles();
         }
-        List<Article> articles = articleRepository.findByKeyword(keyword.trim());
-        return articles.stream()
-                .map(this::convertToDTO)
+        
+        List<ArticleDTO> allArticles = getAllArticles();
+        return allArticles.stream()
+                .filter(article -> {
+                    boolean matchesKeyword = true;
+                    boolean matchesIndustry = true;
+                    
+                    // キーワードフィルタ
+                    if (keyword != null && !keyword.trim().isEmpty()) {
+                        String searchText = keyword.trim().toLowerCase();
+                        matchesKeyword = article.getTitle().toLowerCase().contains(searchText) ||
+                                (article.getCompanyName() != null && article.getCompanyName().toLowerCase().contains(searchText)) ||
+                                article.getDescription().toLowerCase().contains(searchText);
+                    }
+                    
+                    // 業界フィルタ（業界IDを業界名に変換してマッチング）
+                    if (industryId != null) {
+                        // TODO: ここでindustryIdを業界名に変換する処理が必要
+                        // 今は簡易実装として、ID=1は"IT"、ID=2は"製造業"、ID=3は"サービス業"とする
+                        String targetIndustry = null;
+                        switch (industryId) {
+                            case 1: targetIndustry = "IT"; break;
+                            case 2: targetIndustry = "製造業"; break;
+                            case 3: targetIndustry = "サービス業"; break;
+                        }
+                        if (targetIndustry != null) {
+                            matchesIndustry = targetIndustry.equals(article.getIndustry());
+                        }
+                    }
+                    
+                    return matchesKeyword && matchesIndustry;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -170,6 +204,17 @@ public class ArticleService {
             System.out.println("Debug: No tags found for article " + article.getId());
         }
 
+        String industryName = null;
+        if (article.getCompanyId() != null) {
+            try {
+                industryName = companyService.getCompanyById(article.getCompanyId())
+                        .map(dto -> dto.getIndustry())
+                        .orElse(null);
+            } catch (Exception e) {
+                // Ignore and leave industryName as null
+            }
+        }
+
         return new ArticleDTO(
                 article.getId(),
                 article.getCompanyId(),
@@ -182,7 +227,8 @@ public class ArticleService {
                 article.getPhoto1Id(),
                 article.getPhoto2Id(),
                 article.getPhoto3Id(),
-                tagNames
+                tagNames,
+                industryName
         );
     }
 
