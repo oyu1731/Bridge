@@ -187,7 +187,7 @@ public class CompanyService {
             
             if (industryRelation.isPresent()) {
                 Optional<Industry> industry = 
-                    industryRepository.findById(industryRelation.get().getTargetId());
+                    industryRepository.findById(industryRelation.get().getId());
                 
                 if (industry.isPresent()) {
                     dto.setIndustry(industry.get().getIndustry());

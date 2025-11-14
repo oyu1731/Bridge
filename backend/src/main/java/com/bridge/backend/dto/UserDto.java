@@ -11,6 +11,7 @@ public class UserDto {
     private String phoneNumber;
     private int type; // 1 = 学生
     private List<Integer> desiredIndustries; // ← ここをIDリストに変更！
+    private Integer societyHistory;
 
     // 手動でgetterとsetterを追加（Lombokが機能しない場合のため）
     public String getNickname() {
@@ -59,5 +60,13 @@ public class UserDto {
 
     public void setDesiredIndustries(List<Integer> desiredIndustries) {
         this.desiredIndustries = desiredIndustries;
+    }
+
+    public Integer getSocietyHistory() {
+        return societyHistory;
+    }
+
+    public void setSocietyHistory(Integer societyHistory) {
+        this.societyHistory = societyHistory;
     }
 }

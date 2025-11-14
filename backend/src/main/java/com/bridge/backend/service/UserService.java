@@ -5,14 +5,20 @@ import com.bridge.backend.entity.IndustryRelation;
 import com.bridge.backend.entity.User;
 import com.bridge.backend.repository.IndustryRelationRepository;
 import com.bridge.backend.repository.UserRepository;
+import jakarta.persistence.Column;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import com.bridge.backend.entity.Industry;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 
 @Service
 public class UserService {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     @Autowired
     private UserRepository userRepository;
@@ -43,21 +49,32 @@ public class UserService {
 
         user.setPhoneNumber(userDto.getPhoneNumber());
         user.setType(userDto.getType());
+        
+        logger.info("createUser called: email={} societyHistory={}", userDto.getEmail(), userDto.getSocietyHistory());
+        if (userDto.getSocietyHistory() != null) {
+            user.setSocietyHistory(userDto.getSocietyHistory());
+        }
 
-        User savedUser = userRepository.save(user);
+    User savedUser = userRepository.save(user);
+    logger.info("User saved: id={} societyHistory={}", savedUser.getId(), savedUser.getSocietyHistory());
 
         Integer userId = savedUser.getId();
 
-        // ✅ 2. 希望業界（type = 1）を industry_relations に登録
+        // ✅ 2. 業界を industry_relations に登録
         if (userDto.getDesiredIndustries() != null) {
+            int relationType = 1; // デフォルトは希望業界
+            if (userDto.getType() == 2) {
+                relationType = 2; // 社会人の場合、所属業界
+            } else if (userDto.getType() == 3) {
+                relationType = 3; // 企業の場合、企業所属業界
+            }
             for (Integer industryId : userDto.getDesiredIndustries()) {
-
                 IndustryRelation relation = new IndustryRelation();
-                relation.setType(1);              // 希望業界
-                relation.setUserId(userId);       // 登録した user の ID
-                relation.setTargetId(industryId);
-                relation.setCreatedAt(LocalDateTime.now());
-
+                relation.setUser(savedUser);
+                Industry industry = new Industry();
+                industry.setId(industryId);
+                relation.setIndustry(industry);
+                relation.setType(relationType);
                 industryRelationRepository.save(relation);
             }
         }

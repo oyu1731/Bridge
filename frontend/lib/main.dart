@@ -15,22 +15,31 @@ void main() async {
 
   final prefs = await SharedPreferences.getInstance();
   final String? jsonString = prefs.getString('current_user');
+  print('【Debug】セッション確認: jsonString = $jsonString');
 
   Widget initialPage;
 
-  if (jsonString != null) {
-    final Map<String, dynamic> user = jsonDecode(jsonString);
-    final int type = user['type'];
-    if (type == 1 || type == 2) {
-      initialPage = StudentWorkerHome();
-    } else if (type == 3) {
-      initialPage = CompanyHome();
-    // } else if (type == 4) {
-    //   initialPage = AdminHome();
-    } else {
+  if (jsonString != null && jsonString.isNotEmpty) {
+    try {
+      final Map<String, dynamic> user = jsonDecode(jsonString);
+      final int? type = user['type'];
+      print('ユーザータイプ: $type');
+      if (type == 1 || type == 2) {
+        print('学生・社会人ホームへ遷移');
+        initialPage = const StudentWorkerHome();
+      } else if (type == 3) {
+        print('企業ホームへ遷移');
+        initialPage = const CompanyHome();
+      } else {
+        print('ログイン画面へ遷移（タイプ不正）');
+        initialPage = const MyHomePage(title: 'Bridge');
+      }
+    } catch (e) {
+      print('セッション解析エラー: $e');
       initialPage = const MyHomePage(title: 'Bridge');
     }
   } else {
+    print('セッションなし - トップ画面へ遷移');
     initialPage = const MyHomePage(title: 'Bridge');
   }
 

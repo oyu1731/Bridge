@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bridge/main.dart';
-import 'package:bridge/03-home/08-student-worker-home.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bridge/03-home/08-student-worker-home.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
@@ -14,7 +14,7 @@ class StudentInputPage extends StatefulWidget {
 }
 Future<void> saveSession(dynamic userData) async {
   final prefs = await SharedPreferences.getInstance();
-  await prefs.setString('user_data', jsonEncode(userData));
+  await prefs.setString('current_user', jsonEncode(userData));
 }
 
 class _StudentInputPageState extends State<StudentInputPage> {
@@ -130,6 +130,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 labelText: 'パスワード',
+                hintText: '英数字８文字以上で入力してください',
               ),
               obscureText: true,
               validator: (value) {
@@ -149,7 +150,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 labelText: '電話番号',
-                hintText: '例：090-1234-5678 または 072-123-4567',
+                hintText: 'ハイフンまで正しく入力してください',
               ),
               keyboardType: TextInputType.phone,
               inputFormatters: [
@@ -205,9 +206,6 @@ class _StudentInputPageState extends State<StudentInputPage> {
                   final email = _emailController.text;
                   final password = _passwordController.text;
 
-                  // パスワードをハッシュ化
-                  final hashedPassword = sha256.convert(utf8.encode(password)).toString();
-
                   final phoneNumber = _phoneNumberController.text;
 
                   // SharedPreferencesインスタンス
@@ -224,7 +222,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
                   final body = jsonEncode({
                     'nickname': nickname,
                     'email': email,
-                    'password': hashedPassword,
+                    'password': password,
                     'phoneNumber': phoneNumber,
                     'desiredIndustries': desiredIndustries,
                     'type': 1, // 学生
