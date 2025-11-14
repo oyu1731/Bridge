@@ -1,5 +1,7 @@
 package com.bridge.backend.dto;
 
+import java.util.List;
+
 /**
  * ArticleDTO
  * 記事データの転送用オブジェクトです。
@@ -16,6 +18,7 @@ public class ArticleDTO {
     private Integer photo1Id;
     private Integer photo2Id;
     private Integer photo3Id;
+    private List<String> tags; // タグ名のリスト
 
     // デフォルトコンストラクタ
     public ArticleDTO() {
@@ -24,7 +27,8 @@ public class ArticleDTO {
     // 全フィールドのコンストラクタ
     public ArticleDTO(Integer id, Integer companyId, String companyName, String title, 
                      String description, Integer totalLikes, Boolean isDeleted, 
-                     String createdAt, Integer photo1Id, Integer photo2Id, Integer photo3Id) {
+                     String createdAt, Integer photo1Id, Integer photo2Id, Integer photo3Id,
+                     List<String> tags) {
         this.id = id;
         this.companyId = companyId;
         this.companyName = companyName;
@@ -36,6 +40,7 @@ public class ArticleDTO {
         this.photo1Id = photo1Id;
         this.photo2Id = photo2Id;
         this.photo3Id = photo3Id;
+        this.tags = tags;
     }
 
     // Getters and Setters
@@ -127,6 +132,14 @@ public class ArticleDTO {
         this.photo3Id = photo3Id;
     }
 
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
     @Override
     public String toString() {
         return "ArticleDTO{" +
@@ -141,6 +154,7 @@ public class ArticleDTO {
                 ", photo1Id=" + photo1Id +
                 ", photo2Id=" + photo2Id +
                 ", photo3Id=" + photo3Id +
+                ", tags=" + tags +
                 '}';
     }
 }

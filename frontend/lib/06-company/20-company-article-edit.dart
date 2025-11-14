@@ -17,6 +17,7 @@ class ArticleEditPage extends StatefulWidget {
     this.initialContent = '',
   }) : super(key: key);
 
+
   @override
   _ArticleEditPageState createState() => _ArticleEditPageState();
 }

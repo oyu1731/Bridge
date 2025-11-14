@@ -3,6 +3,7 @@ package com.bridge.backend.service;
 import com.bridge.backend.dto.ArticleDTO;
 import com.bridge.backend.entity.Article;
 import com.bridge.backend.entity.Company;
+import com.bridge.backend.entity.Tag;
 import com.bridge.backend.repository.ArticleRepository;
 import com.bridge.backend.repository.CompanyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,9 @@ public class ArticleService {
      * @return ArticleDTOのリスト
      */
     public List<ArticleDTO> getAllArticles() {
-        List<Article> articles = articleRepository.findByIsDeletedFalseOrderByCreatedAtDesc();
+        System.out.println("Debug: Calling findAllWithTags()");
+        List<Article> articles = articleRepository.findAllWithTags();
+        System.out.println("Debug: Found " + articles.size() + " articles");
         return articles.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -60,7 +63,7 @@ public class ArticleService {
      * @return ArticleDTO（存在しない場合はnull）
      */
     public ArticleDTO getArticleById(Integer id) {
-        Article article = articleRepository.findByIdAndIsDeletedFalse(id);
+        Article article = articleRepository.findByIdAndIsDeletedFalseWithTags(id);
         return article != null ? convertToDTO(article) : null;
     }
 
@@ -155,6 +158,18 @@ public class ArticleService {
             }
         }
 
+        // タグ情報を取得
+        List<String> tagNames = null;
+        System.out.println("Debug: Article tags: " + article.getTags());
+        if (article.getTags() != null) {
+            tagNames = article.getTags().stream()
+                    .map(Tag::getTag)
+                    .collect(Collectors.toList());
+            System.out.println("Debug: Tag names: " + tagNames);
+        } else {
+            System.out.println("Debug: No tags found for article " + article.getId());
+        }
+
         return new ArticleDTO(
                 article.getId(),
                 article.getCompanyId(),
@@ -166,7 +181,8 @@ public class ArticleService {
                 article.getCreatedAt() != null ? article.getCreatedAt().toString() : null,
                 article.getPhoto1Id(),
                 article.getPhoto2Id(),
-                article.getPhoto3Id()
+                article.getPhoto3Id(),
+                tagNames
         );
     }
 

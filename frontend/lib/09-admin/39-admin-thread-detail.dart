@@ -19,15 +19,11 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
 
   String searchText = ''; // 検索文字列
 
-  // 擬似メッセージデータ（サーバー代替）
   List<Map<String, dynamic>> _messages = [];
   int _loadedPages = 1;
   final int _pageSize = 20;
 
-  // ソケット風 StreamController（リアルタイム更新用）
   late final StreamController<List<Map<String, dynamic>>> _messageStreamController;
-
-  // 新着バッジ表示フラグ（上を見てるときに新着を示す）
   bool _showNewBadge = false;
 
   @override
@@ -36,7 +32,6 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
     _messageStreamController = StreamController<List<Map<String, dynamic>>>.broadcast();
     _loadInitialMessages();
 
-    // 無限スクロール（上方向）監視
     _scrollController.addListener(() {
       if (_scrollController.position.pixels <= _scrollController.position.minScrollExtent + 10) {
         _loadMoreMessages();
@@ -155,12 +150,19 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'コメント検索',
-                      prefixIcon: const Icon(Icons.search),
+                      hintText: '検索',
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.search),
+                        onPressed: () {
+                          setState(() {
+                            searchText = _searchController.text.trim();
+                          });
+                        },
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                     ),
                     onChanged: (value) {
                       setState(() {
@@ -261,6 +263,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
                                           margin: const EdgeInsets.symmetric(vertical: 4),
                                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                           decoration: BoxDecoration(
+                                            color: Colors.white, // メッセージ背景を白に
                                             border: Border.all(width: 1),
                                             borderRadius: BorderRadius.circular(12),
                                           ),
@@ -269,7 +272,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
                                       ),
                                       IconButton(
                                         icon: const Icon(Icons.delete),
-                                        color: Colors.black, // 黒色
+                                        color: Colors.black,
                                         onPressed: () {
                                           setState(() {
                                             _messages.removeWhere((m) => m['id'] == msg['id']);
