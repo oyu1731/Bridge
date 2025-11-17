@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import '43-admin-account-detail.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AdminAccountList extends StatefulWidget {
   @override
@@ -11,12 +13,100 @@ class _AdminAccountListState extends State<AdminAccountList> {
   final TextEditingController _searchController = TextEditingController();
   String? _selectedType;
 
-  // ダミーデータ（typeを1,2,3に変更）
-  final List<Map<String, dynamic>> _users = [
-    {'id': '001', 'name': '山田太郎', 'type': 1, 'reports': 0, 'icon': 'A'},
-    {'id': '002', 'name': '佐藤花子', 'type': 2, 'reports': 2, 'icon': 'B'},
-    {'id': '003', 'name': '株式会社テック', 'type': 3, 'reports': 1, 'icon': 'C'},
-  ];
+  List<Map<String, dynamic>> _users = [];
+  bool _isLoading = true;
+  String _errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUsers(); // 画面開いた瞬間に初期表示
+  }
+
+  // 初期表示: 上位30件
+  Future<void> _fetchUsers() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+    try {
+      final response = await http.get(Uri.parse('http://localhost:8080/api/users?limit=30'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+        setState(() {
+          _users = data.map((e) => e as Map<String, dynamic>).toList();
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = '取得失敗: ${response.statusCode}';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = '通信エラー: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  // 検索ボタン押下時
+  Future<void> _searchUsers() async {
+    final keyword = _searchController.text;
+    final type = _selectedType ?? '';
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+    try {
+      final url = Uri.parse(
+          'http://localhost:8080/api/users/search?keyword=$keyword&type=$type');
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+        setState(() {
+          _users = data.map((e) => e as Map<String, dynamic>).toList();
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = '検索失敗: ${response.statusCode}';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = '通信エラー: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _deleteUser(int index) async {
+    bool confirm = await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('削除確認'),
+        content: const Text('このアカウントを削除しますか？'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('キャンセル')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('削除')),
+        ],
+      ),
+    );
+
+    if (confirm) {
+      // 削除処理はバックエンド側にAPIを呼び出すこと
+      setState(() {
+        _users.removeAt(index);
+      });
+    }
+  }
 
   String _getTypeLabel(int type) {
     switch (type) {
@@ -31,40 +121,24 @@ class _AdminAccountListState extends State<AdminAccountList> {
     }
   }
 
-  void _deleteUser(int index) async {
-    bool confirm = await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('削除確認'),
-        content: const Text('このアカウントを削除しますか？'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('キャンセル')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('削除')),
-        ],
-      ),
-    );
-
-    if (confirm) {
-      setState(() {
-        _users.removeAt(index);
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: BridgeHeader(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            _buildSearchCard(),
-            const SizedBox(height: 24),
-            _buildUserCards(),
-          ],
-        ),
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage.isNotEmpty
+              ? Center(child: Text(_errorMessage))
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      _buildSearchCard(),
+                      const SizedBox(height: 24),
+                      _buildUserCards(),
+                    ],
+                  ),
+                ),
     );
   }
 
@@ -75,13 +149,16 @@ class _AdminAccountListState extends State<AdminAccountList> {
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade400),
         borderRadius: BorderRadius.circular(8),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 2))],
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 2))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Center(
-            child: Text('アカウント検索', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            child:
+                Text('アカウント検索', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(height: 12),
           Container(
@@ -130,7 +207,7 @@ class _AdminAccountListState extends State<AdminAccountList> {
                 const SizedBox(width: 12),
                 ElevatedButton(
                   onPressed: () {
-                    print('検索: ${_searchController.text}, type=$_selectedType');
+                    _searchUsers();
                   },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -156,11 +233,13 @@ class _AdminAccountListState extends State<AdminAccountList> {
             color: Colors.white,
             border: Border.all(color: Colors.grey.shade300),
             borderRadius: BorderRadius.circular(8),
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))],
+            boxShadow: const [
+              BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))
+            ],
           ),
           child: Row(
             children: [
-              CircleAvatar(radius: 30, child: Text(user['icon'])),
+              CircleAvatar(radius: 30, child: Text(user['icon'] ?? '?')),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -171,12 +250,13 @@ class _AdminAccountListState extends State<AdminAccountList> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => AdminAccountDetail(userId: user['id']),
+                            builder: (context) =>
+                                AdminAccountDetail(userId: user['id']),
                           ),
                         );
                       },
                       child: Text(
-                        user['name'],
+                        user['nickname'] ?? '',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -186,9 +266,9 @@ class _AdminAccountListState extends State<AdminAccountList> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(_getTypeLabel(user['type'])),
+                    Text(_getTypeLabel(user['type'] ?? 0)),
                     const SizedBox(height: 2),
-                    Text('通報回数: ${user['reports']}'),
+                    Text('通報回数: ${user['reportCount'] ?? 0}'),
                   ],
                 ),
               ),

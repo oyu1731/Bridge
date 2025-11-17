@@ -5,6 +5,7 @@ import 'dart:html' as html show window;
 import '../11-common/58-header.dart';
 import 'company_api_client.dart';
 import 'article_api_client.dart';
+import 'filter_api_client.dart';
 import '15-company-info-detail.dart';
 import '16-article-list.dart';
 import '18-article-detail.dart';
@@ -24,6 +25,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
   // API連携のための状態管理
   List<CompanyDTO> _filteredCompanies = [];
   List<ArticleDTO> _articles = [];
+  List<String> _availableIndustries = ['業種']; // 動的業界リスト
   bool _isLoading = false;
   bool _isLoadingArticles = false;
   String? _errorMessage;
@@ -34,6 +36,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     super.initState();
     _loadCompanies();
     _loadArticles();
+    _loadIndustries();
   }
 
   // 企業データを読み込む
@@ -45,6 +48,14 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
 
     try {
       final companies = await CompanyApiClient.getAllCompanies();
+      // 最終更新日時順にソート（注目企業として表示）
+      companies.sort((a, b) {
+        if (a.createdAt == null && b.createdAt == null) return 0;
+        if (a.createdAt == null) return 1;
+        if (b.createdAt == null) return -1;
+        return b.createdAt!.compareTo(a.createdAt!);
+      });
+      
       setState(() {
         _filteredCompanies = companies;
         _isLoading = false;
@@ -58,6 +69,22 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     }
   }
 
+  // 業界データを読み込む
+  Future<void> _loadIndustries() async {
+    try {
+      final industries = await FilterApiClient.getAllIndustries();
+      setState(() {
+        _availableIndustries = ['業種'] + industries.map((industry) => industry.industry).toList();
+      });
+    } catch (e) {
+      print('業界データの読み込みエラー: $e');
+      // エラーが発生した場合はデフォルト値を使用
+      setState(() {
+        _availableIndustries = ['業種', 'IT', '製造業', 'サービス業'];
+      });
+    }
+  }
+
   // 記事データを読み込み
   Future<void> _loadArticles() async {
     setState(() {
@@ -66,6 +93,14 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
 
     try {
       final articles = await ArticleApiClient.getAllArticles();
+      // 最終更新日時順にソート（注目記事として表示）
+      articles.sort((a, b) {
+        if (a.createdAt == null && b.createdAt == null) return 0;
+        if (a.createdAt == null) return 1;
+        if (b.createdAt == null) return -1;
+        return b.createdAt!.compareTo(a.createdAt!);
+      });
+      
       setState(() {
         _articles = articles;
         _isLoadingArticles = false;
@@ -154,22 +189,11 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     // 業種でフィルタリング
     if (_selectedIndustry != '業種' && _selectedIndustry.isNotEmpty) {
       filtered = filtered.where((company) {
-        // 実際の業界情報を使用してフィルタリング
+        // 実際の業界情報を使用してフィルタリング（正確な一致）
         if (company.industry != null) {
-          return company.industry!.contains(_selectedIndustry);
+          return company.industry == _selectedIndustry;
         }
-        // 業界情報がない場合は従来のロジックをフォールバックとして使用
-        String industryKeyword = _selectedIndustry;
-        if (industryKeyword == 'IT') {
-          return company.name.toLowerCase().contains('it') || 
-                 company.name.contains('Bridge') || // Bridge はIT企業として扱う
-                 (company.description != null && 
-                  (company.description!.toLowerCase().contains('it') ||
-                   company.description!.contains('システム') ||
-                   company.description!.contains('ソフトウェア')));
-        }
-        return company.name.contains(industryKeyword) || 
-               (company.description != null && company.description!.contains(industryKeyword));
+        return false; // 業界情報がない場合は除外
       }).toList();
       print('業種フィルタリング後: ${filtered.length}件 (業種: $_selectedIndustry)');
     }
@@ -177,17 +201,24 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     // エリアでフィルタリング
     if (_selectedArea != 'エリア' && _selectedArea.isNotEmpty) {
       filtered = filtered.where((company) {
-        String areaKeyword = _selectedArea;
-        // 東京の場合は東京都も含む
-        if (areaKeyword == '東京') {
-          return company.address.contains('東京') || company.address.contains('渋谷');
-        }
-        return company.address.contains(areaKeyword);
+        // 選択された地方の全都道府県を対象にフィルタリング
+        List<String> prefectures = _regionPrefectureMap[_selectedArea] ?? [];
+        return prefectures.any((prefecture) => company.address.contains(prefecture));
       }).toList();
-      print('エリアフィルタリング後: ${filtered.length}件 (エリア: $_selectedArea)');
+      
+      print('エリアフィルタリング後: ${filtered.length}件 (地方: $_selectedArea)');
     }
     
     return filtered;
+  }
+
+  // エリア選択処理
+  void _handleAreaSelection(String? value) {
+    if (value == null) return;
+    
+    setState(() {
+      _selectedArea = value;
+    });
   }
 
   // プラットフォーム判別ヘルパーメソッド
@@ -205,9 +236,22 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     }
   }
 
-  // ダミーデータ
-  final List<String> _industries = ['業種', 'IT', '製造業', 'サービス業', '金融'];
-  final List<String> _areas = ['エリア', '東京都', '大阪府', '愛知県', '福岡県'];
+  // 地方と都道府県の階層データ
+  final Map<String, List<String>> _regionPrefectureMap = {
+    '関東': ['東京都', '神奈川県', '千葉県', '埼玉県', '茨城県', '栃木県', '群馬県'],
+    '関西': ['大阪府', '京都府', '兵庫県', '奈良県', '和歌山県', '滋賀県'],
+    '中部': ['愛知県', '静岡県', '岐阜県', '三重県', '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県'],
+    '九州': ['福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'],
+    '東北': ['宮城県', '福島県', '岩手県', '青森県', '秋田県', '山形県'],
+    '中国': ['広島県', '岡山県', '山口県', '鳥取県', '島根県'],
+    '四国': ['徳島県', '香川県', '愛媛県', '高知県'],
+    '北海道': ['北海道'],
+  };
+  
+  // 現在表示するエリア選択肢を取得
+  List<String> get _currentAreaOptions {
+    return ['エリア'] + _regionPrefectureMap.keys.toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +334,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
           Row(
             children: [
               Expanded(
-                child: _buildDropdown('業種', _industries, _selectedIndustry, (
+                child: _buildDropdown('業種', _availableIndustries, _selectedIndustry, (
                   value,
                 ) {
                   setState(() => _selectedIndustry = value!);
@@ -299,10 +343,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildDropdown('エリア', _areas, _selectedArea, (value) {
-                  setState(() => _selectedArea = value!);
-                  // 自動検索を削除 - 検索ボタンを押すまで検索しない
-                }),
+                child: _buildDropdown('エリア', _currentAreaOptions, _selectedArea, _handleAreaSelection),
               ),
             ],
           ),

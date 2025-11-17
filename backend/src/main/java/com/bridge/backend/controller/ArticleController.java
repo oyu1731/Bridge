@@ -41,15 +41,18 @@ public class ArticleController {
 
     /**
      * 記事を検索
-     * GET /api/articles/search?keyword=キーワード
+     * GET /api/articles/search?keyword=キーワード&industryId=業界ID
      * 
      * @param keyword 検索キーワード
+     * @param industryId 業界ID（オプション）
      * @return 検索結果の記事一覧
      */
     @GetMapping("/search")
-    public ResponseEntity<List<ArticleDTO>> searchArticles(@RequestParam String keyword) {
+    public ResponseEntity<List<ArticleDTO>> searchArticles(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer industryId) {
         try {
-            List<ArticleDTO> articles = articleService.searchArticles(keyword);
+            List<ArticleDTO> articles = articleService.searchArticles(keyword, industryId);
             return ResponseEntity.ok(articles);
         } catch (Exception e) {
             e.printStackTrace();
