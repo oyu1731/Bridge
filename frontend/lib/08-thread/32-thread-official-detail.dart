@@ -245,6 +245,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: _messageStreamController.stream,
+              initialData: _messages, // ← これを追加！
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
