@@ -2,13 +2,19 @@ package com.bridge.backend.service;
 
 import com.bridge.backend.dto.ArticleDTO;
 import com.bridge.backend.entity.Article;
+import com.bridge.backend.entity.ArticleTag;
 import com.bridge.backend.entity.Company;
 import com.bridge.backend.entity.Tag;
 import com.bridge.backend.repository.ArticleRepository;
+import com.bridge.backend.repository.ArticleTagRepository;
 import com.bridge.backend.repository.CompanyRepository;
+import com.bridge.backend.repository.TagRepository;
 import com.bridge.backend.service.CompanyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,6 +35,15 @@ public class ArticleService {
 
     @Autowired
     private CompanyService companyService;
+
+    @Autowired
+    private TagRepository tagRepository;
+
+    @Autowired
+    private ArticleTagRepository articleTagRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     /**
      * 全ての記事を取得（削除されていないもの）
@@ -120,7 +135,9 @@ public class ArticleService {
      * @param articleDTO 作成する記事のDTO
      * @return 作成された記事のDTO
      */
+    @Transactional
     public ArticleDTO createArticle(ArticleDTO articleDTO) {
+        // 記事を保存
         Article article = new Article();
         article.setTitle(articleDTO.getTitle());
         article.setDescription(articleDTO.getDescription());
@@ -133,7 +150,51 @@ public class ArticleService {
         article.setPhoto3Id(articleDTO.getPhoto3Id());
 
         Article savedArticle = articleRepository.save(article);
-        return convertToDTO(savedArticle);
+
+        // タグを中間テーブルに保存（名称/ID両対応・trim対応）
+        if (articleDTO.getTags() != null && !articleDTO.getTags().isEmpty()) {
+            System.out.println("Debug: createArticle received tags=" + articleDTO.getTags());
+            for (String raw : articleDTO.getTags()) {
+                if (raw == null) continue;
+                String tagInput = raw.trim();
+                if (tagInput.isEmpty()) continue;
+
+                Tag tag = null;
+                // 1) 名称で検索
+                try {
+                    tag = tagRepository.findByTag(tagInput);
+                } catch (Exception ignored) {}
+
+                // 2) 名称で見つからず、数値ならID解釈も試す
+                if (tag == null) {
+                    try {
+                        Integer maybeId = Integer.valueOf(tagInput);
+                        tag = tagRepository.findById(maybeId).orElse(null);
+                    } catch (NumberFormatException ignored) {}
+                }
+
+                if (tag != null) {
+                    ArticleTag articleTag = new ArticleTag();
+                    articleTag.setArticleId(savedArticle.getId());
+                    articleTag.setTagId(tag.getId());
+                    articleTag.setCreationDate(LocalDateTime.now());
+                    articleTagRepository.save(articleTag);
+                    System.out.println("Debug: linked tag id=" + tag.getId() + " to article id=" + savedArticle.getId());
+                } else {
+                    System.out.println("Warn: tag not found for input='" + tagInput + "'");
+                }
+            }
+            // DBへ反映を強制
+            try { articleTagRepository.flush(); } catch (Exception ignored) {}
+        } else {
+            System.out.println("Debug: createArticle received no tags");
+        }
+
+        // 保存直後にタグ付きで再読込して返す
+        // 同一永続化コンテキストのキャッシュをクリアして関連を新鮮に読み込む
+        try { entityManager.flush(); entityManager.clear(); } catch (Exception ignored) {}
+        Article reloaded = articleRepository.findByIdAndIsDeletedFalseWithTags(savedArticle.getId());
+        return convertToDTO(reloaded != null ? reloaded : savedArticle);
     }
 
     /**
@@ -143,6 +204,7 @@ public class ArticleService {
      * @param articleDTO 更新内容
      * @return 更新された記事のDTO（存在しない場合はnull）
      */
+    @Transactional
     public ArticleDTO updateArticle(Integer id, ArticleDTO articleDTO) {
         Article existingArticle = articleRepository.findByIdAndIsDeletedFalse(id);
         if (existingArticle == null) {
@@ -156,7 +218,50 @@ public class ArticleService {
         existingArticle.setPhoto3Id(articleDTO.getPhoto3Id());
 
         Article updatedArticle = articleRepository.save(existingArticle);
-        return convertToDTO(updatedArticle);
+
+        // 既存のタグ関連付けを削除
+        articleTagRepository.deleteByArticleId(id);
+
+        // 新しいタグを中間テーブルに保存（名称/ID両対応・trim対応）
+        if (articleDTO.getTags() != null && !articleDTO.getTags().isEmpty()) {
+            System.out.println("Debug: updateArticle received tags=" + articleDTO.getTags());
+            for (String raw : articleDTO.getTags()) {
+                if (raw == null) continue;
+                String tagInput = raw.trim();
+                if (tagInput.isEmpty()) continue;
+
+                Tag tag = null;
+                try {
+                    tag = tagRepository.findByTag(tagInput);
+                } catch (Exception ignored) {}
+                if (tag == null) {
+                    try {
+                        Integer maybeId = Integer.valueOf(tagInput);
+                        tag = tagRepository.findById(maybeId).orElse(null);
+                    } catch (NumberFormatException ignored) {}
+                }
+
+                if (tag != null) {
+                    ArticleTag articleTag = new ArticleTag();
+                    articleTag.setArticleId(id);
+                    articleTag.setTagId(tag.getId());
+                    articleTag.setCreationDate(LocalDateTime.now());
+                    articleTagRepository.save(articleTag);
+                    System.out.println("Debug: linked tag id=" + tag.getId() + " to article id=" + id);
+                } else {
+                    System.out.println("Warn: tag not found for input='" + tagInput + "'");
+                }
+            }
+            // DBへ反映を強制
+            try { articleTagRepository.flush(); } catch (Exception ignored) {}
+        } else {
+            System.out.println("Debug: updateArticle received no tags");
+        }
+
+        // 更新後にタグ付きで再読込して返す
+        try { entityManager.flush(); entityManager.clear(); } catch (Exception ignored) {}
+        Article reloaded = articleRepository.findByIdAndIsDeletedFalseWithTags(updatedArticle.getId());
+        return convertToDTO(reloaded != null ? reloaded : updatedArticle);
     }
 
     /**
