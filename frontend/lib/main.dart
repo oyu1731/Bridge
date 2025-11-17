@@ -21,8 +21,8 @@ void main() async {
 
   if (jsonString != null && jsonString.isNotEmpty) {
     try {
-      final Map<String, dynamic> user = jsonDecode(jsonString);
-      final int? type = user['type'];
+      final Map<String, dynamic> userData = jsonDecode(jsonString);
+      final int? type = userData['type'];
       print('ユーザータイプ: $type');
       if (type == 1 || type == 2) {
         print('学生・社会人ホームへ遷移');
@@ -82,8 +82,8 @@ class _MyHomePageState extends State<MyHomePage> {
     final String? jsonString = prefs.getString('current_user');
     if (jsonString != null) {
       print('セッションが存在するため、ホーム画面に遷移します');
-      final Map<String, dynamic> user = jsonDecode(jsonString);
-      final int type = user['type'];
+      final Map<String, dynamic> userData = jsonDecode(jsonString);
+      final int type = userData['type'];
       Widget? homePage;
       if (type == 1 || type == 2) {
         homePage = StudentWorkerHome();
@@ -102,7 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
     if (label == '学生') {
       nextPage = const StudentInputPage();
     } else if (label == '社会人') {
-      nextPage = const ProfessionalInputPage();
+      nextPage = const WorkerInputPage();
     } else if (label == '企業') {
       nextPage = const CompanyInputPage();
     } else {

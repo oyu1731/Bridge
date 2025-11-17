@@ -55,8 +55,8 @@ public class UserService {
             user.setSocietyHistory(userDto.getSocietyHistory());
         }
 
-    User savedUser = userRepository.save(user);
-    logger.info("User saved: id={} societyHistory={}", savedUser.getId(), savedUser.getSocietyHistory());
+        User savedUser = userRepository.save(user);
+        logger.info("User saved: id={} societyHistory={}", savedUser.getId(), savedUser.getSocietyHistory());
 
         Integer userId = savedUser.getId();
 

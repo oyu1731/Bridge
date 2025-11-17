@@ -4,7 +4,8 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class UserDto {
+public class UserDto implements java.io.Serializable {
+    private Integer id;
     private String nickname;
     private String email;
     private String password;
@@ -14,6 +15,14 @@ public class UserDto {
     private Integer societyHistory;
 
     // 手動でgetterとsetterを追加（Lombokが機能しない場合のため）
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+    
     public String getNickname() {
         return nickname;
     }

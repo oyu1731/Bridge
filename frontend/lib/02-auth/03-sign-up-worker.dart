@@ -7,17 +7,17 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
-class ProfessionalInputPage extends StatefulWidget {
-  const ProfessionalInputPage({super.key});
+class WorkerInputPage extends StatefulWidget {
+  const WorkerInputPage({super.key});
   @override
-  State<ProfessionalInputPage> createState() => _ProfessionalInputPageState();
+  State<WorkerInputPage> createState() => _WorkerInputPageState();
 }
 Future<void> saveSession(dynamic userData) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('current_user', jsonEncode(userData));
 }
 
-class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
+class _WorkerInputPageState extends State<WorkerInputPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nicknameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
