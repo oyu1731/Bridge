@@ -15,9 +15,17 @@ class PhotoDTO {
   });
 
   factory PhotoDTO.fromJson(Map<String, dynamic> json) {
+    // バックエンドからのパスをフルURLに変換
+    String? photoPath = json['photoPath'];
+    String? fullPath;
+    if (photoPath != null && photoPath.isNotEmpty) {
+      // /uploads/photos/xxx.jpg のようなパスを http://localhost:8080/uploads/photos/xxx.jpg に変換
+      fullPath = '${ApiConfig.baseUrl}$photoPath';
+    }
+    
     return PhotoDTO(
       id: json['id'],
-      photoPath: json['photoPath'],
+      photoPath: fullPath,
       userId: json['userId'],
     );
   }

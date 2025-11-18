@@ -32,6 +32,14 @@ class CompanyDTO {
   });
 
   factory CompanyDTO.fromJson(Map<String, dynamic> json) {
+    // バックエンドからのパスをフルURLに変換
+    String? photoPath = json['photoPath'];
+    String? fullPhotoPath;
+    if (photoPath != null && photoPath.isNotEmpty) {
+      // /uploads/photos/xxx.jpg のようなパスを http://localhost:8080/uploads/photos/xxx.jpg に変換
+      fullPhotoPath = '${ApiConfig.baseUrl}$photoPath';
+    }
+    
     return CompanyDTO(
       id: json['id'],
       name: json['name'] ?? '',
@@ -43,7 +51,7 @@ class CompanyDTO {
       isWithdrawn: json['isWithdrawn'],
       createdAt: json['createdAt'],
       photoId: json['photoId'],
-      photoPath: json['photoPath'], // 写真パスを追加
+      photoPath: fullPhotoPath, // フルURLに変換した写真パス
       industry: json['industry'], // 業界情報を追加
     );
   }

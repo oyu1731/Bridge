@@ -60,10 +60,11 @@ public class PhotoService {
         String fileExtension = getFileExtension(originalFilename);
         String uniqueFilename = UUID.randomUUID().toString() + fileExtension;
 
-        // アップロードディレクトリを作成
+        // アップロードディレクトリを作成（存在しない場合）
         Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
+            System.out.println("Created upload directory: " + uploadPath.toAbsolutePath());
         }
 
         // ファイルを保存

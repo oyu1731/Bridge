@@ -3,6 +3,7 @@ package com.bridge.backend.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.nio.file.Path;
@@ -26,5 +27,15 @@ public class WebMvcConfig implements WebMvcConfigurer {
         
         registry.addResourceHandler("/uploads/photos/**")
                 .addResourceLocations(uploadPathString);
+    }
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        // 開発中は全パスに対して任意のオリジンを許可（Flutter Webのエフェメラルポート対応）
+        registry.addMapping("/**")
+                .allowedOriginPatterns("*")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(false);
     }
 }
