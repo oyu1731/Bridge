@@ -3,7 +3,7 @@ FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
 
 # ===== 日本語・タイムゾーン設定 =====
-RUN apk add --no-cache tzdata
+RUN apk add --no-cache tzdata curl
 ENV TZ=Asia/Tokyo
 ENV LANG=ja_JP.UTF-8
 ENV LC_ALL=ja_JP.UTF-8
