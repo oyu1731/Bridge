@@ -1,374 +1,343 @@
 import 'package:flutter/material.dart';
-/*
-リアルタイムチャットに必要な Firestore パッケージの導入がまだのため、
-Firebase 関連の import やリアルタイムチャット用のコードはコメントアウトしています。
-*/
-// import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:bridge/11-common/58-header.dart';
-import '31-thread-list.dart'; // Thread モデルをインポート
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:bridge/11-common/58-header.dart';
 
 class ThreadOfficialDetail extends StatefulWidget {
-  final Map<String, dynamic> thread;
+final Map<String, dynamic> thread;
+const ThreadOfficialDetail({required this.thread, Key? key}) : super(key: key);
 
-  const ThreadOfficialDetail({required this.thread, Key? key})
-      : super(key: key);
-
-  @override
-  _ThreadOfficialDetailState createState() => _ThreadOfficialDetailState();
+@override
+_ThreadOfficialDetailState createState() => _ThreadOfficialDetailState();
 }
 
 class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
-  final TextEditingController _messageController = TextEditingController();
-  final TextEditingController _searchController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
-  final String currentUserId = 'user_001'; // 仮ユーザー
+final TextEditingController _messageController = TextEditingController();
+final TextEditingController _searchController = TextEditingController();
+final ScrollController _scrollController = ScrollController();
+final String currentUserId = '1';
 
-  String searchText = '';
+List<Map<String, dynamic>> _messages = [];
+String searchText = '';
+bool _isSending = false;
 
-  List<Map<String, dynamic>> _messages = [];
-  int _loadedPages = 1;
-  final int _pageSize = 20;
+late final StreamController<List<Map<String, dynamic>>> _messageStreamController;
+late final WebSocketChannel _channel;
 
-  late final StreamController<List<Map<String, dynamic>>> _messageStreamController;
+final String baseUrl = 'http://localhost:8080/api';
 
-  bool _showNewBadge = false;
+@override
+void initState() {
+super.initState();
+_messageStreamController = StreamController<List<Map<String, dynamic>>>.broadcast();
+_fetchMessages();
 
-  @override
-  void initState() {
-    super.initState();
-    _messageStreamController = StreamController<List<Map<String, dynamic>>>.broadcast();
-    _loadInitialMessages();
 
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels <=
-          _scrollController.position.minScrollExtent + 10) {
-        _loadMoreMessages();
-      }
+_channel = WebSocketChannel.connect(  
+  Uri.parse('ws://localhost:8080/ws/chat/${widget.thread['id']}'),  
+);  
 
-      if (_showNewBadge &&
-          _scrollController.position.pixels >=
-              _scrollController.position.maxScrollExtent - 50) {
-        setState(() {
-          _showNewBadge = false;
-        });
-      }
-    });
-  }
+_channel.stream.listen((data) {  
+  try {  
+    final msg = Map<String, dynamic>.from(jsonDecode(data));  
+    if (!_messages.any((m) => m['id'] == msg['id'])) {  
+      _messages.add({  
+        'id': msg['id'],  
+        'user_id': msg['userId'].toString(),  
+        'text': msg['content'],  
+        'created_at': msg['createdAt'],  
+      });  
 
-  @override
-  void dispose() {
-    _messageStreamController.close();
-    _scrollController.dispose();
-    _messageController.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
+      _messages.sort((a, b) =>  
+          DateTime.parse(a['created_at'])  
+              .compareTo(DateTime.parse(b['created_at'])));  
 
-  void _loadInitialMessages() {
-    final now = DateTime.now();
-    List<Map<String, dynamic>> initialData = List.generate(_pageSize, (index) {
-      return {
-        'id': index,
-        'user_id': index % 2 == 0 ? 'user_001' : 'user_002',
-        'text': 'メッセージ ${index + 1} (最新側)',
-        'created_at': now.subtract(Duration(minutes: _pageSize - index))
-      };
-    });
+      _messageStreamController.add(List.from(_messages));  
+      _scrollToBottom();  
+    }  
+  } catch (e) {  
+    print('WebSocket parse error: $e');  
+  }  
+});  
 
-    _messages = initialData;
-    _messageStreamController.add(_messages);
+}
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-      }
-    });
-  }
+@override
+void dispose() {
+_channel.sink.close();
+_messageStreamController.close();
+_scrollController.dispose();
+_messageController.dispose();
+_searchController.dispose();
+super.dispose();
+}
 
-  Future<void> _loadMoreMessages() async {
-    if (!mounted) return;
-    await Future.delayed(const Duration(milliseconds: 400));
+Future<void> _fetchMessages() async {
+try {
+final response = await http.get(
+Uri.parse('$baseUrl/chat/${widget.thread['id']}'));
 
-    final base = _loadedPages * _pageSize;
-    final now = DateTime.now();
-    List<Map<String, dynamic>> moreData = List.generate(_pageSize, (index) {
-      final id = base + index;
-      return {
-        'id': id,
-        'user_id': id % 2 == 0 ? 'user_001' : 'user_002',
-        'text': '過去メッセージ ${id + 1}',
-        'created_at': now.subtract(Duration(minutes: id + 1 + _pageSize))
-      };
-    });
 
-    double prevScrollHeight =
-        _scrollController.hasClients ? _scrollController.position.maxScrollExtent : 0;
-    setState(() {
-      _messages = [...moreData, ..._messages];
-      _loadedPages++;
-    });
-    _messageStreamController.add(_messages);
+  if (response.statusCode == 200) {  
+    final List<dynamic> data = json.decode(response.body);  
+    final List<Map<String, dynamic>> fetched = data.map((msg) {  
+      return {  
+        'id': msg['id'],  
+        'user_id': msg['userId'].toString(),  
+        'text': msg['content'],  
+        'created_at': msg['createdAt'],  
+      };  
+    }).toList();  
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      final newScrollHeight = _scrollController.position.maxScrollExtent;
-      final delta = newScrollHeight - prevScrollHeight;
-      if (delta > 0) {
-        _scrollController.jumpTo(_scrollController.position.pixels + delta);
-      }
-    });
-  }
+    bool updated = false;  
+    for (var msg in fetched) {  
+      if (!_messages.any((m) => m['id'] == msg['id'])) {  
+        _messages.add(msg);  
+        updated = true;  
+      }  
+    }  
 
-  void _sendMessage() {
-    final text = _messageController.text.trim();
-    if (text.isEmpty) return;
+    if (updated) {  
+      _messages.sort((a, b) =>  
+          DateTime.parse(a['created_at'])  
+              .compareTo(DateTime.parse(b['created_at'])));  
+      _messageStreamController.add(List.from(_messages));  
+      _scrollToBottom();  
+    }  
+  }  
+} catch (e) {  
+  print('Error fetching messages: $e');  
+}  
 
-    final newMessage = {
-      'id': (_messages.isEmpty ? 0 : _messages.last['id'] as int) + 1,
-      'user_id': currentUserId,
-      'text': text,
-      'created_at': DateTime.now(),
-    };
+}
 
-    setState(() {
-      _messages.add(newMessage);
-      _messageController.clear();
-    });
+void _scrollToBottom() {
+WidgetsBinding.instance.addPostFrameCallback((_) {
+if (_scrollController.hasClients) {
+_scrollController.animateTo(
+_scrollController.position.maxScrollExtent,
+duration: const Duration(milliseconds: 300),
+curve: Curves.easeOut,
+);
+}
+});
+}
 
-    _messageStreamController.add(_messages);
+Future<void> _sendMessage() async {
+if (_isSending) return;
+final text = _messageController.text.trim();
+if (text.isEmpty) return;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent - 50) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      } else {
-        setState(() {
-          _showNewBadge = true;
-        });
-      }
-    });
-  }
 
-  void _onExternalNewMessage(Map<String, dynamic> msg) {
-    setState(() {
-      _messages.add(msg);
-    });
-    _messageStreamController.add(_messages);
+setState(() => _isSending = true);  
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent - 50) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      } else {
-        setState(() {
-          _showNewBadge = true;
-        });
-      }
-    });
-  }
+final payload = {  
+  'userId': int.parse(currentUserId),  
+  'content': text,  
+  'threadId': widget.thread['id'],  
+};  
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: BridgeHeader(),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.thread['title'] ?? 'スレッド',
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'コメント検索',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        searchText = value;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
+try {  
+  final response = await http.post(  
+    Uri.parse('$baseUrl/chat/${widget.thread['id']}'),  
+    headers: {'Content-Type': 'application/json'},  
+    body: json.encode(payload),  
+  );  
 
-          const Divider(height: 1),
+  if (response.statusCode == 200 || response.statusCode == 201) {  
+    final msg = json.decode(response.body);  
 
-          if (_showNewBadge)
-            GestureDetector(
-              onTap: () {
-                _scrollController.animateTo(
-                  _scrollController.position.maxScrollExtent,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                );
-                setState(() {
-                  _showNewBadge = false;
-                });
-              },
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.blueAccent,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Text('新しいメッセージがあります', style: TextStyle(color: Colors.white)),
-              ),
-            ),
+    final newMessage = {  
+      'id': msg['id'],  
+      'user_id': msg['userId'].toString(),  
+      'text': msg['content'],  
+      'created_at': msg['createdAt'],  
+    };  
 
-          Expanded(
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _messageStreamController.stream,
-              initialData: _messages, // ← これを追加！
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+    _messages.add(newMessage);  
+    _messages.sort((a, b) =>  
+        DateTime.parse(a['created_at'])  
+            .compareTo(DateTime.parse(b['created_at'])));  
+    _messageStreamController.add(List.from(_messages));  
+    _scrollToBottom();  
 
-                final filteredMessages = snapshot.data!.where((msg) {
-                  final text = (msg['text'] ?? '').toString();
-                  return searchText.isEmpty || text.contains(searchText);
-                }).toList();
+    _channel.sink.add(json.encode(msg));  
 
-                return ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(12),
-                  itemCount: filteredMessages.length,
-                  itemBuilder: (context, index) {
-                    final msg = filteredMessages[index];
-                    final isMe = msg['user_id'] == currentUserId;
+    _messageController.clear();  
+  } else {  
+    print('Failed to send message: ${response.statusCode}');  
+  }  
+} catch (e) {  
+  print('Error sending message: $e');  
+} finally {  
+  setState(() => _isSending = false);  
+}  
 
-                    final createdAt = msg['created_at'] as DateTime;
-                    final timeString =
-                        '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
-                    final dateString =
-                        '${createdAt.year}年${createdAt.month}月${createdAt.day}日';
 
-                    bool showDateLabel = index == 0 ||
-                        dateString !=
-                            '${(filteredMessages[index - 1]['created_at'] as DateTime).year}年'
-                            '${(filteredMessages[index - 1]['created_at'] as DateTime).month}月'
-                            '${(filteredMessages[index - 1]['created_at'] as DateTime).day}日';
+}
 
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (showDateLabel)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Center(
-                              child: Text(dateString, style: const TextStyle(fontSize: 13)),
-                            ),
-                          ),
-                        Align(
-                          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                          child: Row(
-                            mainAxisAlignment:
-                                isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              if (!isMe)
-                                const CircleAvatar(
-                                  backgroundImage: AssetImage('assets/user_icon1.png'),
-                                  radius: 18,
-                                ),
-                              if (!isMe) const SizedBox(width: 8),
-                              Flexible(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                                  children: [
-                                    Text(msg['user_id'], style: const TextStyle(fontSize: 12)),
-                                    Container(
-                                      margin: const EdgeInsets.symmetric(vertical: 4),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(width: 1),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child:
-                                          Text(msg['text'], style: const TextStyle(fontSize: 15)),
-                                    ),
-                                    Text(timeString, style: const TextStyle(fontSize: 11)),
-                                  ],
-                                ),
-                              ),
-                              if (isMe) const SizedBox(width: 8),
-                              if (isMe)
-                                const CircleAvatar(
-                                  backgroundImage: AssetImage('assets/user_icon2.png'),
-                                  radius: 18,
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-            ),
-          ),
+Future<void> _reportMessage(int chatId, String toUserId) async {
+final payload = {
+'fromUserId': int.parse(currentUserId),
+'toUserId': int.parse(toUserId),
+'type': 2, // メッセージ通報
+'chatId': chatId,
+};
 
-          SafeArea(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () {},
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      decoration: InputDecoration(
-                        hintText: 'メッセージを入力',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.send),
-                    onPressed: _sendMessage,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
+try {  
+  final response = await http.post(  
+    Uri.parse('$baseUrl/notice/report'),  
+    headers: {'Content-Type': 'application/json'},  
+    body: json.encode(payload),  
+  );  
+
+  if (response.statusCode == 200 || response.statusCode == 201) {  
+    ScaffoldMessenger.of(context).showSnackBar(  
+      const SnackBar(content: Text('通報しました')),  
+    );  
+  } else {  
+    print('Failed to report: ${response.statusCode}');  
+    ScaffoldMessenger.of(context).showSnackBar(  
+      const SnackBar(content: Text('通報に失敗しました')),  
+    );  
+  }  
+} catch (e) {  
+  print('Error reporting: $e');  
+  ScaffoldMessenger.of(context).showSnackBar(  
+    const SnackBar(content: Text('通報に失敗しました')),  
+  );  
+}  
+
+
+}
+
+@override
+Widget build(BuildContext context) {
+return Scaffold(
+appBar: BridgeHeader(),
+body: Column(
+children: [
+// -----------------------
+// タイトル + 検索バー
+// -----------------------
+Padding(
+padding: const EdgeInsets.all(12),
+child: Row(
+children: [
+Expanded(
+child: Text(
+widget.thread['title'] ?? 'スレッド',
+style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+),
+),
+const SizedBox(width: 10),
+Expanded(
+child: TextField(
+controller: _searchController,
+decoration: const InputDecoration(
+hintText: 'コメント検索',
+prefixIcon: Icon(Icons.search),
+),
+onChanged: (value) => setState(() => searchText = value),
+),
+),
+],
+),
+),
+// -----------------------
+// メッセージリスト
+// -----------------------
+Expanded(
+child: StreamBuilder<List<Map<String, dynamic>>>(
+stream: _messageStreamController.stream,
+initialData: _messages,
+builder: (context, snapshot) {
+final filtered = snapshot.data!
+.where((msg) =>
+searchText.isEmpty || msg['text'].contains(searchText))
+.toList();
+
+
+            return ListView.builder(  
+              controller: _scrollController,  
+              itemCount: filtered.length,  
+              itemBuilder: (context, index) {  
+                final msg = filtered[index];  
+                final isMe = msg['user_id'] == currentUserId;  
+                final createdAt = DateTime.parse(msg['created_at']);  
+                final timeStr =  
+                    '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';  
+
+                return Align(  
+                  alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,  
+                  child: Container(  
+                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),  
+                    padding: const EdgeInsets.all(8),  
+                    decoration: BoxDecoration(  
+                      color: isMe ? Colors.blue[200] : Colors.grey[300],  
+                      borderRadius: BorderRadius.circular(12),  
+                    ),  
+                    child: Column(  
+                      crossAxisAlignment: isMe  
+                          ? CrossAxisAlignment.end  
+                          : CrossAxisAlignment.start,  
+                      children: [  
+                        Row(  
+                          mainAxisSize: MainAxisSize.min,  
+                          children: [  
+                            Flexible(child: Text(msg['text'])),  
+                            const SizedBox(width: 4),  
+                            if (!isMe)  
+                              IconButton(  
+                                icon: const Icon(Icons.report, size: 18, color: Colors.red),  
+                                onPressed: () => _reportMessage(msg['id'], msg['user_id']),  
+                                padding: EdgeInsets.zero,  
+                                constraints: const BoxConstraints(),  
+                                tooltip: 'このメッセージを通報',  
+                              ),  
+                          ],  
+                        ),  
+                        Text(timeStr, style: const TextStyle(fontSize: 10)),  
+                      ],  
+                    ),  
+                  ),  
+                );  
+              },  
+            );  
+          },  
+        ),  
+      ),  
+      // -----------------------  
+      // メッセージ入力  
+      // -----------------------  
+      SafeArea(  
+        child: Row(  
+          children: [  
+            Expanded(  
+              child: TextField(  
+                controller: _messageController,  
+                decoration: const InputDecoration(  
+                  hintText: 'メッセージを入力',  
+                ),  
+                onSubmitted: (_) => _sendMessage(),  
+              ),  
+            ),  
+            IconButton(  
+              icon: _isSending  
+                  ? const CircularProgressIndicator()  
+                  : const Icon(Icons.send),  
+              onPressed: _isSending ? null : _sendMessage,  
+            ),  
+          ],  
+        ),  
+      ),  
+    ],  
+  ),  
+);  
+
+
+}
 }
