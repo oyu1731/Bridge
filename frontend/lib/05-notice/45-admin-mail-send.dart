@@ -9,7 +9,6 @@ class AdminMailSend extends StatefulWidget {
 }
 
 class _AdminMailSendState extends State<AdminMailSend> {
-  // 宛先（複数選択対応）
   final Map<String, bool> _selectedTypes = {
     '学生': false,
     '社会人': false,
@@ -41,7 +40,6 @@ class _AdminMailSendState extends State<AdminMailSend> {
     return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
   }
 
-  /// 安全にタイプ番号を決定
   int? _determineType() {
     final student = _selectedTypes['学生'] ?? false;
     final worker = _selectedTypes['社会人'] ?? false;
@@ -57,10 +55,9 @@ class _AdminMailSendState extends State<AdminMailSend> {
     if (worker && !student && !company && !individual) return 2;
     if (company && !student && !worker && !individual) return 3;
 
-    return null; // 無効な組み合わせ
+    return null;
   }
 
-  /// フォームをすべてクリア
   void _clearForm() {
     setState(() {
       _selectedTypes.updateAll((key, value) => false);
@@ -73,30 +70,70 @@ class _AdminMailSendState extends State<AdminMailSend> {
     });
   }
 
-  /// バック送信
   Future<void> _sendNotification() async {
     final type = _determineType();
     if (type == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('宛先を正しく選択してください')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('宛先を正しく選択してください')),
+      );
       return;
     }
 
-    final userId =
-        (type == 8) ? int.tryParse(_specificUserIdController.text) : null;
+    final userId = (type == 8) ? int.tryParse(_specificUserIdController.text) : null;
 
-    if (type == 8 && userId == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('個人宛の場合はユーザーIDを入力してください')));
-      return;
+    // 個人宛チェック
+    if (type == 8) {
+      if (userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('個人宛の場合はユーザーIDを入力してください')),
+        );
+        return;
+      }
+      if (_selectedTypes['学生']! || _selectedTypes['社会人']! || _selectedTypes['企業']!) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('個人宛の場合は他の宛先を選択できません')),
+        );
+        return;
+      }
     }
 
-    /// 予約時の送信日時を組み立てる
-    String? reservationTime;
-    if (_selectedTimeOption == '予約' && _selectedDate != null && _selectedHour != null) {
+    // 送信時間チェック
+    if (_selectedTimeOption == '予約') {
+      if (_selectedDate == null || _selectedHour == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('予約送信の場合は日付と時間を選択してください')),
+        );
+        return;
+      }
       final hour = int.parse(_selectedHour!.split(":")[0]);
-      final dt = DateTime(_selectedDate!.year, _selectedDate!.month,
-          _selectedDate!.day, hour, 0, 0);
+      final dt = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, hour);
+      if (dt.isBefore(DateTime.now())) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('過去の日時は選択できません')),
+        );
+        return;
+      }
+    }
+
+    // タイトル・内容チェック
+    if (_subjectController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('件名を入力してください')),
+      );
+      return;
+    }
+    if (_contentController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('内容を入力してください')),
+      );
+      return;
+    }
+
+    // 送信日時を組み立て
+    String? reservationTime;
+    if (_selectedTimeOption == '予約') {
+      final hour = int.parse(_selectedHour!.split(":")[0]);
+      final dt = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, hour);
       reservationTime = dt.toIso8601String();
     }
 
@@ -113,20 +150,20 @@ class _AdminMailSendState extends State<AdminMailSend> {
 
     try {
       final response = await http.post(url, headers: headers, body: body);
-
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('送信が完了しました'), backgroundColor: Colors.green));
-
-        _clearForm(); // ← 成功時にフォームをクリア！
-
+          SnackBar(content: Text('送信が完了しました'), backgroundColor: Colors.green),
+        );
+        _clearForm();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('送信失敗: ${response.statusCode}')));
+          SnackBar(content: Text('送信失敗: ${response.statusCode}')),
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('通信エラー: $e')));
+        SnackBar(content: Text('通信エラー: $e')),
+      );
     }
   }
 
@@ -155,8 +192,7 @@ class _AdminMailSendState extends State<AdminMailSend> {
               children: [
                 SizedBox(
                     width: labelWidth,
-                    child: Text('宛先',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
+                    child: Text('宛先', style: TextStyle(fontWeight: FontWeight.bold))),
                 Expanded(
                   child: Wrap(
                     spacing: 12,
@@ -170,8 +206,7 @@ class _AdminMailSendState extends State<AdminMailSend> {
                             onChanged: (value) {
                               setState(() {
                                 _selectedTypes[type] = value!;
-                                if (type == '個人' && !value)
-                                  _specificUserIdController.clear();
+                                if (type == '個人' && !value) _specificUserIdController.clear();
                               });
                             },
                           ),
@@ -191,23 +226,18 @@ class _AdminMailSendState extends State<AdminMailSend> {
                   decoration: InputDecoration(
                     hintText: 'ユーザーIDを入力',
                     border: OutlineInputBorder(),
-                    contentPadding:
-                        EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                   ),
                   keyboardType: TextInputType.number,
                 ),
               ),
             const SizedBox(height: 16),
-
-            // ---（以下レイアウトは一切未変更）---
-
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
                     width: labelWidth,
-                    child: Text('送信時間',
-                        style: TextStyle(fontWeight: FontWeight.bold))),
+                    child: Text('送信時間', style: TextStyle(fontWeight: FontWeight.bold))),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,21 +268,16 @@ class _AdminMailSendState extends State<AdminMailSend> {
                           Text('予約'),
                           const SizedBox(width: 8),
                           GestureDetector(
-                            onTap: _selectedTimeOption == '予約'
-                                ? _pickDate
-                                : null,
+                            onTap: _selectedTimeOption == '予約' ? _pickDate : null,
                             child: Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 10),
+                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               decoration: BoxDecoration(
                                 border: Border.all(color: Colors.grey),
                                 borderRadius: BorderRadius.circular(6),
                                 color: Colors.white,
                               ),
                               child: Text(
-                                  _selectedDate != null
-                                      ? _formatDate(_selectedDate!)
-                                      : '日付選択',
+                                  _selectedDate != null ? _formatDate(_selectedDate!) : '日付選択',
                                   style: TextStyle(color: Colors.black)),
                             ),
                           ),
@@ -261,8 +286,7 @@ class _AdminMailSendState extends State<AdminMailSend> {
                             value: _selectedHour,
                             hint: Text('時間'),
                             items: _hours
-                                .map((h) =>
-                                    DropdownMenuItem(value: h, child: Text(h)))
+                                .map((h) => DropdownMenuItem(value: h, child: Text(h)))
                                 .toList(),
                             onChanged: (v) {
                               setState(() => _selectedHour = v);
@@ -275,9 +299,7 @@ class _AdminMailSendState extends State<AdminMailSend> {
                 ),
               ],
             ),
-
             const SizedBox(height: 16),
-
             TextField(
               controller: _subjectController,
               style: TextStyle(color: Colors.black),
@@ -286,12 +308,10 @@ class _AdminMailSendState extends State<AdminMailSend> {
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(),
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
               ),
             ),
             const SizedBox(height: 16),
-
             TextField(
               controller: _contentController,
               maxLines: 15,
@@ -301,12 +321,10 @@ class _AdminMailSendState extends State<AdminMailSend> {
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(),
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
               ),
             ),
             const SizedBox(height: 16),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -315,8 +333,7 @@ class _AdminMailSendState extends State<AdminMailSend> {
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   ),
                   child: Text('送信'),
                 ),

@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
  */
 public class NotificationDto {
 
-    // お知らせタイプ: 1=学生, 2=社会人, 3=企業, ... 8=特定ユーザー
+    // お知らせタイプ: 1=学生, 2=社会人, 3=企業, 4=学生×社会人, 5=学生×企業, 6=社会人×企業, 7=全員, 8=特定ユーザー
     private Integer type;
 
     // 件名
@@ -35,7 +35,7 @@ public class NotificationDto {
         this.reservationTime = reservationTime;
     }
 
-    // ゲッターとセッター
+    // --- ゲッターとセッター ---
     public Integer getType() {
         return type;
     }
