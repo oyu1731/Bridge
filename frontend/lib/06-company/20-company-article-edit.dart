@@ -93,7 +93,6 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
               
               // タイトル入力
               _buildTitleSection(),
-              
               const SizedBox(height: 16),
               
               // タグ選択
