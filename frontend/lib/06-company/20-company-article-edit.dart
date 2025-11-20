@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../11-common/58-header.dart';
+import '17-company-article-list.dart';
+import 'article_api_client.dart';
+import 'filter_api_client.dart';
+import 'photo_api_client.dart';
 
 class ArticleEditPage extends StatefulWidget {
   final String articleId;
@@ -17,7 +22,6 @@ class ArticleEditPage extends StatefulWidget {
     this.initialContent = '',
   }) : super(key: key);
 
-
   @override
   _ArticleEditPageState createState() => _ArticleEditPageState();
 }
@@ -27,95 +31,118 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
   final TextEditingController _contentController = TextEditingController();
 
   List<String> _selectedTags = [];
-  List<String> _selectedImages = [];
-
-  // 利用可能なタグリスト
-  final List<String> _availableTags = [
-    '説明会開催中', '会社員の日常', '今日のランチ',
-    'インターン開催中', '若手社員のリアル', 'リモートワーク事情',
-    '就活イベント情報', '先輩インタビュー', '社長の推しポイント',
-    '新卒募集中', '新入社員インタビュー', '働く仲間たち',
-    '中途採用あり', '会社紹介', '社会人の本音',
-    'エントリー受付中', 'オフィス紹介', 'スレッド開設',
-    '採用担当のつぶやき', '社内イベント', 'キャリアアドバイス',
-    '選考のウラ話', '最新ニュース', '面接のコツ',
-  ];
+  List<XFile> _selectedImages = [];
+  List<TagDTO> _availableTags = [];
+  bool _isLoading = false;
+  final ImagePicker _picker = ImagePicker();
+  // 既存写真IDと削除フラグ
+  int? _photo1Id;
+  int? _photo2Id;
+  int? _photo3Id;
+  bool _deletePhoto1 = false;
+  bool _deletePhoto2 = false;
+  bool _deletePhoto3 = false;
+  int? _companyId;
 
   @override
   void initState() {
     super.initState();
-    // 初期値を設定
     _titleController.text = widget.initialTitle;
     _contentController.text = widget.initialContent;
     _selectedTags = List.from(widget.initialTags);
-    _selectedImages = List.from(widget.initialImages);
+    
+    _loadAvailableTags();
+    _loadArticleIfNeeded();
+  }
+
+  Future<void> _loadArticleIfNeeded() async {
+    try {
+      final id = int.tryParse(widget.articleId);
+      if (id == null) return;
+      final article = await ArticleApiClient.getArticleById(id);
+      if (article == null) return;
+      setState(() {
+        // 既存写真ID
+        _photo1Id = article.photo1Id;
+        _photo2Id = article.photo2Id;
+        _photo3Id = article.photo3Id;
+        _companyId = article.companyId;
+        // タイトル/本文は初期値が空の場合のみ反映
+        if (_titleController.text.isEmpty) {
+          _titleController.text = article.title;
+        }
+        if (_contentController.text.isEmpty) {
+          _contentController.text = article.description;
+        }
+        if (_selectedTags.isEmpty && (article.tags ?? []).isNotEmpty) {
+          _selectedTags = List.from(article.tags!);
+        }
+      });
+    } catch (e) {
+      // ロード失敗は致命的でないためログのみ
+      print('記事の読み込みに失敗: $e');
+    }
+  }
+
+  Future<void> _loadAvailableTags() async {
+    try {
+      final tags = await FilterApiClient.getAllTags();
+      setState(() {
+        _availableTags = tags;
+      });
+    } catch (e) {
+      print('タグの取得に失敗: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: BridgeHeader(),
-      body: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 記事編集タイトル
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Color(0xFFF5F5F5),
-                  border: Border.all(color: Color(0xFFE0E0E0)),
-                ),
-                child: Row(
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.edit,
-                      color: Color(0xFF424242),
-                      size: 20,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      '記事編集',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF424242),
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Color(0xFFF5F5F5),
+                        border: Border.all(color: Color(0xFFE0E0E0)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, color: Color(0xFF424242), size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            '記事編集',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF424242),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    _buildTitleSection(),
+                    const SizedBox(height: 16),
+                    _buildTagSection(),
+                    const SizedBox(height: 16),
+                    _buildImageSection(),
+                    const SizedBox(height: 16),
+                    _buildContentSection(),
+                    const SizedBox(height: 24),
+                    _buildActionButtonsSection(),
                   ],
                 ),
               ),
-              
-              const SizedBox(height: 16),
-              
-              // タイトル入力
-              _buildTitleSection(),
-              const SizedBox(height: 16),
-              
-              // タグ選択
-              _buildTagSection(),
-              
-              const SizedBox(height: 16),
-              
-              // 画像選択
-              _buildImageSection(),
-              
-              const SizedBox(height: 16),
-              
-              // 本文入力
-              _buildContentSection(),
-              
-              const SizedBox(height: 24),
-              
-              // ボタンセクション
-              _buildActionButtonsSection(),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
@@ -148,11 +175,9 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
             controller: _titleController,
             decoration: InputDecoration(
               hintText: 'タイトルを入力',
+              hintStyle: TextStyle(color: Color(0xFF9E9E9E)),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 12,
-              ),
+              contentPadding: EdgeInsets.all(12),
             ),
             style: TextStyle(fontSize: 14),
           ),
@@ -202,7 +227,7 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
     );
   }
 
-  Widget _buildTagChip(String tag) {
+  Widget _buildTagChip(String tagName) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -213,24 +238,17 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            '#$tag',
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFF1976D2),
-            ),
+            tagName,
+            style: TextStyle(fontSize: 12, color: Color(0xFF1976D2)),
           ),
           const SizedBox(width: 4),
           GestureDetector(
             onTap: () {
               setState(() {
-                _selectedTags.remove(tag);
+                _selectedTags.remove(tagName);
               });
             },
-            child: Icon(
-              Icons.close,
-              size: 16,
-              color: Color(0xFF1976D2),
-            ),
+            child: Icon(Icons.close, size: 16, color: Color(0xFF1976D2)),
           ),
         ],
       ),
@@ -247,11 +265,7 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
           color: Color(0xFF1976D2),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 20,
-        ),
+        child: Icon(Icons.add, color: Colors.white, size: 20),
       ),
     );
   }
@@ -268,7 +282,7 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
             border: Border.all(color: Color(0xFFE0E0E0)),
           ),
           child: Text(
-            '画像',
+            '画像 (最大3枚)',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -288,16 +302,154 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              ..._selectedImages.map((image) => _buildImageChip(image)),
-              _buildAddImageButton(),
+              ..._selectedImages.asMap().entries.map((entry) => _buildImageChip(entry.key)),
+              if (_selectedImages.length < _remainingNewSlots()) _buildAddImageButton(),
             ],
           ),
+        ),
+        SizedBox(height: 4),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            '追加可能枚数: ${_remainingAddableCount()}枚',
+            style: TextStyle(fontSize: 12, color: Color(0xFF424242)),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildExistingPhotosDeleteSection(),
+      ],
+    );
+  }
+
+  int _remainingNewSlots() {
+    int existing = 0;
+    if (_photo1Id != null && !_deletePhoto1) existing++;
+    if (_photo2Id != null && !_deletePhoto2) existing++;
+    if (_photo3Id != null && !_deletePhoto3) existing++;
+    final rem = 3 - existing;
+    return rem < 0 ? 0 : rem;
+  }
+
+  int _remainingAddableCount() {
+    final rem = _remainingNewSlots() - _selectedImages.length;
+    return rem < 0 ? 0 : rem;
+  }
+
+  void _applyCapacityAfterToggle() {
+    final capacity = _remainingNewSlots();
+    int removed = 0;
+    while (_selectedImages.length > capacity) {
+      _selectedImages.removeLast();
+      removed++;
+    }
+    if (removed > 0 && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('上限超過のため最新の画像を${removed}枚削除しました'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
+  Widget _buildExistingPhotosDeleteSection() {
+    // 既存写真が一つも無ければ表示しない
+    final hasAny = _photo1Id != null || _photo2Id != null || _photo3Id != null;
+    if (!hasAny) return SizedBox.shrink();
+
+    Widget row({required String label, required int? id, required bool flag, required ValueChanged<bool?> onChanged}) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
+          color: Colors.white,
+        ),
+        child: Row(
+          children: [
+            Text(label, style: TextStyle(fontSize: 13, color: Color(0xFF424242))),
+            SizedBox(width: 8),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: id != null ? Color(0xFFE8F5E9) : Color(0xFFFFEBEE),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                id != null ? 'あり(ID:$id)' : 'なし',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: id != null ? Color(0xFF2E7D32) : Color(0xFFC62828),
+                ),
+              ),
+            ),
+            Spacer(),
+            if (id != null)
+              Row(
+                children: [
+                  Text('削除', style: TextStyle(fontSize: 13, color: Color(0xFF424242))),
+                  SizedBox(width: 4),
+                  Checkbox(value: flag, onChanged: onChanged),
+                ],
+              ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          decoration: BoxDecoration(
+            color: Color(0xFFF5F5F5),
+            border: Border.all(color: Color(0xFFE0E0E0)),
+          ),
+          child: Text(
+            '既存画像の削除',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF424242)),
+          ),
+        ),
+        row(
+          label: '写真1',
+          id: _photo1Id,
+          flag: _deletePhoto1,
+          onChanged: (v) {
+            setState(() {
+              _deletePhoto1 = v ?? false;
+              _applyCapacityAfterToggle();
+            });
+          },
+        ),
+        row(
+          label: '写真2',
+          id: _photo2Id,
+          flag: _deletePhoto2,
+          onChanged: (v) {
+            setState(() {
+              _deletePhoto2 = v ?? false;
+              _applyCapacityAfterToggle();
+            });
+          },
+        ),
+        row(
+          label: '写真3',
+          id: _photo3Id,
+          flag: _deletePhoto3,
+          onChanged: (v) {
+            setState(() {
+              _deletePhoto3 = v ?? false;
+              _applyCapacityAfterToggle();
+            });
+          },
         ),
       ],
     );
   }
 
-  Widget _buildImageChip(String imageName) {
+  Widget _buildImageChip(int index) {
+    final image = _selectedImages[index];
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -308,24 +460,19 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            imageName,
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFF2E7D32),
-            ),
+            image.name,
+            style: TextStyle(fontSize: 12, color: Color(0xFF2E7D32)),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
           const SizedBox(width: 4),
           GestureDetector(
             onTap: () {
               setState(() {
-                _selectedImages.remove(imageName);
+                _selectedImages.removeAt(index);
               });
             },
-            child: Icon(
-              Icons.close,
-              size: 16,
-              color: Color(0xFF2E7D32),
-            ),
+            child: Icon(Icons.close, size: 16, color: Color(0xFF2E7D32)),
           ),
         ],
       ),
@@ -342,11 +489,7 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
           color: Color(0xFF1976D2),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 20,
-        ),
+        child: Icon(Icons.add, color: Colors.white, size: 20),
       ),
     );
   }
@@ -396,7 +539,6 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // 削除ボタン
         Container(
           width: 120,
           height: 48,
@@ -411,15 +553,11 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
             ),
             child: Text(
               '削除',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
         ),
         SizedBox(width: 16),
-        // 完了ボタン
         Container(
           width: 120,
           height: 48,
@@ -434,10 +572,7 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
             ),
             child: Text(
               '完了',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -446,16 +581,13 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
   }
 
   void _showTagSelectionModal() {
-    // モーダル内で一時的に選択されたタグを管理
     Set<String> tempSelectedTags = Set.from(_selectedTags);
     
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           child: Container(
             width: MediaQuery.of(context).size.width * 0.8,
             height: MediaQuery.of(context).size.height * 0.7,
@@ -464,7 +596,6 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
               builder: (context, setModalState) {
                 return Column(
                   children: [
-                    // モーダルヘッダー
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -482,7 +613,6 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // タグリスト
                     Expanded(
                       child: GridView.builder(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -493,7 +623,7 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
                         ),
                         itemCount: _availableTags.length,
                         itemBuilder: (context, index) {
-                          final tag = _availableTags[index];
+                          final tag = _availableTags[index].tag;
                           final isSelected = tempSelectedTags.contains(tag);
                           
                           return InkWell(
@@ -541,13 +671,11 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // タグを追加ボタン
                     Container(
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton(
                         onPressed: () {
-                          // 実際にタグを追加
                           setState(() {
                             _selectedTags = tempSelectedTags.toList();
                           });
@@ -580,31 +708,37 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
   }
 
   Future<void> _pickImage() async {
-    // 画像選択のシミュレーション
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('画像選択'),
-          content: Text('画像選択機能のデモです。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('キャンセル'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                setState(() {
-                  _selectedImages.add('image${_selectedImages.length + 1}.png');
-                });
-              },
-              child: Text('画像を追加'),
-            ),
-          ],
-        );
-      },
-    );
+    // 事前制限: 残りスロットがない場合拒否
+    if (_selectedImages.length >= _remainingNewSlots()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('これ以上追加できません (最大3枚、既存含む)'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+      
+      if (image != null) {
+        setState(() {
+          _selectedImages.add(image);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('画像の選択に失敗しました: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _showDeleteConfirmationDialog() {
@@ -612,41 +746,30 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           title: Text(
             '確認',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           content: Text(
-            '本当にこの記事を削除しますか？',
+            '本当にこの記事を削除しますか?',
             style: TextStyle(fontSize: 16),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(
-                '戻る',
-                style: TextStyle(color: Color(0xFF757575)),
-              ),
+              child: Text('戻る', style: TextStyle(color: Color(0xFF757575))),
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.pop(context); // ダイアログを閉じる
+                Navigator.pop(context);
                 _deleteArticle();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFFD32F2F),
                 foregroundColor: Colors.white,
               ),
-              child: Text(
-                '削除',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              child: Text('削除', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -654,58 +777,81 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
     );
   }
 
-  void _deleteArticle() {
-    // 削除処理のシミュレーション
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(height: 20),
-              Text(
-                '記事を削除しました',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+  Future<void> _deleteArticle() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final articleId = int.tryParse(widget.articleId);
+      if (articleId == null) {
+        throw Exception('無効な記事IDです');
+      }
+
+      await ArticleApiClient.deleteArticle(articleId);
+      
+      if (!mounted) return;
+      
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(height: 20),
+                Icon(Icons.check_circle, color: Color(0xFF4CAF50), size: 48),
+                SizedBox(height: 16),
+                Text(
+                  '記事を削除しました',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 30),
-              Container(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context); // ダイアログを閉じる
-                    Navigator.pop(context); // 編集画面を閉じて記事一覧に戻る
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFFF9800),
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: Text(
-                    'トップページへ',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                SizedBox(height: 30),
+                Container(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // ダイアログを閉じる
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CompanyArticleListPage(),
+                        ),
+                        (route) => route.isFirst, // ホーム画面まで戻る
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFFFF9800),
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      '記事一覧へ',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      setState(() => _isLoading = false);
+      
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('記事の削除に失敗しました: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
-  void _updateArticle() {
-    // バリデーション
+  Future<void> _updateArticle() async {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -726,18 +872,100 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
       return;
     }
 
-    // 更新処理のシミュレーション
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('記事を更新しました'),
-        backgroundColor: Color(0xFF4CAF50),
-      ),
-    );
+    setState(() => _isLoading = true);
 
-    // 記事一覧に戻る
-    Future.delayed(Duration(seconds: 1), () {
-      Navigator.pop(context);
-    });
+    try {
+      final articleId = int.tryParse(widget.articleId);
+      if (articleId == null) {
+        throw Exception('無効な記事IDです');
+      }
+
+      // 1) 既存写真の削除フラグに応じて削除
+      final deleteOps = <Future<void>>[];
+      if (_deletePhoto1 && _photo1Id != null) {
+        deleteOps.add(PhotoApiClient.deletePhoto(_photo1Id!));
+      }
+      if (_deletePhoto2 && _photo2Id != null) {
+        deleteOps.add(PhotoApiClient.deletePhoto(_photo2Id!));
+      }
+      if (_deletePhoto3 && _photo3Id != null) {
+        deleteOps.add(PhotoApiClient.deletePhoto(_photo3Id!));
+      }
+      if (deleteOps.isNotEmpty) {
+        try {
+          await Future.wait(deleteOps);
+        } catch (e) {
+          // 個別削除失敗しても続行（後続の更新でnullにする）
+          print('写真削除に失敗: $e');
+        }
+      }
+      if (_deletePhoto1) _photo1Id = null;
+      if (_deletePhoto2) _photo2Id = null;
+      if (_deletePhoto3) _photo3Id = null;
+
+      // 2) 新規アップロードして空スロットに割当
+      final currentIds = <int?>[_photo1Id, _photo2Id, _photo3Id];
+      for (int i = 0; i < _selectedImages.length && i < 3; i++) {
+        try {
+          final photoDTO = await PhotoApiClient.uploadPhoto(_selectedImages[i]);
+          final newId = photoDTO.id;
+          if (newId == null) continue;
+          final idx = currentIds.indexWhere((e) => e == null);
+          if (idx != -1) {
+            currentIds[idx] = newId;
+          }
+        } catch (e) {
+          print('画像${i + 1}のアップロードに失敗: $e');
+        }
+      }
+
+      // 3) 記事更新
+      final articleDTO = ArticleDTO(
+        id: articleId,
+        companyId: _companyId ?? 0,
+        title: _titleController.text.trim(),
+        description: _contentController.text.trim(),
+        photo1Id: currentIds[0],
+        photo2Id: currentIds[1],
+        photo3Id: currentIds[2],
+        tags: _selectedTags,
+      );
+
+      await ArticleApiClient.updateArticle(articleId, articleDTO);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('記事を更新しました'),
+          backgroundColor: Color(0xFF4CAF50),
+        ),
+      );
+
+      // 記事一覧画面に遷移
+      Future.delayed(Duration(seconds: 1), () {
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CompanyArticleListPage(),
+            ),
+            (route) => route.isFirst,
+          );
+        }
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('記事の更新に失敗しました: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
