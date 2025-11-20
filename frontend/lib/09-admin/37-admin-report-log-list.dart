@@ -8,15 +8,16 @@ class AdminReportLogList extends StatefulWidget {
   _AdminReportLogListState createState() => _AdminReportLogListState();
 }
 
-/*
-id -id-
-通報者 -from_user_id-
-非通報者 -to_user_id-
-通報タイプ -type-
-対象スレッド -thread_id-
-対象レス -chat_id-
-通報日 -created_at-
-*/
+// /*
+// id -id-
+// 通報者 -from_user_id-
+// 非通報者 -to_user_id-
+// 通報タイプ -type-
+// 対象スレッド -thread_id-
+// 対象レス -chat_id-
+// 通報日 -created_at-
+// */
+
 
 class _AdminReportLogListState extends State<AdminReportLogList> {
   // ダミーデータ
@@ -113,6 +114,7 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
                 ],
               ),
             ),
+
 
             const Divider(height: 1),
 
