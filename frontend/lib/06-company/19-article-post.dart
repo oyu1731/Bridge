@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
 import '../11-common/58-header.dart';
+import 'article_api_client.dart';
+import 'filter_api_client.dart';
+import 'photo_api_client.dart';
 
 class ArticlePostPage extends StatefulWidget {
   const ArticlePostPage({Key? key}) : super(key: key);
@@ -13,30 +18,110 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
   final TextEditingController _contentController = TextEditingController();
   
   List<String> _selectedTags = [];
-  List<String> _selectedImages = [];
+  List<XFile> _selectedImages = []; // XFileとして保持（Web対応）
+  List<TagDTO> _availableTags = []; // 動的タグリスト
+  bool _isLoading = false;
+  bool _isLoadingTags = true;
+  int? _currentCompanyId; // 企業ID
+  String? _errorMessage;
+  final ImagePicker _picker = ImagePicker();
 
-  // 利用可能なタグリスト
-  final List<String> _availableTags = [
-    '説明会開催中', '会社員の日常', '今日のランチ',
-    'インターン開催中', '若手社員のリアル', 'リモートワーク事情',
-    '就活イベント情報', '先輩インタビュー', '社長の推しポイント',
-    '新卒募集中', '新入社員インタビュー', '働く仲間たち',
-    '中途採用あり', '会社紹介', '社会人の本音',
-    'エントリー受付中', 'オフィス紹介', 'スレッド開設',
-    '採用担当のつぶやき', '社内イベント', 'キャリアアドバイス',
-    '選考のウラ話', '最新ニュース', '面接のコツ',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    await Future.wait([
+      _loadCompanyId(),
+      _loadAvailableTags(),
+    ]);
+  }
+
+  Future<void> _loadCompanyId() async {
+    try {
+      // デモ用: 固定のユーザー情報を使用
+      // email: company@example.com, password: hashed_password_company
+      // このユーザーのcompanyIdを取得
+      
+      final prefs = await SharedPreferences.getInstance();
+      
+      // まずSharedPreferencesから取得を試みる
+      int? companyId = prefs.getInt('companyId');
+      
+      // SharedPreferencesに保存されていない場合は、デモユーザーのcompanyIdを設定
+      if (companyId == null) {
+        // TODO: 実際のログイン機能実装時は、APIからユーザー情報を取得
+        // デモ用に固定値を設定（company@example.comのcompanyId）
+        companyId = 1; // デモ企業ID
+        await prefs.setInt('companyId', companyId);
+        await prefs.setString('userEmail', 'company@example.com');
+      }
+      
+      setState(() {
+        _currentCompanyId = companyId;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = '企業情報の取得に失敗しました: ${e.toString()}';
+      });
+    }
+  }
+
+  Future<void> _loadAvailableTags() async {
+    try {
+      final tags = await FilterApiClient.getAllTags();
+      setState(() {
+        _availableTags = tags;
+        _isLoadingTags = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'タグの取得に失敗しました: ${e.toString()}';
+        _isLoadingTags = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // エラーメッセージがある場合は表示
+    if (_errorMessage != null && _currentCompanyId == null) {
+      return Scaffold(
+        appBar: BridgeHeader(),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                _errorMessage!,
+                style: TextStyle(fontSize: 16, color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('戻る'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: BridgeHeader(),
-      body: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      body: _isLoadingTags
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
               // 記事投稿タイトル
               Container(
                 width: double.infinity,
@@ -77,12 +162,12 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
               
               const SizedBox(height: 24),
               
-              // 投稿ボタン
-              _buildSubmitButton(),
-            ],
-          ),
-        ),
-      ),
+                    // 投稿ボタン
+                    _buildSubmitButton(),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 
@@ -125,6 +210,7 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
           ),
         ),
       ],
+      
     );
   }
 
@@ -264,7 +350,8 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
     );
   }
 
-  Widget _buildImageChip(String imageName) {
+  Widget _buildImageChip(XFile imageFile) {
+    final fileName = imageFile.name;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -274,8 +361,14 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Icon(
+            Icons.image,
+            size: 16,
+            color: Color(0xFF2E7D32),
+          ),
+          const SizedBox(width: 4),
           Text(
-            imageName,
+            fileName.length > 15 ? '${fileName.substring(0, 12)}...' : fileName,
             style: TextStyle(
               fontSize: 12,
               color: Color(0xFF2E7D32),
@@ -285,7 +378,7 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
           GestureDetector(
             onTap: () {
               setState(() {
-                _selectedImages.remove(imageName);
+                _selectedImages.remove(imageFile);
               });
             },
             child: Icon(
@@ -365,27 +458,47 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
         width: 120,
         height: 48,
         child: ElevatedButton(
-          onPressed: _submitArticle,
+          onPressed: _isLoading ? null : _submitArticle,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFFFF9800),
+            backgroundColor: _isLoading ? Colors.grey : Color(0xFFFF9800),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(4),
             ),
           ),
-          child: Text(
-            '投稿',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          child: _isLoading
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(
+                  '投稿',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
         ),
       ),
     );
   }
 
   void _showTagSelectionModal() {
+    // タグがまだ読み込まれていない場合
+    if (_availableTags.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('タグを読み込んでいます...'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     // モーダル内で一時的に選択されたタグを管理
     Set<String> tempSelectedTags = Set.from(_selectedTags);
     
@@ -433,7 +546,8 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
                         ),
                         itemCount: _availableTags.length,
                         itemBuilder: (context, index) {
-                          final tag = _availableTags[index];
+                          final tagDto = _availableTags[index];
+                          final tag = tagDto.tag;
                           final isSelected = tempSelectedTags.contains(tag);
                           
                           return InkWell(
@@ -520,34 +634,81 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
   }
 
   Future<void> _pickImage() async {
-    // 画像選択のシミュレーション
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('画像選択'),
-          content: Text('画像選択機能のデモです。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('キャンセル'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                setState(() {
-                  _selectedImages.add('image${_selectedImages.length + 1}.png');
-                });
-              },
-              child: Text('画像を追加'),
-            ),
-          ],
+    try {
+      // 画像選択ダイアログを表示
+      final ImageSource? source = await showDialog<ImageSource>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('画像を選択'),
+            content: Text('画像の選択方法を選んでください'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('キャンセル'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(ImageSource.camera),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.camera_alt),
+                    SizedBox(width: 8),
+                    Text('カメラ'),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(ImageSource.gallery),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.photo_library),
+                    SizedBox(width: 8),
+                    Text('ギャラリー'),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (source == null) return;
+
+      // 画像を選択
+      final XFile? pickedFile = await _picker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImages.add(pickedFile);
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('画像を追加しました'),
+            backgroundColor: Color(0xFF4CAF50),
+            duration: Duration(seconds: 1),
+          ),
         );
-      },
-    );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('画像の選択に失敗しました: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
-  void _submitArticle() {
+  void _submitArticle() async {
+    // バリデーション
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -568,16 +729,103 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
       return;
     }
 
-    // 投稿処理（実際のアプリでは API 呼び出し等を行う）
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('記事を投稿しました'),
-        backgroundColor: Color(0xFF4CAF50),
-      ),
-    );
+    if (_currentCompanyId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('企業情報を取得できません'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
-    // 投稿後は前の画面に戻る
-    Navigator.pop(context);
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 画像アップロード処理
+      int? photo1Id;
+      int? photo2Id;
+      int? photo3Id;
+      
+      if (_selectedImages.isNotEmpty) {
+        // 最大3枚まで画像をアップロード
+        for (int i = 0; i < _selectedImages.length && i < 3; i++) {
+          try {
+            final photoDTO = await PhotoApiClient.uploadPhoto(
+              _selectedImages[i],
+              userId: _currentCompanyId,
+            );
+            
+            if (i == 0) {
+              photo1Id = photoDTO.id;
+            } else if (i == 1) {
+              photo2Id = photoDTO.id;
+            } else if (i == 2) {
+              photo3Id = photoDTO.id;
+            }
+          } catch (e) {
+            // 画像アップロードに失敗した場合もエラーとして扱う
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('画像${i + 1}のアップロードに失敗しました: ${e.toString()}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            setState(() {
+              _isLoading = false;
+            });
+            return;
+          }
+        }
+      }
+      
+      // タグを正規化（trim/重複排除）
+      final normalizedTags = _selectedTags
+          .map((t) => t.trim())
+          .where((t) => t.isNotEmpty)
+          .toSet()
+          .toList();
+
+      // 記事データを作成
+      final articleDTO = ArticleDTO(
+        companyId: _currentCompanyId!,
+        title: _titleController.text,
+        description: _contentController.text,
+        tags: normalizedTags.isNotEmpty ? normalizedTags : null,
+        totalLikes: 0,
+        isDeleted: false,
+        photo1Id: photo1Id,
+        photo2Id: photo2Id,
+        photo3Id: photo3Id,
+      );
+
+      // API呼び出しで記事を作成
+      final createdArticle = await ArticleApiClient.createArticle(articleDTO);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('記事「${createdArticle.title}」を投稿しました'),
+          backgroundColor: Color(0xFF4CAF50),
+        ),
+      );
+
+      // 投稿後は前の画面に戻る
+      Navigator.pop(context);
+      
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('投稿に失敗しました: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override

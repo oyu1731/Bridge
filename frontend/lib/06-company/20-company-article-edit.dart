@@ -17,6 +17,7 @@ class ArticleEditPage extends StatefulWidget {
     this.initialContent = '',
   }) : super(key: key);
 
+
   @override
   _ArticleEditPageState createState() => _ArticleEditPageState();
 }
@@ -92,7 +93,6 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
               
               // タイトル入力
               _buildTitleSection(),
-              
               const SizedBox(height: 16),
               
               // タグ選択

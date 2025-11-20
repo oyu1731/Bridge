@@ -10,7 +10,7 @@ class _ThreadCreateState extends State<ThreadCreate> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
-  String _selectedCondition = '全員'; // デフォルト値
+  String _selectedCondition = '全員';
   Map<String, bool> _industry = {
     'メーカー': false,
     '商社': false,
@@ -28,16 +28,13 @@ class _ThreadCreateState extends State<ThreadCreate> {
     return Scaffold(
       appBar: BridgeHeader(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // --- スレッド名 ---
-            Text(
-              'スレッド名',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
+            Text('スレッド名', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
             TextField(
               controller: _titleController,
               maxLength: 40,
@@ -49,15 +46,12 @@ class _ThreadCreateState extends State<ThreadCreate> {
             const SizedBox(height: 20),
 
             // --- 説明 ---
-            Text(
-              '説明',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
+            Text('説明', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
             TextField(
               controller: _descriptionController,
               maxLength: 255,
-              maxLines: 3,
+              maxLines: 7,
               decoration: InputDecoration(
                 hintText: '説明を記入してください（任意）',
                 border: OutlineInputBorder(),
@@ -66,40 +60,50 @@ class _ThreadCreateState extends State<ThreadCreate> {
             const SizedBox(height: 20),
 
             // --- 参加条件 ---
-            Text(
-              '参加条件',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            Column(
-              children: [
-                _buildRadioOption('全員'),
-                _buildRadioOption('学生'),
-                _buildRadioOption('社会人'),
-              ],
+            Text('参加条件', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: ['全員', '学生', '社会人'].map((label) {
+                return Expanded(
+                  child: RadioListTile<String>(
+                    title: Text(label),
+                    value: label,
+                    groupValue: _selectedCondition,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedCondition = value!;
+                      });
+                    },
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                );
+              }).toList(),
             ),
             const SizedBox(height: 20),
 
             // --- 業界 ---
-            Text(
-              '業界',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
+            Text('業界', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
             Wrap(
               spacing: 12,
-              runSpacing: 4,
-              children:
-                  _industry.keys.map((key) {
-                    return FilterChip(
-                      label: Text(key),
-                      selected: _industry[key]!,
-                      onSelected: (val) {
-                        setState(() {
-                          _industry[key] = val;
-                        });
-                      },
-                    );
-                  }).toList(),
+              runSpacing: 0, // 改行時の縦余白なし
+              children: _industry.keys.map((key) {
+                return SizedBox(
+                  width: (MediaQuery.of(context).size.width - 20 * 2 - 24) / 3,
+                  child: CheckboxListTile(
+                    title: Text(key, style: TextStyle(fontSize: 14)),
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    value: _industry[key],
+                    onChanged: (val) {
+                      setState(() {
+                        _industry[key] = val!;
+                      });
+                    },
+                  ),
+                );
+              }).toList(),
             ),
             const SizedBox(height: 30),
 
@@ -108,37 +112,18 @@ class _ThreadCreateState extends State<ThreadCreate> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 14,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 onPressed: _handleCreate,
-                child: Text(
-                  '作成',
-                  style: TextStyle(fontSize: 20, color: Colors.white),
-                ),
+                child: Text('作成', style: TextStyle(fontSize: 20, color: Colors.white)),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildRadioOption(String label) {
-    return RadioListTile<String>(
-      title: Text(label),
-      value: label,
-      groupValue: _selectedCondition,
-      onChanged: (value) {
-        setState(() {
-          _selectedCondition = value!;
-        });
-      },
     );
   }
 
@@ -149,31 +134,25 @@ class _ThreadCreateState extends State<ThreadCreate> {
     final selectedIndustries =
         _industry.entries.where((e) => e.value).map((e) => e.key).toList();
 
-    // タイトルが空ならエラー
     if (title.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('スレッド名を記入してください')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('スレッド名を記入してください')),
+      );
       return;
     }
 
-    // バック側で全業界を扱うため、未選択時はそのまま送る
     final threadData = {
       'title': title,
-      'description': description.isNotEmpty ? description : null, // 空ならnull
+      'description': description.isNotEmpty ? description : null,
       'condition': condition,
-      'industries':
-          selectedIndustries.isNotEmpty ? selectedIndustries : [], // 空配列で送信
-      'type': 'unofficial', // フロントでは常に非公式
+      'industries': selectedIndustries.isNotEmpty ? selectedIndustries : [],
+      'type': 'unofficial',
     };
 
-    print(threadData); // デバッグ確認用
+    print(threadData);
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('スレッドを作成しました')));
-
-    // 必要なら一覧ページへ戻るなども可
-    // Navigator.pop(context, true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('スレッドの作成が完了しました\nスレッドへの書き込みが可能になります。')),
+    );
   }
 }

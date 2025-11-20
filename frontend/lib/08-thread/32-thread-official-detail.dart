@@ -9,6 +9,7 @@ class ThreadOfficialDetail extends StatefulWidget {
 final Map<String, dynamic> thread;
 const ThreadOfficialDetail({required this.thread, Key? key}) : super(key: key);
 
+
 @override
 _ThreadOfficialDetailState createState() => _ThreadOfficialDetailState();
 }
@@ -61,6 +62,7 @@ _channel.stream.listen((data) {
     print('WebSocket parse error: $e');  
   }  
 });  
+
 
 }
 

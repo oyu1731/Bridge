@@ -6,11 +6,11 @@ import 'package:bridge/02-auth/02-sign-up-student.dart';
 import 'package:bridge/02-auth/03-sign-up-worker.dart';
 import 'package:bridge/02-auth/04-sign-up-company.dart';
 import 'package:bridge/07-ai-training/21-ai-training-list.dart';
-
+ 
 void main() {
   runApp(const MyApp());
 }
-
+ 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
@@ -24,23 +24,23 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
+ 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
-
+ 
 class _MyHomePageState extends State<MyHomePage> {
   // サンプルユーザー情報
   late final Map<String, Map<String, dynamic>> sampleUsers;
-
+ 
   /// 円形ボタンが押されたときの処理
   void _onCircleTap(String label, BuildContext context) {
     HapticFeedback.selectionClick(); // 軽い振動
     print('$label が押されました');
-
+ 
     Widget nextPage;
     if (label == '学生') {
       nextPage = const AiTrainingListPage();
@@ -51,10 +51,10 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       return;
     }
-
+ 
     Navigator.push(context, MaterialPageRoute(builder: (context) => nextPage));
   }
-
+ 
   /// 円形ボタン作成
   Widget _buildCircleButton(String label) {
     return Material(
@@ -93,7 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
-
+ 
   /// 選択したユーザーをSharedPreferencesに保存
   Future<void> saveUserSession(String role) async {
     final prefs = await SharedPreferences.getInstance();
@@ -104,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
       print('指定されたユーザーは存在しません');
     }
   }
-
+ 
   /// SharedPreferencesからユーザー情報を取得
   Future<void> loadUserSession() async {
     final prefs = await SharedPreferences.getInstance();
@@ -117,7 +117,7 @@ class _MyHomePageState extends State<MyHomePage> {
       print('セッションにユーザー情報はありません');
     }
   }
-
+ 
   @override
   void initState() {
     super.initState();
@@ -188,7 +188,7 @@ class _MyHomePageState extends State<MyHomePage> {
       },
     };
   }
-
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -253,3 +253,5 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+ 
+ 

@@ -14,6 +14,8 @@ class ArticleDTO {
   final int? photo1Id;
   final int? photo2Id;
   final int? photo3Id;
+  final List<String>? tags; // タグ情報を追加
+  final String? industry; // 会社の業界名
 
   ArticleDTO({
     this.id,
@@ -27,6 +29,8 @@ class ArticleDTO {
     this.photo1Id,
     this.photo2Id,
     this.photo3Id,
+    this.tags,
+    this.industry,
   });
 
   factory ArticleDTO.fromJson(Map<String, dynamic> json) {
@@ -42,6 +46,8 @@ class ArticleDTO {
       photo1Id: json['photo1Id'],
       photo2Id: json['photo2Id'],
       photo3Id: json['photo3Id'],
+      tags: json['tags'] != null ? List<String>.from(json['tags']) : null,
+      industry: json['industry'],
     );
   }
 
@@ -58,6 +64,8 @@ class ArticleDTO {
       'photo1Id': photo1Id,
       'photo2Id': photo2Id,
       'photo3Id': photo3Id,
+      'tags': tags,
+      'industry': industry,
     };
   }
 }
@@ -83,6 +91,7 @@ class ArticleApiClient {
   static Future<List<ArticleDTO>> searchArticles({
     int? companyId,
     String? keyword,
+    int? industryId,
   }) async {
     try {
       final uri = Uri.parse('$baseUrl/search');
@@ -93,6 +102,9 @@ class ArticleApiClient {
       }
       if (keyword != null && keyword.isNotEmpty) {
         queryParams['keyword'] = keyword;
+      }
+      if (industryId != null) {
+        queryParams['industryId'] = industryId.toString();
       }
       
       final searchUri = uri.replace(queryParameters: queryParams);
