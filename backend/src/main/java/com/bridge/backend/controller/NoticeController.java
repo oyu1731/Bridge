@@ -21,31 +21,29 @@ public class NoticeController {
     }
 
     @PostMapping("/report")
-    public ResponseEntity<String> report(@RequestBody Notice notice) {
-        try {
-            // type が null ならスレッド通報に設定
-            if (notice.getType() == null) {
-                notice.setType(1);
-            }
+    public ResponseEntity<?> report(@RequestBody Notice notice) {
 
-            // type に応じて必須項目をチェック
-            if (notice.getType() == 1 && notice.getThreadId() == null) {
-                return ResponseEntity.badRequest().body("threadId is required for thread report");
-            }
+        // ★ 重複チェック
+        boolean alreadyReported =
+                noticeRepository.existsByFromUserIdAndChatId(
+                        notice.getFromUserId(),
+                        notice.getChatId()
+                );
 
-            if (notice.getType() == 2 && (notice.getChatId() == null || notice.getToUserId() == null)) {
-                return ResponseEntity.badRequest().body("chatId and toUserId are required for message report");
-            }
-
-            notice.setCreatedAt(LocalDateTime.now());
-            noticeRepository.save(notice);
-
-            return ResponseEntity.ok("Report submitted successfully");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to submit report");
+        if (alreadyReported) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("このチャットではすでに通報済みです");
         }
+
+        // ★ 通常の保存処理
+        notice.setCreatedAt(LocalDateTime.now());
+        if (notice.getType() == null) {
+            notice.setType(1);
+        }
+
+        Notice saved = noticeRepository.save(notice);
+        return ResponseEntity.ok(saved);
     }
 
     @GetMapping("/list")

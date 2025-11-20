@@ -186,7 +186,7 @@ final payload = {
 'chatId': chatId,
 };
 
-
+//通報部分
 try {  
   final response = await http.post(  
     Uri.parse('$baseUrl/notice/report'),  
@@ -198,6 +198,12 @@ try {
     ScaffoldMessenger.of(context).showSnackBar(  
       const SnackBar(content: Text('通報しました')),  
     );  
+  } else if (response.statusCode == 400) {
+    // ★ 重複通報メッセージをそのまま表示
+    final msg = response.body; // ← バックエンドからの文字列
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg)),
+    );
   } else {  
     print('Failed to report: ${response.statusCode}');  
     ScaffoldMessenger.of(context).showSnackBar(  
