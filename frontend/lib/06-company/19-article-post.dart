@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import '../11-common/58-header.dart';
+import '17-company-article-list.dart';
 import 'article_api_client.dart';
 import 'filter_api_client.dart';
 import 'photo_api_client.dart';
@@ -804,6 +805,8 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
       // API呼び出しで記事を作成
       final createdArticle = await ArticleApiClient.createArticle(articleDTO);
       
+      if (!mounted) return;
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('記事「${createdArticle.title}」を投稿しました'),
@@ -811,8 +814,14 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
         ),
       );
 
-      // 投稿後は前の画面に戻る
-      Navigator.pop(context);
+      // 投稿後は記事一覧画面に遷移
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CompanyArticleListPage(),
+        ),
+        (route) => route.isFirst,
+      );
       
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
