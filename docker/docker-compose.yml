@@ -44,6 +44,8 @@ services:
       context: ../backend # ビルドコンテキストのパス
       dockerfile: ../docker/Dockerfile.backend # 使用するDockerfileのパス
     container_name: bridge-backend # コンテナの名前
+    env_file:
+      - .env
     ports:
       - "8080:8080" # ホストの8080ポートをコンテナの8080ポートにマッピング
     depends_on: # 依存関係の定義
