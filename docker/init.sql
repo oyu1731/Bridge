@@ -50,7 +50,10 @@ CREATE TABLE users (
     created_at DATETIME NOT NULL,
     society_history INT(2),
     icon INT(10),
-    announcement_deletion INT(1) NOT NULL DEFAULT 1 COMMENT '1=新規お知らせなし、2=新規お知らせあり'
+    announcement_deletion INT(1) NOT NULL DEFAULT 1 COMMENT '1=新規お知らせなし、2=新規お知らせあり',
+    token INT(10) NOT NULL DEFAULT 50 COMMENT '面接練習やメール添削で使用',
+    otp VARCHAR(6) COMMENT 'パスワード再設定用ワンタイムパスワード',
+    otp_expires_at DATETIME COMMENT 'OTP有効期限'
 );
 
 
