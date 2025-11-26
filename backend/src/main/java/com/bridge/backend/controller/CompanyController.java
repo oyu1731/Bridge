@@ -17,7 +17,7 @@ public class CompanyController {
     
     @Autowired
     private CompanyService companyService;
-    
+
     /**
      * すべての企業を取得
      * GET /api/companies
