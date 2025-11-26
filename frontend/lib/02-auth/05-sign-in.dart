@@ -40,12 +40,6 @@ class _SignInPageState extends State<SignInPage> {
   //   super.dispose();
   // }
 
-
-  /*
-  来週の私へ
-  userテーブルに保存はできますが、企業テーブルへの保存ができていません企業テーブルから企業 IDを参照するので、頑張ってください。ほな
-  */
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

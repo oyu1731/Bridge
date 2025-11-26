@@ -1,10 +1,7 @@
 package com.bridge.backend.service;
 
 import com.bridge.backend.dto.UserDto;
-import com.bridge.backend.entity.Industry;
-import com.bridge.backend.entity.IndustryRelation;
 import com.bridge.backend.entity.User;
-import com.bridge.backend.repository.IndustryRelationRepository;
 import com.bridge.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -17,9 +14,6 @@ public class AuthService {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private IndustryRelationRepository industryRelationRepository;
 
     // 既存の場所と同じエンコーダを使う
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -38,7 +32,7 @@ public class AuthService {
             throw new IllegalArgumentException("メールアドレスまたはパスワードが正しくありません");
         }
 
-    // サインアップと同じ DTO を返す（パスワードは含めない）
+    // サインアップと同じ DTO を返す
         UserDto userDto = new UserDto();
         userDto.setId(user.getId());
         userDto.setNickname(user.getNickname());

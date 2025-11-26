@@ -1,7 +1,10 @@
 package com.bridge.backend.controller;
 
 import com.bridge.backend.entity.Industry;
+import com.bridge.backend.entity.IndustryRelation;
 import com.bridge.backend.repository.IndustryRepository;
+import com.bridge.backend.repository.IndustryRelationRepository;
+
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,20 +15,23 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/industries")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:5000", allowCredentials = "true")
 public class IndustryController {
 
     private static final Logger logger = LoggerFactory.getLogger(IndustryController.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final IndustryRepository industryRepository;
+    private final IndustryRelationRepository industryRelationRepository;
 
-    public IndustryController(IndustryRepository industryRepository) {
+    public IndustryController(IndustryRepository industryRepository,
+                              IndustryRelationRepository industryRelationRepository) {
         this.industryRepository = industryRepository;
+        this.industryRelationRepository = industryRelationRepository;
     }
 
+    // ====== 全業界一覧取得API ======
     @GetMapping(produces = "application/json;charset=UTF-8")
     public List<Industry> getAllIndustries() {
-        // MySQLからデータをそのまま取得
         List<Industry> industries = industryRepository.findAll();
 
         // ログ出力（取得確認）
@@ -35,7 +41,6 @@ public class IndustryController {
             logger.error("IndustryデータのJSON変換中にエラーが発生しました", e);
         }
 
-        // Flutter側でデコード確認ができるよう、データ型を明示して出力
         for (Industry industry : industries) {
             logger.info("Industry ID={} | Value={} | Type={}",
                     industry.getId(),
@@ -45,4 +50,15 @@ public class IndustryController {
 
         return industries;
     }
+
+    // ====== ユーザー別業界取得API ======
+    @GetMapping("/user/{userId}")
+    public List<Industry> getIndustriesByUser(@PathVariable Integer userId) {
+        List<IndustryRelation> relations = industryRelationRepository.findByUserId(userId);
+
+        return relations.stream()
+                .map(IndustryRelation::getIndustry)
+                .toList();
+    }
+
 }

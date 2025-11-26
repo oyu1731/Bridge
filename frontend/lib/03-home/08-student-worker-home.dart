@@ -72,7 +72,7 @@ Widget _buildTopPageTab() {
           child: Column(
             children: [
               _buildThreadCard(
-                title: 'IT業界について教えてほしい',
+                title: 'これは、学生・社会人トップです。',
                 time: '1分前',
               ),
               const SizedBox(height: 12),

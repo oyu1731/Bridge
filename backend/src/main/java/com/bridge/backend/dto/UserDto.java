@@ -1,24 +1,30 @@
 package com.bridge.backend.dto;
 
-import lombok.Data;
 import java.util.List;
 
-@Data
-public class UserDto implements java.io.Serializable {
+public class UserDto {
     private Integer id;
     private String nickname;
     private String email;
     private String password;
     private String phoneNumber;
-    private int type; // 1 = 学生
-    private List<Integer> desiredIndustries; // ← ここをIDリストに変更！
+    private Integer type; // 1=学生, 2=社会人, 3=企業
+    private String planStatus; // "無料" など
+    private Boolean isWithdrawn;
     private Integer societyHistory;
+    private List<Integer> desiredIndustries;
+    
 
-    // 手動でgetterとsetterを追加（Lombokが機能しない場合のため）
+    // 企業ユーザー用フィールド
+    private String companyName;
+    private String companyAddress;
+    private String companyPhoneNumber;
+    private String companyDescription;
+
+    // ===== Getter / Setter =====
     public Integer getId() {
         return id;
     }
-
     public void setId(Integer id) {
         this.id = id;
     }
@@ -26,7 +32,6 @@ public class UserDto implements java.io.Serializable {
     public String getNickname() {
         return nickname;
     }
-
     public void setNickname(String nickname) {
         this.nickname = nickname;
     }
@@ -34,7 +39,6 @@ public class UserDto implements java.io.Serializable {
     public String getEmail() {
         return email;
     }
-
     public void setEmail(String email) {
         this.email = email;
     }
@@ -42,7 +46,6 @@ public class UserDto implements java.io.Serializable {
     public String getPassword() {
         return password;
     }
-
     public void setPassword(String password) {
         this.password = password;
     }
@@ -50,32 +53,71 @@ public class UserDto implements java.io.Serializable {
     public String getPhoneNumber() {
         return phoneNumber;
     }
-
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
 
-    public int getType() {
+    public Integer getType() {
         return type;
     }
-
-    public void setType(int type) {
+    public void setType(Integer type) {
         this.type = type;
     }
 
-    public List<Integer> getDesiredIndustries() {
-        return desiredIndustries;
+    public String getPlanStatus() {
+        return planStatus;
+    }
+    public void setPlanStatus(String planStatus) {
+        this.planStatus = planStatus;
     }
 
-    public void setDesiredIndustries(List<Integer> desiredIndustries) {
-        this.desiredIndustries = desiredIndustries;
+    public Boolean getIsWithdrawn() {
+        return isWithdrawn;
+    }
+    public void setIsWithdrawn(Boolean isWithdrawn) {
+        this.isWithdrawn = isWithdrawn;
     }
 
     public Integer getSocietyHistory() {
         return societyHistory;
     }
-
     public void setSocietyHistory(Integer societyHistory) {
         this.societyHistory = societyHistory;
+    }
+
+    public List<Integer> getDesiredIndustries() {
+        return desiredIndustries;
+    }
+    public void setDesiredIndustries(List<Integer> desiredIndustries) {
+        this.desiredIndustries = desiredIndustries;
+    }
+
+    // 企業用フィールド
+    public String getCompanyName() {
+        return companyName;
+    }
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+
+    public String getCompanyAddress() {
+        return companyAddress;
+    }
+    public void setCompanyAddress(String companyAddress) {
+        this.companyAddress = companyAddress;
+    }
+
+    public String getCompanyPhoneNumber() {
+        return companyPhoneNumber;
+    }
+    public void setCompanyPhoneNumber(String companyPhoneNumber) {
+        this.companyPhoneNumber = companyPhoneNumber;
+    }
+
+    public String getCompanyDescription() {
+        return companyDescription;
+    }
+    public void setCompanyDescription(String companyDescription) {
+        this.companyDescription = companyDescription;
     }
 }

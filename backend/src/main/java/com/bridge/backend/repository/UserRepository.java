@@ -17,4 +17,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     
     // メールアドレス重複チェック
     boolean existsByEmail(String email);
+
+    // パスワード更新のためのメソッド
+    Optional<User> findById(Integer id);
 }
