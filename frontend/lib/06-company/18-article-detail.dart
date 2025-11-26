@@ -81,6 +81,7 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
   List<PhotoDTO?> _photos = [];
   bool _isLoading = true;
   String? _error;
+  int? _currentUserId; // サインイン中のユーザーID
   
   // いいね機能の状態
   bool _isLiked = false;
@@ -89,8 +90,24 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
   @override
   void initState() {
     super.initState();
+    _loadUserId();
+  }
+
+  Future<void> _loadUserId() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userDataString = prefs.getString('current_user');
+      if (userDataString != null) {
+        final userData = jsonDecode(userDataString);
+        setState(() {
+          _currentUserId = userData['id'];
+        });
+      }
+    } catch (e) {
+      print('Error loading user ID: $e');
+    }
+    // ユーザーID読み込み後に記事データを読み込む
     _loadArticleData();
-    _loadLikeStatus();
   }
 
   Future<void> _loadArticleData() async {
@@ -106,10 +123,15 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
         throw Exception('Invalid article ID');
       }
 
-      // 記事データを取得
-      final article = await ArticleApiClient.getArticleById(articleId);
+      // 記事データを取得（ユーザーID付き）
+      final article = await ArticleApiClient.getArticleById(articleId, userId: _currentUserId);
       if (article == null) {
         throw Exception('Article not found');
+      }
+      
+      // サーバーからいいね状態を取得
+      if (article.isLikedByUser != null) {
+        _isLiked = article.isLikedByUser!;
       }
 
       // デバッグ用：取得した記事データのphoto_idを確認
@@ -169,6 +191,9 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
       setState(() {
         _article = article;
         _photos = photos;
+        if (article.isLikedByUser != null) {
+          _isLiked = article.isLikedByUser!;
+        }
         _isLoading = false;
       });
     } catch (e) {
@@ -179,34 +204,11 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
     }
   }
 
-  // いいね状態をローカルストレージから読み込み
-  Future<void> _loadLikeStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final likedArticles = prefs.getStringList('liked_articles') ?? [];
-    setState(() {
-      _isLiked = likedArticles.contains(widget.articleId);
-    });
-  }
 
-  // いいね状態をローカルストレージに保存
-  Future<void> _saveLikeStatus(bool isLiked) async {
-    final prefs = await SharedPreferences.getInstance();
-    final likedArticles = prefs.getStringList('liked_articles') ?? [];
-    
-    if (isLiked) {
-      if (!likedArticles.contains(widget.articleId)) {
-        likedArticles.add(widget.articleId);
-      }
-    } else {
-      likedArticles.remove(widget.articleId);
-    }
-    
-    await prefs.setStringList('liked_articles', likedArticles);
-  }
 
   // いいねトグル機能
   Future<void> _toggleLike() async {
-    if (_article?.id == null || _isLikeLoading) return;
+    if (_article?.id == null || _isLikeLoading || _currentUserId == null) return;
 
     setState(() {
       _isLikeLoading = true;
@@ -216,19 +218,22 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
       final int articleId = _article!.id!;
       final bool willLike = !_isLiked; // 新しい状態を計算
       
-      // サーバーに新しい状態を送信
-      await _updateLikeCount(articleId, willLike);
+      // サーバーに新しい状態を送信（userId付き）
+      await ArticleApiClient.likeArticle(articleId, _currentUserId!, willLike);
 
-      // ローカル状態を更新
-      setState(() {
-        _isLiked = willLike;
-      });
-      
-      // ローカルストレージに保存
-      await _saveLikeStatus(_isLiked);
-      
-      // 記事データを再読み込みしてサーバーの状態と同期
-      await _loadArticleData();
+      // サーバーから最新の記事データを取得して同期
+      final updatedArticle = await ArticleApiClient.getArticleById(articleId, userId: _currentUserId);
+      if (updatedArticle != null) {
+        setState(() {
+          _article = updatedArticle;
+          _isLiked = updatedArticle.isLikedByUser ?? false;
+        });
+      } else {
+        // フォールバック: ローカルで状態を更新
+        setState(() {
+          _isLiked = willLike;
+        });
+      }
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -252,27 +257,7 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
     }
   }
 
-  // サーバーのいいね数を更新
-  Future<void> _updateLikeCount(int articleId, bool isLiking) async {
-    print('Debug: _updateLikeCount called with articleId=$articleId, isLiking=$isLiking');
-    print('Debug: Current _isLiked state: $_isLiked');
-    
-    final requestBody = {'liking': isLiking};  // isLiking から liking に変更
-    print('Debug: Sending request body: $requestBody');
-    
-    final response = await http.post(
-      Uri.parse('http://localhost:8080/api/articles/$articleId/like'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(requestBody),
-    );
-    
-    print('Debug: Response status: ${response.statusCode}');
-    print('Debug: Response body: ${response.body}');
-    
-    if (response.statusCode != 200) {
-      throw Exception('いいね操作に失敗しました');
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {

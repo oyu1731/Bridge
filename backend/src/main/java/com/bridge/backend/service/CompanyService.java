@@ -186,11 +186,9 @@ public class CompanyService {
                 industryRelationRepository.findByUserIdAndType(user.getId(), 3);
             
             if (industryRelation.isPresent()) {
-                Optional<Industry> industry = 
-                    industryRepository.findById(industryRelation.get().getId());
-                
-                if (industry.isPresent()) {
-                    dto.setIndustry(industry.get().getIndustry());
+                Industry industry = industryRelation.get().getIndustry();
+                if (industry != null) {
+                    dto.setIndustry(industry.getIndustry());
                 }
             }
         }

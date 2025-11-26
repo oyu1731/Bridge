@@ -17,6 +17,7 @@ USE bridgedb;
 
 -- 既存のテーブルがあれば削除 (開発用)
 DROP TABLE IF EXISTS articles_tag;
+DROP TABLE IF EXISTS article_likes;
 DROP TABLE IF EXISTS articles;
 DROP TABLE IF EXISTS notices;
 DROP TABLE IF EXISTS chats;
@@ -112,6 +113,17 @@ CREATE TABLE articles (
     photo2_id INT(10),
     photo3_id INT(10),
     FOREIGN KEY (company_id) REFERENCES companies(id)
+);
+
+-- テーブル定義書_記事いいね
+CREATE TABLE article_likes (
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    article_id INT(20) NOT NULL,
+    user_id INT(20) NOT NULL,
+    created_at DATETIME NOT NULL,
+    FOREIGN KEY (article_id) REFERENCES articles(id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    UNIQUE KEY unique_article_user (article_id, user_id)
 );
 
 -- テーブル定義書_スレッド

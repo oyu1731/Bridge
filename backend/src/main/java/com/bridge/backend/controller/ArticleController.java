@@ -65,12 +65,13 @@ public class ArticleController {
      * GET /api/articles/{id}
      * 
      * @param id 記事ID
+     * @param userId ユーザーID（オプション、いいね状態確認用）
      * @return 記事データ
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ArticleDTO> getArticleById(@PathVariable Integer id) {
+    public ResponseEntity<ArticleDTO> getArticleById(@PathVariable Integer id, @RequestParam(required = false) Integer userId) {
         try {
-            ArticleDTO article = articleService.getArticleById(id);
+            ArticleDTO article = articleService.getArticleById(id, userId);
             if (article != null) {
                 return ResponseEntity.ok(article);
             } else {
@@ -177,10 +178,13 @@ public class ArticleController {
     @PostMapping("/{id}/like")
     public ResponseEntity<ArticleDTO> toggleLike(@PathVariable Integer id, @RequestBody LikeRequestDTO likeRequest) {
         try {
-            System.out.println("Debug: toggleLike called with articleId=" + id + ", isLiking=" + likeRequest.isLiking());
+            System.out.println("Debug: toggleLike called with articleId=" + id + ", userId=" + likeRequest.getUserId() + ", isLiking=" + likeRequest.isLiking());
             
-            // ユーザーIDは固定値1を使用（将来的にはJWTトークンから取得）
-            Integer userId = 1;
+            // リクエストからユーザーIDを取得
+            Integer userId = likeRequest.getUserId();
+            if (userId == null) {
+                return ResponseEntity.badRequest().build();
+            }
             ArticleDTO article = articleService.toggleLike(id, userId, likeRequest.isLiking());
             
             System.out.println("Debug: Updated article total_likes=" + (article != null ? article.getTotalLikes() : "null"));

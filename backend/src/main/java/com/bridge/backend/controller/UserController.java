@@ -82,4 +82,16 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
+
+    @PutMapping("/{id}/icon")
+    public ResponseEntity<UserDto> updateIcon(
+            @PathVariable Integer id,
+            @RequestBody Map<String, Integer> body) {
+        Integer photoId = body.get("photoId");
+        if (photoId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        UserDto updated = userService.updateUserIcon(id, photoId);
+        return ResponseEntity.ok(updated);
+    }
 }

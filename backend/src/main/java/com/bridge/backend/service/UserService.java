@@ -148,6 +148,7 @@ public class UserService {
             userDto.setEmail(existingUser.getEmail());
             userDto.setPhoneNumber(existingUser.getPhoneNumber());
             userDto.setType(existingUser.getType());
+            userDto.setIcon(existingUser.getIcon());
             userDto.setSocietyHistory(existingUser.getSocietyHistory());
             if (existingUser.getType() == 3 && existingUser.getCompanyId() != null) {
                 Optional<Company> company = companyRepository.findById(existingUser.getCompanyId());
@@ -211,6 +212,16 @@ public class UserService {
 
         userRepository.save(user);
         return getUserById(user.getId().longValue());
+    }
+
+    // アイコン更新
+    @Transactional
+    public UserDto updateUserIcon(Integer userId, Integer photoId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setIcon(photoId);
+        userRepository.save(user);
+        return getUserById(userId.longValue());
     }
 
     // 希望業界の更新
