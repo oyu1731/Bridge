@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:convert';
 import '../11-common/58-header.dart';
 import '17-company-article-list.dart';
 import 'article_api_client.dart';
@@ -42,22 +43,25 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
 
   Future<void> _loadCompanyId() async {
     try {
-      // デモ用: 固定のユーザー情報を使用
-      // email: company@example.com, password: hashed_password_company
-      // このユーザーのcompanyIdを取得
-      
       final prefs = await SharedPreferences.getInstance();
       
-      // まずSharedPreferencesから取得を試みる
-      int? companyId = prefs.getInt('companyId');
+      // サインイン情報からcompanyIdを取得
+      final userDataString = prefs.getString('current_user');
+      if (userDataString == null) {
+        setState(() {
+          _errorMessage = 'ログインしていません。サインインしてください。';
+        });
+        return;
+      }
       
-      // SharedPreferencesに保存されていない場合は、デモユーザーのcompanyIdを設定
+      final userData = jsonDecode(userDataString);
+      final int? companyId = userData['companyId'];
+      
       if (companyId == null) {
-        // TODO: 実際のログイン機能実装時は、APIからユーザー情報を取得
-        // デモ用に固定値を設定（company@example.comのcompanyId）
-        companyId = 1; // デモ企業ID
-        await prefs.setInt('companyId', companyId);
-        await prefs.setString('userEmail', 'company@example.com');
+        setState(() {
+          _errorMessage = '企業アカウントでログインしてください。';
+        });
+        return;
       }
       
       setState(() {

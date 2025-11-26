@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../main.dart';
 import '../04-profile/11-student-profile-edit.dart';
 import '../04-profile/12-worker-profile-edit.dart';
 import '/04-profile/13-company-profile-edit.dart';
@@ -490,9 +491,99 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         // 退会手続きの確認ダイアログ（張りぼて）
         break;
       case 'logout':
-        // ログアウト確認ダイアログ（張りぼて）
+        // ログアウト確認ダイアログ
+        _showLogoutConfirmDialog(context);
         break;
     }
+  }
+
+  // ログアウト確認ダイアログ
+  void _showLogoutConfirmDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.logout,
+                color: Color(0xFFD32F2F),
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'ログアウト確認',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'ログアウトしてもよろしいですか？',
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF616161),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // ダイアログを閉じる
+              },
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: Text(
+                '戻る',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF616161),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                // セッション情報を削除
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('current_user');
+                await prefs.clear(); // 全てのセッション情報をクリア
+                
+                // ダイアログを閉じる
+                Navigator.of(context).pop();
+                
+                // ログイン画面に遷移（全てのページをクリアして戻る）
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => MyHomePage(title: 'Bridge')),
+                  (Route<dynamic> route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFFD32F2F),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'ログアウト',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

@@ -99,7 +99,7 @@ class _SignInPageState extends State<SignInPage> {
                     // NOTE: ホスト/ポート指定のタイポを修正しました。
                     var response = await http
                         .post(
-                      Uri.parse('http://127.0.0.1:8080/api/auth/signin'),
+                      Uri.parse('http://localhost:8080/api/auth/signin'),
                       headers: {'Content-Type': 'application/json'},
                       body: jsonEncode({
                         'email': email,

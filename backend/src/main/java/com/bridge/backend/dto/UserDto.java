@@ -13,6 +13,7 @@ public class UserDto {
     private Boolean isWithdrawn;
     private Integer societyHistory;
     private List<Integer> desiredIndustries;
+    private Integer icon; // プロフィールアイコン写真ID (photos.id)
     
 
     // 企業ユーザー用フィールド
@@ -90,6 +91,14 @@ public class UserDto {
     }
     public void setDesiredIndustries(List<Integer> desiredIndustries) {
         this.desiredIndustries = desiredIndustries;
+    }
+
+    public Integer getIcon() {
+        return icon;
+    }
+
+    public void setIcon(Integer icon) {
+        this.icon = icon;
     }
 
     // 企業用フィールド
