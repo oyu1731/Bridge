@@ -128,6 +128,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
       print('選択された業種: $_selectedIndustry'); // デバッグログ
       print('選択されたエリア: $_selectedArea'); // デバッグログ
       
+      
       List<CompanyDTO> results;
       
       // 検索条件チェック
