@@ -221,7 +221,7 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                 const SizedBox(height: 20),
 
                 const Text(
-                  '所属業界:',
+                  '業界:',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 6, 62, 85)),
                 ),
 
@@ -230,7 +230,12 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                     : Column(
                         children: _industries.map((industry) {
                           return CheckboxListTile(
-                            title: const Text(""
+                            title: Text(
+                              industry["name"],
+                              style: const TextStyle(
+                                color: cyanDark,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                             value: _selectedIndustryIds.contains(industry["id"]),
                             activeColor: cyanDark,
@@ -243,13 +248,6 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                                 }
                               });
                             },
-                            subtitle: Text(
-                              industry["name"],
-                              style: const TextStyle(
-                                color: cyanDark,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
                           );
                         }).toList(),
                       ),
