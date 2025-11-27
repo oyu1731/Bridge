@@ -1,6 +1,7 @@
 package com.bridge.backend.controller;
 
 import com.bridge.backend.dto.ArticleDTO;
+import com.bridge.backend.dto.LikeRequestDTO;
 import com.bridge.backend.service.ArticleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -40,15 +41,18 @@ public class ArticleController {
 
     /**
      * 記事を検索
-     * GET /api/articles/search?keyword=キーワード
+     * GET /api/articles/search?keyword=キーワード&industryId=業界ID
      * 
      * @param keyword 検索キーワード
+     * @param industryId 業界ID（オプション）
      * @return 検索結果の記事一覧
      */
     @GetMapping("/search")
-    public ResponseEntity<List<ArticleDTO>> searchArticles(@RequestParam String keyword) {
+    public ResponseEntity<List<ArticleDTO>> searchArticles(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer industryId) {
         try {
-            List<ArticleDTO> articles = articleService.searchArticles(keyword);
+            List<ArticleDTO> articles = articleService.searchArticles(keyword, industryId);
             return ResponseEntity.ok(articles);
         } catch (Exception e) {
             e.printStackTrace();
@@ -106,6 +110,8 @@ public class ArticleController {
     @PostMapping
     public ResponseEntity<ArticleDTO> createArticle(@RequestBody ArticleDTO articleDTO) {
         try {
+            System.out.println("Debug: ArticleController.createArticle received title=" + articleDTO.getTitle());
+            System.out.println("Debug: ArticleController.createArticle received tags=" + articleDTO.getTags());
             ArticleDTO createdArticle = articleService.createArticle(articleDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdArticle);
         } catch (Exception e) {
@@ -125,6 +131,7 @@ public class ArticleController {
     @PutMapping("/{id}")
     public ResponseEntity<ArticleDTO> updateArticle(@PathVariable Integer id, @RequestBody ArticleDTO articleDTO) {
         try {
+            System.out.println("Debug: ArticleController.updateArticle received id=" + id + ", tags=" + articleDTO.getTags());
             ArticleDTO updatedArticle = articleService.updateArticle(id, articleDTO);
             if (updatedArticle != null) {
                 return ResponseEntity.ok(updatedArticle);
@@ -150,6 +157,36 @@ public class ArticleController {
             boolean deleted = articleService.deleteArticle(id);
             if (deleted) {
                 return ResponseEntity.noContent().build();
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 記事にいいねをトグル（追加/削除）
+     * POST /api/articles/{id}/like
+     * 
+     * @param id 記事ID
+     * @param likeRequest いいね操作の詳細
+     * @return いいね操作の結果
+     */
+    @PostMapping("/{id}/like")
+    public ResponseEntity<ArticleDTO> toggleLike(@PathVariable Integer id, @RequestBody LikeRequestDTO likeRequest) {
+        try {
+            System.out.println("Debug: toggleLike called with articleId=" + id + ", isLiking=" + likeRequest.isLiking());
+            
+            // ユーザーIDは固定値1を使用（将来的にはJWTトークンから取得）
+            Integer userId = 1;
+            ArticleDTO article = articleService.toggleLike(id, userId, likeRequest.isLiking());
+            
+            System.out.println("Debug: Updated article total_likes=" + (article != null ? article.getTotalLikes() : "null"));
+            
+            if (article != null) {
+                return ResponseEntity.ok(article);
             } else {
                 return ResponseEntity.notFound().build();
             }

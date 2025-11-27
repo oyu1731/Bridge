@@ -388,15 +388,30 @@ INSERT INTO notices (from_user_id, to_user_id, type, thread_id, chat_id, created
 
 -- tag
 INSERT INTO tag (tag) VALUES
-('プログラミング'),
-('デザイン'),
-('ビジネス');
+('説明会開催中'),
+('会社員の日常'),
+('インターン開催中'),
+('就活イベント情報'),
+('新卒募集中'),
+('全社員のご紹介'),
+('エンジニア採用'),
+('会社紹介'),
+('新卒社員のリアル'),
+('先輩インタビュー'),
+('新人社員インタビュー'),
+('社内イベント'),
+('最新ニュース'),
+('スレッド開設'),
+('キャリアアドバイス'),
+('面接のコツ'),
+('社員の推しポイント');
 
 -- articles_tag
 INSERT INTO articles_tag (article_id, tag_id, creation_date) VALUES
-(1, 1, NOW()),
-(1, 2, NOW()),
-(2, 3, NOW());
+(1, 1, NOW()), -- 記事1 に「説明会開催中」
+(1, 8, NOW()), -- 記事1 に「会社紹介」
+(2, 14, NOW()), -- 記事2 に「スレッド開設」
+(2, 2, NOW()); -- 記事2 に「会社員の日常」
 
 -- industry_relations
 INSERT INTO industry_relations (type, user_id, target_id, created_at) VALUES

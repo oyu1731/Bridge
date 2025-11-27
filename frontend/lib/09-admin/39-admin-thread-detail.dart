@@ -18,15 +18,11 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
 
   String searchText = ''; // 検索文字列
 
-  // ---- 擬似メッセージデータ（サーバー代替） ----
   List<Map<String, dynamic>> _messages = [];
   int _loadedPages = 1;
   final int _pageSize = 20;
 
-  // ソケット風 StreamController（リアルタイム更新用）
   late final StreamController<List<Map<String, dynamic>>> _messageStreamController;
-
-  // 新着バッジ表示フラグ（上を見てるときに新着を示す）
   bool _showNewBadge = false;
 
   @override
@@ -35,18 +31,12 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
     _messageStreamController = StreamController<List<Map<String, dynamic>>>.broadcast();
     _loadInitialMessages();
 
-    // 無限スクロール（上方向）監視
     _scrollController.addListener(() {
-      // 上端に近づいたら過去ログをロード
-      if (_scrollController.position.pixels <=
-          _scrollController.position.minScrollExtent + 10) {
+      if (_scrollController.position.pixels <= _scrollController.position.minScrollExtent + 10) {
         _loadMoreMessages();
       }
-
-      // 新着バッジ自動消去：ユーザーが下に戻ってきたらバッジを消す
       if (_showNewBadge &&
-          _scrollController.position.pixels >=
-              _scrollController.position.maxScrollExtent - 50) {
+          _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 50) {
         setState(() {
           _showNewBadge = false;
         });
@@ -63,7 +53,6 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
     super.dispose();
   }
 
-  // 初期データ読み込み（最新ページを生成）
   void _loadInitialMessages() {
     final now = DateTime.now();
     List<Map<String, dynamic>> initialData = List.generate(_pageSize, (index) {
@@ -77,7 +66,6 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
 
     _messages = initialData;
     _messageStreamController.add(_messages);
-    // 初回は下までスクロール
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
@@ -85,9 +73,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
     });
   }
 
-  // 上スクロール（過去ログ）を追加読み込み
   Future<void> _loadMoreMessages() async {
-    // ロード中に何度も呼ばれるのを防ぎ、疑似待ち時間
     if (!mounted) return;
     await Future.delayed(const Duration(milliseconds: 400));
 
@@ -103,7 +89,6 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
       };
     });
 
-    // preserve scroll offset: record current offset from top, then update list, then restore near same visual spot
     double prevScrollHeight = _scrollController.hasClients ? _scrollController.position.maxScrollExtent : 0;
     setState(() {
       _messages = [...moreData, ..._messages];
@@ -111,7 +96,6 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
     });
     _messageStreamController.add(_messages);
 
-    // attempt to keep view on the same message after prepending
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
       final newScrollHeight = _scrollController.position.maxScrollExtent;
@@ -129,11 +113,9 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
     });
     _messageStreamController.add(_messages);
 
-    // 新着に対するスクロール制御は送信と同様
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
-      if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent - 50) {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 50) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
@@ -153,7 +135,6 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
       appBar: BridgeHeader(),
       body: Column(
         children: [
-          // タイトル＋検索バー
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
@@ -169,12 +150,19 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'コメント検索',
-                      prefixIcon: const Icon(Icons.search),
+                      hintText: '検索',
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.search),
+                        onPressed: () {
+                          setState(() {
+                            searchText = _searchController.text.trim();
+                          });
+                        },
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                     ),
                     onChanged: (value) {
                       setState(() {
@@ -189,11 +177,9 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
 
           const Divider(height: 1),
 
-          // 新着バッジ
           if (_showNewBadge)
             GestureDetector(
               onTap: () {
-                // タップで最新までスクロールしてバッジを消す
                 _scrollController.animateTo(
                   _scrollController.position.maxScrollExtent,
                   duration: const Duration(milliseconds: 300),
@@ -214,7 +200,6 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
               ),
             ),
 
-          // コメント一覧（ソケット風リアルタイム表示＋無限スクロール）
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: _messageStreamController.stream,
@@ -223,7 +208,6 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                // 検索フィルタ
                 final filteredMessages = snapshot.data!.where((msg) {
                   final text = (msg['text'] ?? '').toString();
                   return searchText.isEmpty || text.contains(searchText);

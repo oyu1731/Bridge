@@ -1,30 +1,53 @@
 package com.bridge.backend.controller;
 
-import com.bridge.backend.dto.NoticeDTO;
-import com.bridge.backend.service.NoticeService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.bridge.backend.entity.Notice;
+import com.bridge.backend.repository.NoticeRepository;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.List; // ← これが必要
 
 @RestController
-@RequestMapping("/api/notices")
-@CrossOrigin(origins = {"http://localhost:5000"}, allowCredentials = "true")
+@RequestMapping("/api/notice")
+@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
 public class NoticeController {
-    
-    @Autowired
-    private NoticeService noticeService;
 
-    @GetMapping
-    public ResponseEntity<List<NoticeDTO>> getNotices() {
-        try {
-            List<NoticeDTO> notices = noticeService.getNotices();
-            return ResponseEntity.ok(notices);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    private final NoticeRepository noticeRepository;
+
+    public NoticeController(NoticeRepository noticeRepository) {
+        this.noticeRepository = noticeRepository;
+    }
+
+    @PostMapping("/report")
+    public ResponseEntity<?> report(@RequestBody Notice notice) {
+
+        // ★ 重複チェック
+        boolean alreadyReported =
+                noticeRepository.existsByFromUserIdAndChatId(
+                        notice.getFromUserId(),
+                        notice.getChatId()
+                );
+
+        if (alreadyReported) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("このチャットではすでに通報済みです");
         }
+
+        // ★ 通常の保存処理
+        notice.setCreatedAt(LocalDateTime.now());
+        if (notice.getType() == null) {
+            notice.setType(1);
+        }
+
+        Notice saved = noticeRepository.save(notice);
+        return ResponseEntity.ok(saved);
+    }
+
+    @GetMapping("/list")
+    public List<Notice> getAllReports() {
+        return noticeRepository.findAll();
     }
 }

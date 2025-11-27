@@ -7,7 +7,7 @@ import 'admin-thread-list.dart';
 class Thread {
   final int id;
   final String title;
-  final String? lastComment; // 公式スレッドのみ
+  final String? lastComment;
   final String timeAgo;
 
   Thread({
@@ -43,8 +43,7 @@ class _AdminThreadListState extends State<AdminThreadList> {
   }
 
   Future<void> _loadDummyThreads() async {
-    await Future.delayed(Duration(milliseconds: 300)); // 疑似通信待ち
-
+    await Future.delayed(Duration(milliseconds: 300));
     setState(() {
       officialThreads = [
         Thread(
@@ -73,7 +72,86 @@ class _AdminThreadListState extends State<AdminThreadList> {
       ];
     });
   }
-  
+
+  void _deleteThread(List<Thread> threadList, int index) async {
+    bool confirm = await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('削除確認'),
+        content: Text('このスレッドを削除しますか？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('削除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm) {
+      setState(() {
+        threadList.removeAt(index);
+      });
+    }
+  }
+
+  Widget _buildThreadCard(Thread thread, List<Thread> threadList, int index,
+      {bool showLastComment = false}) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminThreadDetail(
+              threadId: thread.id,
+            ),
+          ),
+        );
+      },
+      child: Card(
+        color: Colors.white, // 背景を白に
+        margin: EdgeInsets.symmetric(vertical: 6),
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: ListTile(
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          title: Text(
+            thread.title,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          subtitle: showLastComment && thread.lastComment != null
+              ? Text(
+                  thread.lastComment!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: Colors.black87, fontSize: 14),
+                )
+              : null,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                thread.timeAgo,
+                style: TextStyle(color: Colors.grey),
+              ),
+              SizedBox(width: 8),
+              IconButton(
+                icon: Icon(Icons.delete, color: Colors.black),
+                onPressed: () => _deleteThread(threadList, index),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -127,14 +205,13 @@ class _AdminThreadListState extends State<AdminThreadList> {
                 );
               }).toList(),
             ),
-
             SizedBox(height: 30),
 
             // 非公式スレッド
             Row(
               children: [
                 Text(
-                  'HOTスレッド（非公式）',
+                  '直近に通報のあったスレッド',
                   style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                 ),
                 Spacer(),
@@ -149,7 +226,7 @@ class _AdminThreadListState extends State<AdminThreadList> {
                   },
                   child: Text(
                     'もっと見る',
-                    style: TextStyle(fontSize: 16, color: Colors.orange),
+                    style: TextStyle(fontSize: 16, color: Colors.black),
                   ),
                 ),
               ],

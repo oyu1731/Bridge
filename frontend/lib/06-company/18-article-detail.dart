@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../11-common/58-header.dart';
 import 'article_api_client.dart';
 import 'api_config.dart';
+import '15-company-info-detail.dart';
 
 class PhotoDTO {
   final int? id;
@@ -17,9 +21,18 @@ class PhotoDTO {
   });
 
   factory PhotoDTO.fromJson(Map<String, dynamic> json) {
+    // バックエンドはphotoPathを返すので、それをfilePathにマッピング
+    // パスをフルURLに変換
+    String? photoPath = json['photoPath'];
+    String? fullPath;
+    if (photoPath != null && photoPath.isNotEmpty) {
+      // /uploads/photos/xxx.jpg のようなパスを http://localhost:8080/uploads/photos/xxx.jpg に変換
+      fullPath = '${ApiConfig.baseUrl}$photoPath';
+    }
+    
     return PhotoDTO(
       id: json['id'],
-      filePath: json['filePath'],
+      filePath: fullPath,
       fileName: json['fileName'],
     );
   }
@@ -68,11 +81,16 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
   List<PhotoDTO?> _photos = [];
   bool _isLoading = true;
   String? _error;
+  
+  // いいね機能の状態
+  bool _isLiked = false;
+  bool _isLikeLoading = false;
 
   @override
   void initState() {
     super.initState();
     _loadArticleData();
+    _loadLikeStatus();
   }
 
   Future<void> _loadArticleData() async {
@@ -158,6 +176,101 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
         _error = e.toString();
         _isLoading = false;
       });
+    }
+  }
+
+  // いいね状態をローカルストレージから読み込み
+  Future<void> _loadLikeStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final likedArticles = prefs.getStringList('liked_articles') ?? [];
+    setState(() {
+      _isLiked = likedArticles.contains(widget.articleId);
+    });
+  }
+
+  // いいね状態をローカルストレージに保存
+  Future<void> _saveLikeStatus(bool isLiked) async {
+    final prefs = await SharedPreferences.getInstance();
+    final likedArticles = prefs.getStringList('liked_articles') ?? [];
+    
+    if (isLiked) {
+      if (!likedArticles.contains(widget.articleId)) {
+        likedArticles.add(widget.articleId);
+      }
+    } else {
+      likedArticles.remove(widget.articleId);
+    }
+    
+    await prefs.setStringList('liked_articles', likedArticles);
+  }
+
+  // いいねトグル機能
+  Future<void> _toggleLike() async {
+    if (_article?.id == null || _isLikeLoading) return;
+
+    setState(() {
+      _isLikeLoading = true;
+    });
+
+    try {
+      final int articleId = _article!.id!;
+      final bool willLike = !_isLiked; // 新しい状態を計算
+      
+      // サーバーに新しい状態を送信
+      await _updateLikeCount(articleId, willLike);
+
+      // ローカル状態を更新
+      setState(() {
+        _isLiked = willLike;
+      });
+      
+      // ローカルストレージに保存
+      await _saveLikeStatus(_isLiked);
+      
+      // 記事データを再読み込みしてサーバーの状態と同期
+      await _loadArticleData();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_isLiked ? 'いいねしました！' : 'いいねを取り消しました'),
+          duration: Duration(seconds: 1),
+          backgroundColor: _isLiked ? Colors.red : Colors.grey,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('エラー: $e'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLikeLoading = false;
+      });
+    }
+  }
+
+  // サーバーのいいね数を更新
+  Future<void> _updateLikeCount(int articleId, bool isLiking) async {
+    print('Debug: _updateLikeCount called with articleId=$articleId, isLiking=$isLiking');
+    print('Debug: Current _isLiked state: $_isLiked');
+    
+    final requestBody = {'liking': isLiking};  // isLiking から liking に変更
+    print('Debug: Sending request body: $requestBody');
+    
+    final response = await http.post(
+      Uri.parse('http://localhost:8080/api/articles/$articleId/like'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(requestBody),
+    );
+    
+    print('Debug: Response status: ${response.statusCode}');
+    print('Debug: Response body: ${response.body}');
+    
+    if (response.statusCode != 200) {
+      throw Exception('いいね操作に失敗しました');
     }
   }
 
@@ -259,35 +372,81 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
   }
 
   Widget _buildCompanyAndHashtags() {
+    final tags = _article?.tags ?? [];
+    Widget tagWidget;
+    if (tags.isEmpty) {
+      tagWidget = Text(
+        'タグなし',
+        style: TextStyle(
+          fontSize: 13,
+          color: Color(0xFF757575),
+        ),
+      );
+    } else {
+      tagWidget = Wrap(
+        spacing: 6,
+        runSpacing: 4,
+        children: tags.map((t) {
+          return Container(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Color(0xFFE3F2FD),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Color(0xFF90CAF9)),
+            ),
+            child: Text(
+              '#$t',
+              style: TextStyle(
+                fontSize: 13,
+                color: Color(0xFF1565C0),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          );
+        }).toList(),
+      );
+    }
+
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ハッシュタグセクション
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '＃説明会開催中, ＃会社紹介',
+        Expanded(child: tagWidget),
+        SizedBox(width: 12),
+        GestureDetector(
+          onTap: () {
+            final companyId = _article?.companyId;
+            final companyName = _article?.companyName ?? widget.companyName ?? '';
+            if (companyId != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CompanyDetailPage(
+                    companyName: companyName,
+                    companyId: companyId,
+                  ),
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('企業IDが取得できませんでした')),
+              );
+            }
+          },
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: Container(
+              constraints: BoxConstraints(maxWidth: 220),
+              child: Text(
+                _article?.companyName ?? widget.companyName ?? '株式会社AAA',
+                textAlign: TextAlign.right,
                 style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF1976D2),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1565C0),
+                  height: 1.3,
+                  decoration: TextDecoration.underline,
                 ),
               ),
-            ],
-          ),
-        ),
-        
-        // 企業名セクション
-        Container(
-          padding: EdgeInsets.only(left: 16),
-          child: Text(
-            _article?.companyName ?? widget.companyName ?? '株式会社AAA',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF424242),
             ),
           ),
         ),
@@ -297,60 +456,22 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
 
   Widget _buildImageSection() {
     // 存在する写真のリストを作成
+    final isWide = MediaQuery.of(context).size.width >= 900; // PC幅判定
     List<Widget> imageWidgets = [];
     
     // 画像1 (photo1_id) - photo1Idが存在し、かつ写真が取得できた場合のみ追加
     if (_article?.photo1Id != null && _photos.isNotEmpty && _photos[0] != null) {
-      imageWidgets.add(
-        Expanded(
-          child: Container(
-            height: double.infinity,
-            margin: EdgeInsets.only(right: 4),
-            decoration: BoxDecoration(
-              color: Color(0xFFF5F5F5),
-              border: Border.all(color: Color(0xFFE0E0E0)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: _buildPhotoWidget(0, '画像1'),
-          ),
-        ),
-      );
+      imageWidgets.add(_buildPhotoWidget(0, '画像1'));
     }
     
     // 画像2 (photo2_id) - photo2Idが存在し、かつ写真が取得できた場合のみ追加
     if (_article?.photo2Id != null && _photos.length > 1 && _photos[1] != null) {
-      imageWidgets.add(
-        Expanded(
-          child: Container(
-            height: double.infinity,
-            margin: EdgeInsets.symmetric(horizontal: 4),
-            decoration: BoxDecoration(
-              color: Color(0xFFF5F5F5),
-              border: Border.all(color: Color(0xFFE0E0E0)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: _buildPhotoWidget(1, '画像2'),
-          ),
-        ),
-      );
+      imageWidgets.add(_buildPhotoWidget(1, '画像2'));
     }
     
     // 画像3 (photo3_id) - photo3Idが存在し、かつ写真が取得できた場合のみ追加
     if (_article?.photo3Id != null && _photos.length > 2 && _photos[2] != null) {
-      imageWidgets.add(
-        Expanded(
-          child: Container(
-            height: double.infinity,
-            margin: EdgeInsets.only(left: 4),
-            decoration: BoxDecoration(
-              color: Color(0xFFF5F5F5),
-              border: Border.all(color: Color(0xFFE0E0E0)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: _buildPhotoWidget(2, '画像3'),
-          ),
-        ),
-      );
+      imageWidgets.add(_buildPhotoWidget(2, '画像3'));
     }
 
     // 画像が一つもない場合は、画像セクション自体を表示しない
@@ -358,10 +479,86 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
       return SizedBox.shrink();
     }
 
-    return Container(
-      height: 200,
-      child: Row(
-        children: imageWidgets,
+    // 画像枚数に応じて表示を調整
+    int imageCount = imageWidgets.length;
+    
+    // PC幅かどうかで高さ・最大幅を調整（縦長画像がはみ出さない最大値＋中央寄せ）
+    // PCサイズを現状の約3/4に縮小
+    double singleHeight = isWide ? 360 : 300; // 480 -> 360
+    double doubleHeight = isWide ? 270 : 250; // 360 -> 270
+    double tripleHeight = isWide ? 240 : 200; // 320 -> 240
+    double maxRowWidth = isWide ? 825 : double.infinity; // 1100 -> 825 (≈75%)
+    double maxSingleWidth = isWide ? 675 : double.infinity; // 900 -> 675 (≈75%)
+
+    if (imageCount == 1) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: singleHeight,
+            maxWidth: maxSingleWidth,
+          ),
+          child: imageWidgets[0],
+        ),
+      );
+    }
+
+    if (imageCount == 2) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: doubleHeight,
+            maxWidth: maxRowWidth,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: 8),
+                  child: imageWidgets[0],
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(left: 8),
+                  child: imageWidgets[1],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: tripleHeight,
+          maxWidth: maxRowWidth,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: imageWidgets[0],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: imageWidgets[1],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(left: 8),
+                child: imageWidgets[2],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -370,48 +567,59 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
     if (index < _photos.length && _photos[index] != null) {
       final photo = _photos[index]!;
       if (photo.filePath != null && photo.filePath!.isNotEmpty) {
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            photo.filePath!,
-            width: double.infinity,
-            height: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.broken_image,
-                      color: Color(0xFF757575),
-                      size: 32,
+        return GestureDetector(
+          onTap: () => _showImageModal(photo.filePath!),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black12, // 縦長画像用余白背景
+              border: Border.all(color: Color(0xFFE0E0E0)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: FittedBox(
+                fit: BoxFit.contain,
+                alignment: Alignment.center,
+                child: Image.network(
+                  photo.filePath!,
+                  fit: BoxFit.contain,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
                     ),
-                    SizedBox(height: 4),
-                    Text(
-                      '読み込み\nエラー',
-                      style: TextStyle(
-                        color: Color(0xFF757575),
-                        fontSize: 12,
-                      ),
-                      textAlign: TextAlign.center,
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.broken_image,
+                          color: Color(0xFF757575),
+                          size: 32,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          '読み込み\nエラー',
+                          style: TextStyle(
+                            color: Color(0xFF757575),
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
-                  ],
+                  );
+                },
                 ),
-              );
-            },
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
-                      : null,
-                  strokeWidth: 2,
-                ),
-              );
-            },
+              ),
+            ),
           ),
         );
       }
@@ -455,12 +663,10 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            _article?.description ?? widget.description ?? '記事の内容が表示されます。',
-            style: TextStyle(
-              fontSize: 16,
-              color: Color(0xFF424242),
-              height: 1.6,
+          Container(
+            width: double.infinity,
+            child: _buildLinkifiedDescription(
+              _article?.description ?? widget.description ?? '記事の内容が表示されます。',
             ),
           ),
         ],
@@ -468,36 +674,96 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
     );
   }
 
+  // 記事本文内のURLを検出してリンク化
+  Widget _buildLinkifiedDescription(String text) {
+    final urlRegExp = RegExp(r'((https?:\/\/|www\.)[^\s]+)', caseSensitive: false);
+    final spans = <TextSpan>[];
+    int start = 0;
+    final matches = urlRegExp.allMatches(text).toList();
+
+    for (final m in matches) {
+      if (m.start > start) {
+        spans.add(TextSpan(text: text.substring(start, m.start)));
+      }
+      final rawUrl = text.substring(m.start, m.end);
+      final url = rawUrl.startsWith('http') ? rawUrl : 'https://$rawUrl';
+      spans.add(
+        TextSpan(
+          text: rawUrl,
+          style: const TextStyle(
+            color: Color(0xFF1976D2),
+            decoration: TextDecoration.underline,
+          ),
+          recognizer: TapGestureRecognizer()
+            ..onTap = () async {
+              final uri = Uri.parse(url);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
+            },
+        ),
+      );
+      start = m.end;
+    }
+    if (start < text.length) {
+      spans.add(TextSpan(text: text.substring(start)));
+    }
+
+    return SelectableText.rich(
+      TextSpan(
+        style: const TextStyle(
+          fontSize: 16,
+          color: Color(0xFF424242),
+          height: 1.6,
+        ),
+        children: spans,
+      ),
+      textAlign: TextAlign.center,
+    );
+  }
+
   Widget _buildLikeSection() {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.end, // 右端に配置
         children: [
           InkWell(
-            onTap: _toggleLike,
+            onTap: _isLikeLoading ? null : _toggleLike,
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: Color(0xFFF5F5F5),
-                border: Border.all(color: Color(0xFFE0E0E0)),
+                color: _isLiked ? Colors.red[50] : Color(0xFFF5F5F5),
+                border: Border.all(
+                  color: _isLiked ? Colors.red : Color(0xFFE0E0E0),
+                  width: _isLiked ? 2 : 1,
+                ),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.favorite,
-                    color: Colors.red,
-                    size: 20,
-                  ),
+                  _isLikeLoading
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                        ),
+                      )
+                    : Icon(
+                        _isLiked ? Icons.favorite : Icons.favorite_border,
+                        color: _isLiked ? Colors.red : Color(0xFF757575),
+                        size: 20,
+                      ),
                   SizedBox(width: 8),
                   Text(
                     '${_article?.totalLikes ?? 0}',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF424242),
+                      color: _isLiked ? Colors.red : Color(0xFF424242),
                     ),
                   ),
                 ],
@@ -509,29 +775,83 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
     );
   }
 
-  Future<void> _toggleLike() async {
-    if (_article?.id == null) return;
-
-    try {
-      // いいね機能の実装（後で詳細な実装を追加可能）
-      await ArticleApiClient.likeArticle(_article!.id!);
-      
-      // データを再読み込み
-      _loadArticleData();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('いいねしました'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('エラーが発生しました: $e'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
+  // 画像拡大表示モーダル
+  void _showImageModal(String imageUrl) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.all(16),
+          child: Stack(
+            children: [
+              // 拡大画像表示
+              Center(
+                child: InteractiveViewer(
+                  minScale: 0.5,
+                  maxScale: 4.0,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                          color: Colors.white,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.broken_image,
+                              color: Colors.white,
+                              size: 64,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              '画像を読み込めませんでした',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              // 閉じるボタン
+              Positioned(
+                top: 16,
+                right: 16,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black54,
+                    padding: EdgeInsets.all(8),
+                  ),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

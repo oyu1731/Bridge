@@ -2,6 +2,8 @@ package com.bridge.backend.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 
 /**
  * Chatエンティティ
@@ -28,10 +30,17 @@ public class Chat {
     private Boolean isDeleted; // 削除済みフラグ
 
     @Column(name = "deleted_at")
-    private LocalDateTime deletedAt; // 削除日時
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime deletedAt;
 
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt; // 作成日時
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createdAt;
+    // @Column(name = "deleted_at")
+    // private LocalDateTime deletedAt; // 削除日時
+
+    // @Column(name = "created_at", nullable = false)
+    // private LocalDateTime createdAt; // 作成日時
 
     @Column(name = "photo_id")
     private Integer photoId; // 写真ID

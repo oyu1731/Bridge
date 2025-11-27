@@ -16,6 +16,14 @@ import java.util.List;
 public interface ArticleRepository extends JpaRepository<Article, Integer> {
     
     /**
+     * 削除されていない記事をタグ情報と一緒に全て取得
+     * 
+     * @return 削除されていない記事のリスト（タグ情報含む）
+     */
+    @Query("SELECT DISTINCT a FROM Article a LEFT JOIN FETCH a.tags WHERE a.isDeleted = false ORDER BY a.createdAt DESC")
+    List<Article> findAllWithTags();
+    
+    /**
      * 削除されていない記事を全て取得
      * 
      * @return 削除されていない記事のリスト
@@ -38,6 +46,15 @@ public interface ArticleRepository extends JpaRepository<Article, Integer> {
      * @return 該当企業の記事のリスト
      */
     List<Article> findByCompanyIdAndIsDeletedFalseOrderByCreatedAtDesc(Integer companyId);
+    
+    /**
+     * IDと削除フラグで記事をタグ情報と一緒に検索
+     * 
+     * @param id 記事ID
+     * @return 記事（存在しない、または削除済みの場合はnull）
+     */
+    @Query("SELECT a FROM Article a LEFT JOIN FETCH a.tags WHERE a.id = :id AND a.isDeleted = false")
+    Article findByIdAndIsDeletedFalseWithTags(@Param("id") Integer id);
     
     /**
      * IDと削除フラグで記事を検索

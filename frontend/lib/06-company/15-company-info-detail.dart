@@ -70,6 +70,34 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
     }
   }
 
+  // いいね行（0件でも固定高さで表示してレイアウトを安定化）
+  Widget _buildLikeRow(int? likes) {
+    final count = likes ?? 0;
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: SizedBox(
+        height: 18,
+        child: Row(
+          children: [
+            Icon(
+              Icons.favorite,
+              size: 12,
+              color: Colors.red,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '$count',
+              style: TextStyle(
+                fontSize: 11,
+                color: const Color(0xFF757575),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildCompanyImage(double height) {
     if (_company?.photoPath != null && _company!.photoPath!.isNotEmpty) {
       return ClipRRect(
@@ -436,27 +464,7 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
                                           height: 1.4,
                                         ),
                                       ),
-                                      if (article.totalLikes != null && article.totalLikes! > 0)
-                                        Padding(
-                                          padding: const EdgeInsets.only(top: 4),
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.favorite,
-                                                size: 12,
-                                                color: Colors.red,
-                                              ),
-                                              SizedBox(width: 4),
-                                              Text(
-                                                '${article.totalLikes}',
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: Color(0xFF757575),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+                                      _buildLikeRow(article.totalLikes),
                                     ],
                                   ),
                                 ),
@@ -558,27 +566,7 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
                                     height: 1.4,
                                   ),
                                 ),
-                                if (article.totalLikes != null && article.totalLikes! > 0)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.favorite,
-                                          size: 12,
-                                          color: Colors.red,
-                                        ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          '${article.totalLikes}',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Color(0xFF757575),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                _buildLikeRow(article.totalLikes),
                               ],
                             ),
                           ),
