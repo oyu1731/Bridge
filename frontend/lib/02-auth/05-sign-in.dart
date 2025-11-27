@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:bridge/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bridge/03-home/08-student-worker-home.dart';
+import 'package:bridge/03-home/09-company-home.dart';
 import 'dart:convert';
 import 'dart:async';
-// 'crypto' を現在は使っていないためコメントアウト（将来ハッシュ等を使うなら戻す）
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
@@ -43,7 +43,11 @@ class _SignInPageState extends State<SignInPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('サインイン')),
+      appBar: AppBar(
+        title: const Text('サインイン'),
+        backgroundColor: const Color.fromARGB(255, 24, 147, 178),
+        foregroundColor: Colors.white,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -114,9 +118,19 @@ class _SignInPageState extends State<SignInPage> {
                         final userData = jsonDecode(response.body);
                         await saveSession(userData);
                         print('✅ 保存したセッションデータ: ${userData}');
-                        Navigator.push(
+                        final int? type = userData['type'];
+                        Widget homePage;
+                        if (type == 1 || type == 2) {
+                          homePage = const StudentWorkerHome();
+                        } else if (type == 3) {
+                          homePage = const CompanyHome();
+                        } else {
+                          // 予期しないタイプの場合は、とりあえずトップページに戻す
+                          homePage = const MyHomePage(title: 'Bridge');
+                        }
+                        Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (context) => StudentWorkerHome()),
+                          MaterialPageRoute(builder: (context) => homePage),
                         );
                       } else {
                         print('❌ サインイン失敗: ${response.statusCode}');
@@ -140,7 +154,7 @@ class _SignInPageState extends State<SignInPage> {
                 if (_errorMessage.isNotEmpty)
                   Text(
                     _errorMessage,
-                    style: const TextStyle(color: Colors.red),
+                    style: TextStyle(color: Colors.orange[800]),
                   ),
             ],
           ),

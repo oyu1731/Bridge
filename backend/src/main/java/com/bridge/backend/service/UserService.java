@@ -1,14 +1,14 @@
 package com.bridge.backend.service;
 
 import java.util.Optional;
-
+// DTO
 import com.bridge.backend.dto.UserDto;
+// Entities
 import com.bridge.backend.entity.Company;
 import com.bridge.backend.entity.Subscription;
 import com.bridge.backend.entity.IndustryRelation;
 import com.bridge.backend.entity.User;
-
-import com.bridge.backend.repository.IndustryRepository;
+// Repositories
 import com.bridge.backend.repository.SubscriptionRepository;
 import com.bridge.backend.repository.IndustryRelationRepository;
 import com.bridge.backend.repository.UserRepository;
@@ -46,8 +46,7 @@ public class UserService {
     @Autowired
     private com.bridge.backend.repository.IndustryRepository industryRepository;
 
-
-    // パスワードハッシュ用のEncoderを作成
+    // パスワードハッシュ用
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     /**
@@ -170,6 +169,12 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // ===== メールアドレス重複チェック =====
+        Optional<User> existingUserWithEmail = userRepository.findByEmail(dto.getEmail());
+        if (existingUserWithEmail.isPresent() && !existingUserWithEmail.get().getId().equals(userId)) {
+            throw new IllegalArgumentException("そのメールアドレスは使用できません");
+        }
+        
         // ===== usersテーブル更新 =====
         user.setNickname(dto.getNickname());
         user.setEmail(dto.getEmail());
@@ -253,6 +258,15 @@ public class UserService {
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    // 退会処理
+    @Transactional
+    public void deleteUser(Integer userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setIsWithdrawn(true);
         userRepository.save(user);
     }
 }

@@ -1,13 +1,10 @@
 package com.bridge.backend.controller;
 
-// import com.bridge.backend.dto.CompanyDTO;
-// import com.bridge.backend.service.CompanyService;
-// import com.bridge.backend.dto.CompanyRegistrationDto;
-// import com.bridge.backend.service.CompanyAccountService;
 import com.bridge.backend.dto.UserDto;
 import com.bridge.backend.entity.User;
 import com.bridge.backend.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
@@ -78,6 +76,21 @@ public class UserController {
             return ResponseEntity.ok("Password updated successfully");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Integer id, HttpSession session) {
+        try {
+            // ===== ユーザー削除 =====
+            userService.deleteUser(id);
+
+            // ===== セッション削除 =====
+            session.invalidate();
+
+            return ResponseEntity.ok("User deleted successfully and session invalidated");
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }

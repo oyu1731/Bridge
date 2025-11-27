@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../02-auth/06-delete-account.dart';
 import '../04-profile/11-student-profile-edit.dart';
 import '../04-profile/12-worker-profile-edit.dart';
 import '/04-profile/13-company-profile-edit.dart';
@@ -487,7 +488,12 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         );
         break;
       case 'withdraw':
-        // 退会手続きの確認ダイアログ（張りぼて）
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DeleteAccountPage(), // 退会確認画面
+            ),
+          );
         break;
       case 'logout':
         // ログアウト確認ダイアログ（張りぼて）

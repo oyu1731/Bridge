@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/03-home/08-student-worker-home.dart';
+import 'package:bridge/03-home/09-company-home.dart';
+import 'package:bridge/main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -44,10 +46,12 @@ Future<void> _onSubmit() async {
     final userJson = prefs.getString('current_user');
 
     int? userId;
+    int? userType;
 
     if (userJson != null) {
       final userData = jsonDecode(userJson);
       userId = userData['id'];
+      userType = userData['type'];
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('ユーザーが見つかりません')),
@@ -85,9 +89,17 @@ Future<void> _onSubmit() async {
                 onPressed: () {
                   Navigator.of(ctx).pop(); // ダイアログを閉じる
                   // ✅ トップページへ遷移（例: HomePage）
+                  Widget homePage;
+                  if (userType == 1 || userType == 2) {
+                    homePage = const StudentWorkerHome();
+                  } else if (userType == 3) {
+                    homePage = const CompanyHome();
+                  } else {
+                    homePage = const MyHomePage(title: 'Bridge');
+                  }
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (_) => const StudentWorkerHome()),
+                    MaterialPageRoute(builder: (_) => homePage),
                   );
                 },
                 child: const Text('閉じる'),
@@ -198,25 +210,6 @@ Future<void> _onSubmit() async {
 
                         const SizedBox(height: 32),
 
-                        // --- 参考用にワイヤーフレーム画像を下部に表示（ローカルパスをそのまま使用） ---
-                        // 開発環境に合わせて経路を変えてください。
-                        Builder(builder: (_) {
-                          try {
-                            final imageFile = File('/mnt/data/c18f8270-40d6-4dc1-b381-54ae136fff4e.png');
-                            if (imageFile.existsSync()) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 8),
-                                  const Text('（参考イメージ）', style: TextStyle(fontSize: 12, color: Colors.black45)),
-                                  const SizedBox(height: 8),
-                                  Image.file(imageFile, width: double.infinity),
-                                ],
-                              );
-                            }
-                          } catch (_) {}
-                          return const SizedBox.shrink();
-                        }),
                       ],
                     ),
                   ),

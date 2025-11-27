@@ -8,6 +8,7 @@ import 'package:bridge/02-auth/04-sign-up-company.dart';
 import 'package:bridge/02-auth/05-sign-in.dart';
 import 'package:bridge/03-home/08-student-worker-home.dart';
 import 'package:bridge/03-home/09-company-home.dart';
+import 'package:bridge/09-admin/36-admin-home.dart';
 // import 'package:bridge/09-admin/36-admin-home.dart';
 
 void main() async {
@@ -30,6 +31,9 @@ void main() async {
       } else if (type == 3) {
         print('企業ホームへ遷移');
         initialPage = const CompanyHome();
+      } else if (type == 4) {
+        print('管理者ホームへ遷移');
+        initialPage = AdminHome();
       } else {
         print('ログイン画面へ遷移（タイプ不正）');
         initialPage = const MyHomePage(title: 'Bridge');
@@ -53,10 +57,28 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Bridge App',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlue),
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color.fromARGB(255, 0, 100, 120), // 暗めのシアン
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color.fromARGB(255, 0, 100, 120), // ボタンも統一
+            foregroundColor: Colors.white, // 文字色
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          errorStyle: TextStyle(color: Colors.orange[800]),
+          errorBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.orange),
+          ),
+          focusedErrorBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.orange, width: 2),
+          ),
+        ),
       ),
+      title: 'Bridge App',
       home: initialPage,
     );
   }
@@ -89,8 +111,8 @@ class _MyHomePageState extends State<MyHomePage> {
         homePage = StudentWorkerHome();
       } else if (type == 3) {
         homePage =  CompanyHome();
-      // } else if (type == 4) {
-      //   homePage = AdminHome();
+      } else if (type == 4) {
+        homePage = AdminHome();
       } else {
         homePage = const MyHomePage(title: 'Bridge');
       }
@@ -111,7 +133,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Navigator.push(context, MaterialPageRoute(builder: (context) => nextPage));
   }
 
-  Widget _buildCircleButton(String label, IconData icon) {
+  Widget _buildCircleButton(String label, IconData icon, {double size = 200}) {
     return Material(
       color: Colors.transparent,
       shape: const CircleBorder(),
@@ -119,10 +141,10 @@ class _MyHomePageState extends State<MyHomePage> {
         onTap: () => _onCircleTap(label, context),
         borderRadius: BorderRadius.circular(100),
         containedInkWell: true,
-        splashColor: Colors.blueAccent.withOpacity(0.5),
+        splashColor: Colors.cyan[700]!,
         child: Container(
-          height: 200,
-          width: 200,
+          height: size,
+          width: size,
           decoration: const BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
@@ -130,7 +152,7 @@ class _MyHomePageState extends State<MyHomePage> {
               BoxShadow(
                 color: Colors.black26,
                 blurRadius: 4,
-                offset: Offset(2, 2),
+                offset: Offset(1, 2),
               ),
             ],
           ),
@@ -138,16 +160,12 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  icon,
-                  size: 60,
-                  color: Color.fromARGB(255, 93, 87, 87),
-                ),
+                Icon(icon, size: size * 0.3, color: const Color.fromARGB(255, 9, 70, 95)),
                 Text(
                   label,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontSize: 32,
-                        color: Colors.black,
+                        fontSize: size * 0.16,
+                        color: const Color.fromARGB(255, 6, 62, 85),
                         fontWeight: FontWeight.bold,
                       ),
                 ),
@@ -252,9 +270,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 600; // スマホ判定
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: const Color.fromARGB(255, 24, 147, 178),
+        foregroundColor: Colors.white,
         title: Text(widget.title),
       ),
       body: SingleChildScrollView(
@@ -263,14 +285,28 @@ class _MyHomePageState extends State<MyHomePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 40),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildCircleButton('学生', Icons.school),
-                  _buildCircleButton('社会人', Icons.work),
-                  _buildCircleButton('企業', Icons.business),
-                ],
-              ),
+
+              // レスポンシブレイアウト
+              if (isSmallScreen)
+                Column(
+                  children: [
+                    _buildCircleButton('学生', Icons.school, size: 150),
+                    const SizedBox(height: 20),
+                    _buildCircleButton('社会人', Icons.work, size: 150),
+                    const SizedBox(height: 20),
+                    _buildCircleButton('企業', Icons.business, size: 150),
+                  ],
+                )
+              else
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildCircleButton('学生', Icons.school),
+                    _buildCircleButton('社会人', Icons.work),
+                    _buildCircleButton('企業', Icons.business),
+                  ],
+                ),
+
               const SizedBox(height: 20),
               const Text("デバッグ用: ユーザーセッション操作"),
               const SizedBox(height: 10),
@@ -303,7 +339,8 @@ class _MyHomePageState extends State<MyHomePage> {
               TextButton(
                 child: const Text("サインインはこちら"),
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SignInPage()));
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => const SignInPage()));
                 },
               ),
             ],
@@ -312,4 +349,5 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+
 }

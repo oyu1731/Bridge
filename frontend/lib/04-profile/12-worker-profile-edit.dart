@@ -3,6 +3,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bridge/11-common/58-header.dart';
+import 'package:bridge/03-home/08-student-worker-home.dart';
+import 'package:bridge/03-home/09-company-home.dart';
+import 'package:bridge/main.dart';
 
 class Industry {
   final int id;
@@ -212,6 +215,24 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
     );
   }
 
+  void _navigateToHome(Map<String, dynamic> userData) {
+    final int? type = userData['type'];
+    Widget homePage;
+    if (type == 1 || type == 2) {
+      homePage = const StudentWorkerHome();
+    } else if (type == 3) {
+      homePage = const CompanyHome();
+    } else {
+      homePage = const MyHomePage(title: 'Bridge');
+    }
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => homePage),
+      (Route<dynamic> route) => false,
+    );
+  }
+
   Future<void> _updateUserProfile() async {
     final prefs = await SharedPreferences.getInstance();
     final String? userJson = prefs.getString('current_user');
@@ -221,70 +242,51 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
     }
 
     final userData = jsonDecode(userJson);
-    final dynamic idValue = userData['id'];
-    final int userId = idValue is int ? idValue : int.parse(idValue.toString());
+    final int userId = userData['id'];
+
+    final selectedIndustryIds = industries
+        .where((industry) => industry.isSelected)
+        .map((industry) => industry.id)
+        .toList();
 
     final Map<String, dynamic> updatedData = {
       'nickname': _nicknameController.text,
       'email': _emailController.text,
       'phoneNumber': _phoneNumberController.text,
-      'societyHistory': _societyHistoryController.text,
+      'societyHistory': int.tryParse(_societyHistoryController.text),
+      'desiredIndustries': selectedIndustryIds,
     };
 
-    final userUpdateUrl = 'http://localhost:8080/api/users/$userId/profile';
-    final userUpdateResponse = await http.put(
-      Uri.parse(userUpdateUrl),
+    final url = 'http://localhost:8080/api/users/$userId/profile';
+    final response = await http.put(
+      Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(updatedData),
     );
 
-    // 修正ポイント: name ではなく id を送信
-    final selectedIndustries = industries
-        .where((industry) => industry.isSelected)
-        .map((industry) => industry.id) // ← id を送る
-        .toList();
+    if (response.statusCode == 200) {
+      final updatedUserData = jsonDecode(response.body);
+      await prefs.setString('current_user', jsonEncode(updatedUserData));
 
-    final industriesUpdateUrl = 'http://localhost:8080/api/users/$userId/industries';
-    final industriesUpdateResponse = await http.put(
-      Uri.parse(industriesUpdateUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(selectedIndustries),
-    );
-
-    if (userUpdateResponse.statusCode == 200 && industriesUpdateResponse.statusCode == 200) {
-      // 現在のセッション情報を取得して、変更点のみ更新する
-      final String? currentUserJson = prefs.getString('current_user');
-      if (currentUserJson != null) {
-        Map<String, dynamic> currentUserData = jsonDecode(currentUserJson);
-
-        // 変更された項目だけを更新
-        currentUserData['nickname'] = _nicknameController.text;
-        currentUserData['email'] = _emailController.text;
-        currentUserData['phoneNumber'] = _phoneNumberController.text;
-        currentUserData['societyHistory'] = int.tryParse(_societyHistoryController.text);
-
-        // 更新したセッション情報を保存
-        await prefs.setString('current_user', jsonEncode(currentUserData));
-      }
-
-      showDialog(
+      showDialog<bool>(
         context: context,
-        builder: (BuildContext context) {
+        builder: (BuildContext dialogContext) {
           return AlertDialog(
             title: const Text('成功'),
             content: const Text('プロフィールを更新しました'),
             actions: [
               TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // ダイアログを閉じる
-                  Navigator.of(context).pop(); // プロフィール編集画面を閉じる
-                },
+                onPressed: () => Navigator.of(dialogContext).pop(true),
                 child: const Text('OK'),
               ),
             ],
           );
         },
-      );
+      ).then((result) {
+        if (result == true) {
+          _navigateToHome(updatedUserData);
+        }
+      });
     } else {
       showDialog(
         context: context,
