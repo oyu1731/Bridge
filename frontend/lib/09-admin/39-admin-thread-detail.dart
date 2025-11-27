@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import '38-admin-thread-list.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'dart:async';
 
 class AdminThreadDetail extends StatefulWidget {
-  final Map<String, dynamic> thread;
+  final int threadId; // ← String → int に変更
 
-  const AdminThreadDetail({required this.thread, Key? key})
-      : super(key: key);
+  const AdminThreadDetail({required this.threadId, super.key});
 
   @override
   _AdminThreadDetailState createState() => _AdminThreadDetailState();
@@ -125,7 +123,6 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
   }
 
   // （将来）外部ソケットからの着信を想定した擬似メソッド
-  // 実際にバックエンド接続したら socket.on('new_message', ...) 内で呼ぶ
   void _onExternalNewMessage(Map<String, dynamic> msg) {
     setState(() {
       _messages.add(msg);
@@ -163,7 +160,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.thread['title'] ?? 'スレッド',
+                    "スレッドID: ${widget.threadId}", // ← 受け取ったIDのみ使用
                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -261,35 +258,34 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
                               child: Text(dateString, style: const TextStyle(fontSize: 13)),
                             ),
                           ),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              const CircleAvatar(
-                                // assetsパスはプロジェクトに合わせて調整
-                                backgroundImage: AssetImage('assets/user_icon1.png'),
-                                radius: 18,
-                              ),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(msg['user_id'], style: const TextStyle(fontSize: 12)),
-                                    Container(
-                                      margin: const EdgeInsets.symmetric(vertical: 4),
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(width: 1),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(msg['text'], style: const TextStyle(fontSize: 15)),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            const CircleAvatar(
+                              backgroundImage: AssetImage('assets/user_icon1.png'),
+                              radius: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(msg['user_id'], style: const TextStyle(fontSize: 12)),
+                                  Container(
+                                    margin: const EdgeInsets.symmetric(vertical: 4),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(width: 1),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    Text(timeString, style: const TextStyle(fontSize: 11)),
-                                  ],
-                                ),
+                                    child: Text(msg['text'], style: const TextStyle(fontSize: 15)),
+                                  ),
+                                  Text(timeString, style: const TextStyle(fontSize: 11)),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
+                        ),
                       ],
                     );
                   },

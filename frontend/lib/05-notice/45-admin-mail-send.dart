@@ -20,6 +20,12 @@ class _AdminMailSendState extends State<AdminMailSend> {
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
 
+  String? _selectedCategory;
+  final Map<String, int> _categories = {
+    '運営情報': 1,
+    '重要': 2,
+  };
+
   String _selectedTimeOption = '即時';
   DateTime? _selectedDate;
   String? _selectedHour;
@@ -81,6 +87,14 @@ class _AdminMailSendState extends State<AdminMailSend> {
 
     final userId = (type == 8) ? int.tryParse(_specificUserIdController.text) : null;
 
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('カテゴリを選択してください')),
+      );
+      return;
+    }
+
+
     // 個人宛チェック
     if (type == 8) {
       if (userId == null) {
@@ -134,7 +148,7 @@ class _AdminMailSendState extends State<AdminMailSend> {
     if (_selectedTimeOption == '予約') {
       final hour = int.parse(_selectedHour!.split(":")[0]);
       final dt = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, hour);
-      reservationTime = dt.toIso8601String();
+      reservationTime = '${dt.year}-${dt.month.toString().padLeft(2,'0')}-${dt.day.toString().padLeft(2,'0')}T${dt.hour.toString().padLeft(2,'0')}:00:00';
     }
 
     final body = jsonEncode({
@@ -142,6 +156,7 @@ class _AdminMailSendState extends State<AdminMailSend> {
       'userId': userId,
       'title': _subjectController.text,
       'content': _contentController.text,
+      'category': _categories[_selectedCategory],
       'reservationTime': reservationTime,
     });
 
@@ -152,7 +167,9 @@ class _AdminMailSendState extends State<AdminMailSend> {
       final response = await http.post(url, headers: headers, body: body);
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('送信が完了しました'), backgroundColor: Colors.green),
+          SnackBar(
+            content: Text('送信が完了しました'),
+          ),
         );
         _clearForm();
       } else {
@@ -231,6 +248,27 @@ class _AdminMailSendState extends State<AdminMailSend> {
                   keyboardType: TextInputType.number,
                 ),
               ),
+            const SizedBox(height: 16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                    width: labelWidth,
+                    child: Text('カテゴリ', style: TextStyle(fontWeight: FontWeight.bold))),
+                Expanded(
+                  child: DropdownButton<String>(
+                    value: _selectedCategory,
+                    hint: Text('選択してください'),
+                    items: _categories.keys
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                    onChanged: (v) {
+                      setState(() => _selectedCategory = v);
+                    },
+                  ),
+                )
+              ],
+            ),
             const SizedBox(height: 16),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,

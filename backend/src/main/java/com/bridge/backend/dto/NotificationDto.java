@@ -8,34 +8,41 @@ import com.fasterxml.jackson.annotation.JsonFormat;
  * フロントから送信されるお知らせ情報を受け取るDTO
  */
 public class NotificationDto {
-
-    // お知らせタイプ: 1=学生, 2=社会人, 3=企業, 4=学生×社会人, 5=学生×企業, 6=社会人×企業, 7=全員, 8=特定ユーザー
+    private Integer id;
     private Integer type;
-
-    // 件名
     private String title;
-
-    // 内容
     private String content;
-
-    // 特定ユーザーID (typeに8が含まれる場合のみ)
+    private Integer category;
     private Integer userId;
 
-    // 予約送信日時（nullの場合は即時）
     @JsonFormat(pattern="yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime reservationTime;
 
+    @JsonFormat(pattern="yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime sendFlag;
+
     public NotificationDto() {}
 
-    public NotificationDto(Integer type, String title, String content, Integer userId, LocalDateTime reservationTime) {
+    public NotificationDto(Integer id, Integer type, String title, String content, Integer category, Integer userId, LocalDateTime reservationTime, LocalDateTime sendFlag) {
+        this.id = id;
         this.type = type;
         this.title = title;
         this.content = content;
+        this.category = category;
         this.userId = userId;
         this.reservationTime = reservationTime;
+        this.sendFlag = sendFlag;
     }
 
     // --- ゲッターとセッター ---
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+    
     public Integer getType() {
         return type;
     }
@@ -43,7 +50,7 @@ public class NotificationDto {
     public void setType(Integer type) {
         this.type = type;
     }
-
+    
     public String getTitle() {
         return title;
     }
@@ -60,6 +67,14 @@ public class NotificationDto {
         this.content = content;
     }
 
+    public Integer getCategory() {
+        return category;
+    }
+
+    public void setCategory(Integer category) {
+        this.category = category;
+    }
+
     public Integer getUserId() {
         return userId;
     }
@@ -74,5 +89,13 @@ public class NotificationDto {
 
     public void setReservationTime(LocalDateTime reservationTime) {
         this.reservationTime = reservationTime;
+    }
+
+    public LocalDateTime getSendFlag() {
+        return sendFlag;
+    }
+
+    public void setSendFlag(LocalDateTime sendFlag) {
+        this.sendFlag = sendFlag;
     }
 }
