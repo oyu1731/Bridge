@@ -5,7 +5,6 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bridge/03-home/09-company-home.dart';
 import 'package:http/http.dart' as http;
-import 'package:payjp_flutter/payjp_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform, kIsWeb;
 
@@ -19,10 +18,6 @@ class CompanyInputPage extends StatefulWidget {
 Future<void> saveSession(dynamic userData) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('current_user', jsonEncode(userData));
-}
-
-Future<void> _initPayjp() async {
-  await Payjp.init(publicKey: 'pk_test_fc1c2a514fc1023cd2fffbab');
 }
 
 class _CompanyInputPageState extends State<CompanyInputPage> {
@@ -50,13 +45,6 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
   void initState() {
     super.initState();
     _fetchIndustries();
-
-    final bool _payjpSupported = !kIsWeb &&
-        (defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS);
-    if (_payjpSupported) {
-      _initPayjp();
-    }
   }
 
   Future<void> _fetchIndustries() async {
