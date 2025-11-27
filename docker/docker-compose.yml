@@ -52,6 +52,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/bridgedb # データベース接続URL (Dockerネットワーク内のmysqlサービス名を使用)
       SPRING_DATASOURCE_USERNAME: bridgeuser # データベースユーザー名
       SPRING_DATASOURCE_PASSWORD: bridgepass # データベースパスワード
+    volumes:
+      - uploaded_photos:/app/uploads/photos # 画像アップロード用の永続化ボリューム
     networks:
       - bridge-network # サービス間の通信に使用するネットワーク
     restart: unless-stopped # コンテナが停止した場合に自動的に再起動
@@ -83,6 +85,7 @@ services:
 
 volumes:
   mysql_data: # MySQLデータ用のボリューム定義
+  uploaded_photos: # アップロードされた画像ファイル用のボリューム定義
 
 networks:
   bridge-network: # サービス間の通信に使用するカスタムネットワーク

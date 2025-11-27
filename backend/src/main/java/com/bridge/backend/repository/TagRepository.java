@@ -10,4 +10,12 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface TagRepository extends JpaRepository<Tag, Integer> {
+    
+    /**
+     * タグ名でタグを検索
+     * 
+     * @param tag タグ名
+     * @return Tag（存在しない場合はnull）
+     */
+    Tag findByTag(String tag);
 }

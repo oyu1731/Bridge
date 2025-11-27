@@ -49,7 +49,7 @@ void main() async {
 
   runApp(MyApp(initialPage: initialPage));
 }
-
+ 
 class MyApp extends StatelessWidget {
   final Widget initialPage;
   const MyApp({super.key, required this.initialPage});
@@ -176,7 +176,6 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
-
   /// 選択したユーザーをSharedPreferencesに保存
   Future<void> saveUserSession(String role) async {
     final prefs = await SharedPreferences.getInstance();
@@ -187,7 +186,6 @@ class _MyHomePageState extends State<MyHomePage> {
       print('指定されたユーザーは存在しません');
     }
   }
-
   /// SharedPreferencesからユーザー情報を取得
   Future<void> loadUserSession() async {
     final prefs = await SharedPreferences.getInstance();
@@ -200,7 +198,6 @@ class _MyHomePageState extends State<MyHomePage> {
       print('セッションにユーザー情報はありません');
     }
   }
-
   @override
   void initState() {
     super.initState();

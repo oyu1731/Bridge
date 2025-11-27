@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:bridge/11-common/58-header.dart';
 import '32-thread-official-detail.dart';
 import '33-thread-unofficial-detail.dart';
@@ -8,23 +10,56 @@ import 'thread-unofficial-list.dart';
 class Thread {
   final String id;
   final String title;
-  final String? lastComment; // 公式スレッドのみ
+  final int type; // 1=公式, 2=非公式
+  final String? lastComment; // 公式のみ
   final String timeAgo;
 
   Thread({
     required this.id,
     required this.title,
+    required this.type,
     this.lastComment,
     required this.timeAgo,
   });
 
   factory Thread.fromJson(Map<String, dynamic> json) {
+    // last_update_date があれば経過時間を計算
+    String timeAgoText = "";
+    if (json["last_update_date"] != null) {
+      DateTime lastUpdate = DateTime.parse(json["last_update_date"]);
+      timeAgoText = _formatTimeAgo(lastUpdate);
+    }
+
     return Thread(
       id: json['id'].toString(),
-      title: json['title'] as String,
-      lastComment: json['lastComment'] as String?,
-      timeAgo: json['timeAgo'] as String,
+      title: json['title']?.toString() ?? '',
+      type: json['type'] != null ? int.parse(json['type'].toString()) : 2,
+      lastComment: null, // DB仕様上なし
+      timeAgo: timeAgoText,
     );
+  }
+
+  /// 時間差 → 「〜分前」「〜時間前」「〜日前」
+  static String _formatTimeAgo(DateTime time) {
+    final diff = DateTime.now().difference(time);
+
+    if (diff.inSeconds < 60) return 'たった今';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}分前';
+    if (diff.inHours < 24) return '${diff.inHours}時間前';
+    return '${diff.inDays}日前';
+  }
+}
+
+// API呼び出し関数
+Future<List<Thread>> fetchThreads() async {
+  final url = Uri.parse('http://localhost:8080/api/threads');
+  final response = await http.get(url);
+
+  if (response.statusCode == 200) {
+    final List<dynamic> data = json.decode(response.body);
+    return data.map((json) => Thread.fromJson(json)).toList();
+  } else {
+    throw Exception('スレッド取得に失敗しました: ${response.statusCode}');
   }
 }
 
@@ -40,39 +75,28 @@ class _ThreadListState extends State<ThreadList> {
   @override
   void initState() {
     super.initState();
+<<<<<<< HEAD
+    _fetchThreads(); // DBから取得
+  }
+
+  Future<void> _fetchThreads() async {
+    try {
+      final threads = await fetchThreads();
+=======
     _loadDummyThreads();
   }
 
   Future<void> _loadDummyThreads() async {
     await Future.delayed(Duration(milliseconds: 300));
+>>>>>>> yoshida
 
-    setState(() {
-      officialThreads = [
-        Thread(
-            id: '1',
-            title: '学生・社会人',
-            lastComment: '最近忙しいけど頑張ってる！',
-            timeAgo: '3分前'),
-        Thread(
-            id: '2',
-            title: '学生',
-            lastComment: 'テスト期間でやばいです…',
-            timeAgo: '15分前'),
-        Thread(
-            id: '3',
-            title: '社会人',
-            lastComment: '残業が多くてつらい…',
-            timeAgo: '42分前'),
-      ];
-
-      hotUnofficialThreads = [
-        Thread(id: 't1', title: '業界別の面接対策', timeAgo: '3分前'),
-        Thread(id: 't2', title: '社会人一年目の過ごし方', timeAgo: '10分前'),
-        Thread(id: 't3', title: 'おすすめの資格', timeAgo: '25分前'),
-        Thread(id: 't4', title: '働きながら転職活動するには', timeAgo: '50分前'),
-        Thread(id: 't5', title: '就活で意識すべきこと', timeAgo: '1時間前'),
-      ];
-    });
+      setState(() {
+        officialThreads = threads.where((t) => t.type == 1).toList();
+        hotUnofficialThreads = threads.where((t) => t.type == 2).toList();
+      });
+    } catch (e) {
+      print('スレッド取得に失敗: $e');
+    }
   }
 
   @override
@@ -98,10 +122,7 @@ class _ThreadListState extends State<ThreadList> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => ThreadOfficialDetail(
-                          thread: {
-                            'id': thread.id,
-                            'title': thread.title,
-                          },
+                          thread: {'id': thread.id, 'title': thread.title},
                         ),
                       ),
                     );
@@ -110,6 +131,17 @@ class _ThreadListState extends State<ThreadList> {
                     color: Colors.white, // 背景を白に設定
                     margin: EdgeInsets.symmetric(vertical: 6),
                     elevation: 2,
+<<<<<<< HEAD
+                    child: ListTile(
+                      title: Text(
+                        thread.title,
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      trailing: Text(
+                        thread.timeAgo,
+                        style: TextStyle(color: Colors.grey),
+=======
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -154,6 +186,7 @@ class _ThreadListState extends State<ThreadList> {
                             style: TextStyle(color: Colors.grey, fontSize: 13),
                           ),
                         ],
+>>>>>>> yoshida
                       ),
                     ),
                   ),
@@ -196,10 +229,7 @@ class _ThreadListState extends State<ThreadList> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => ThreadUnofficialDetail(
-                          thread: {
-                            'id': thread.id,
-                            'title': thread.title,
-                          },
+                          thread: {'id': thread.id, 'title': thread.title},
                         ),
                       ),
                     );

@@ -110,6 +110,8 @@ public class ArticleController {
     @PostMapping
     public ResponseEntity<ArticleDTO> createArticle(@RequestBody ArticleDTO articleDTO) {
         try {
+            System.out.println("Debug: ArticleController.createArticle received title=" + articleDTO.getTitle());
+            System.out.println("Debug: ArticleController.createArticle received tags=" + articleDTO.getTags());
             ArticleDTO createdArticle = articleService.createArticle(articleDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdArticle);
         } catch (Exception e) {
@@ -129,6 +131,7 @@ public class ArticleController {
     @PutMapping("/{id}")
     public ResponseEntity<ArticleDTO> updateArticle(@PathVariable Integer id, @RequestBody ArticleDTO articleDTO) {
         try {
+            System.out.println("Debug: ArticleController.updateArticle received id=" + id + ", tags=" + articleDTO.getTags());
             ArticleDTO updatedArticle = articleService.updateArticle(id, articleDTO);
             if (updatedArticle != null) {
                 return ResponseEntity.ok(updatedArticle);

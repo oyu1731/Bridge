@@ -47,6 +47,7 @@ class _AdminHomeState extends State<AdminHome> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _buildButton('アカウント管理', buttonWidth, buttonHeight, () {
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => AdminAccountList()),

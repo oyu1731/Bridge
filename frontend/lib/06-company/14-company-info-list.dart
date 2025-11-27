@@ -839,16 +839,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            article.description,
-            style: TextStyle(
-              color: Color(0xFF424242),
-              fontSize: 13,
-              height: 1.4,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
+          // 本文は一覧では非表示（要望により削除）
           const SizedBox(height: 8),
           Row(
             children: [
@@ -857,9 +848,20 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
                 style: TextStyle(color: Color(0xFF757575), fontSize: 12),
               ),
               const SizedBox(width: 16),
-              Text(
-                '♡ ${article.totalLikes ?? 0}',
-                style: TextStyle(color: Color(0xFF757575), fontSize: 12),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.favorite,
+                    size: 14,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${article.totalLikes ?? 0}',
+                    style: TextStyle(color: Color(0xFF757575), fontSize: 12),
+                  ),
+                ],
               ),
               const Spacer(),
               Text(
