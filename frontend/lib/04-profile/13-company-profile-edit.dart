@@ -9,6 +9,8 @@ import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/image_crop_dialog.dart';
 import '../06-company/photo_api_client.dart';
 import 'user_api_client.dart';
+import 'company_photo_modal.dart';
+import '../../06-company/company_api_client.dart';
 
 class Industry {
   final int id;
@@ -17,6 +19,8 @@ class Industry {
 
   Industry({required this.id, required this.name, this.isSelected = false});
 }
+  int? _companyPhotoId;
+  String? _companyPhotoUrl;
 
 class CompanyProfileEditPage extends StatefulWidget {
   const CompanyProfileEditPage({super.key});
@@ -79,6 +83,20 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
           _companyAddressController.text = userData['companyAddress'] ?? '';
           _companyDescriptionController.text = userData['companyDescription'] ?? '';
           _iconPhotoId = userData['icon'];
+
+          // 企業写真情報をセット
+          if (userData['companyPhotoId'] != null) {
+            _companyPhotoId = userData['companyPhotoId'];
+          }
+          if (userData['companyPhotoId'] != null && userData['companyPhotoId'] is int) {
+            PhotoApiClient.getPhotoById(userData['companyPhotoId']).then((photo) {
+              if (photo?.photoPath != null) {
+                setState(() {
+                  _companyPhotoUrl = photo!.photoPath;
+                });
+              }
+            });
+          }
         });
 
         // 既存アイコン取得
@@ -197,6 +215,36 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
               ),
             ),
             const SizedBox(height: 30),
+            // 企業写真追加ボタン（常に表示、アップロード時にphoto_id/photoUrlを上書き）
+            Center(
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.add_a_photo),
+                label: const Text('企業写真追加'),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => CompanyPhotoModal(
+                      onPhotoUploaded: (photoId, photoUrl) {
+                        setState(() {
+                          _companyPhotoId = photoId;
+                          _companyPhotoUrl = photoUrl;
+                        });
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+                        if (_companyPhotoUrl != null)
+                          Column(
+                            children: [
+                              const SizedBox(height: 16),
+                              Text('選択中の企業写真', style: TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 8),
+                              Image.network(_companyPhotoUrl!, width: 120, height: 120, fit: BoxFit.cover),
+                            ],
+                          ),
+            const SizedBox(height: 30),
             _buildLabel("企業名"),
             _buildTextField(_nicknameController),
             const SizedBox(height: 20),
@@ -219,9 +267,18 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
                   title: Text(industry.name),
                   value: industry.isSelected,
                   onChanged: (bool? value) {
-                    setState(() {
-                      industry.isSelected = value ?? true;
-                    });
+                    if (value == true) {
+                      setState(() {
+                        for (var ind in industries) {
+                          ind.isSelected = false;
+                        }
+                        industry.isSelected = true;
+                      });
+                    } else {
+                      setState(() {
+                        industry.isSelected = false;
+                      });
+                    }
                   },
                 );
               }).toList(),
@@ -276,6 +333,8 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
     final userData = jsonDecode(userJson);
     final dynamic idValue = userData['id'];
     final int userId = idValue is int ? idValue : int.parse(idValue.toString());
+    int? companyId = userData['companyId'];
+    print('プロフィール更新: companyId=$companyId, photoId=$_companyPhotoId');
 
     final Map<String, dynamic> updatedData = {
       'nickname': _nicknameController.text,
@@ -293,6 +352,20 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
       body: jsonEncode(updatedData),
     );
 
+    // 企業写真のphoto_idを保存
+    if (companyId != null && _companyPhotoId != null) {
+      final companyPhotoUrl = 'http://localhost:8080/api/companies/$companyId/photo';
+      final companyPhotoRes = await http.put(
+        Uri.parse(companyPhotoUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'photo_id': _companyPhotoId}),
+      );
+      print('企業写真APIレスポンス: status=${companyPhotoRes.statusCode}, body=${companyPhotoRes.body}');
+      if (companyPhotoRes.statusCode != 200) {
+        print('企業写真の保存に失敗: ${companyPhotoRes.statusCode}');
+      }
+    }
+
     // 修正ポイント: name ではなく id を送信
     final selectedIndustries = industries
         .where((industry) => industry.isSelected)
@@ -305,6 +378,48 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(selectedIndustries),
     );
+
+    // 企業プロフィール更新（企業アカウントの場合のみ）
+    if (companyId != null && userData['type'] == 3) {
+      // planStatusを数値型で送信
+      int planStatusValue = 1; // デフォルト: 無料
+      if (userData['planStatus'] != null) {
+        if (userData['planStatus'] is int) {
+          planStatusValue = userData['planStatus'];
+        } else if (userData['planStatus'] is String) {
+          switch (userData['planStatus']) {
+            case '無料':
+            case 'free':
+              planStatusValue = 1;
+              break;
+            case '有料':
+            case 'paid':
+              planStatusValue = 2;
+              break;
+            default:
+              planStatusValue = 1;
+          }
+        }
+      }
+      final Map<String, dynamic> companyUpdateData = {
+        'name': _nicknameController.text,
+        'address': _companyAddressController.text,
+        'phoneNumber': _phoneNumberController.text,
+        'description': _companyDescriptionController.text,
+        'planStatus': planStatusValue,
+      };
+      if (_companyPhotoId != null) {
+        companyUpdateData['photoId'] = _companyPhotoId;
+      }
+      print('企業プロフィール更新: $companyUpdateData');
+      final companyUpdateUrl = 'http://localhost:8080/api/companies/$companyId';
+      final companyUpdateRes = await http.put(
+        Uri.parse(companyUpdateUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(companyUpdateData),
+      );
+      print('企業プロフィールAPIレスポンス: status=${companyUpdateRes.statusCode}, body=${companyUpdateRes.body}');
+    }
 
     if (userUpdateResponse.statusCode == 200 && industriesUpdateResponse.statusCode == 200) {
       // 現在のセッション情報を取得して、変更点のみ更新する

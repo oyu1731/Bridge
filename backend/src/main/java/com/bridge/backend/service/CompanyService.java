@@ -22,6 +22,19 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class CompanyService {
+        /**
+         * 企業のphotoIdのみ更新
+         */
+        public boolean updateCompanyPhotoId(Integer companyId, Integer photoId) {
+            Optional<Company> companyOpt = companyRepository.findByIdAndIsWithdrawnFalse(companyId);
+            if (companyOpt.isPresent()) {
+                Company company = companyOpt.get();
+                company.setPhotoId(photoId);
+                companyRepository.save(company);
+                return true;
+            }
+            return false;
+        }
     
     @Autowired
     private CompanyRepository companyRepository;
@@ -191,6 +204,8 @@ public class CompanyService {
                     dto.setIndustry(industry.getIndustry());
                 }
             }
+            // ユーザーのアイコンIDをセット
+            dto.setIconId(user.getIcon());
         }
         
         return dto;

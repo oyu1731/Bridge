@@ -151,6 +151,7 @@ public class UserService {
             userDto.setIcon(existingUser.getIcon());
             userDto.setSocietyHistory(existingUser.getSocietyHistory());
             if (existingUser.getType() == 3 && existingUser.getCompanyId() != null) {
+                userDto.setCompanyId(existingUser.getCompanyId());
                 Optional<Company> company = companyRepository.findById(existingUser.getCompanyId());
                 if (company.isPresent()) {
                     Company existingCompany = company.get();
@@ -158,6 +159,7 @@ public class UserService {
                     userDto.setCompanyAddress(existingCompany.getAddress());
                     userDto.setCompanyPhoneNumber(existingCompany.getPhoneNumber());
                     userDto.setCompanyDescription(existingCompany.getDescription());
+                    userDto.setCompanyPhotoId(existingCompany.getPhotoId());
                 }
             }
             return userDto;

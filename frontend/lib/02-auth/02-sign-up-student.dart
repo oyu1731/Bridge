@@ -186,10 +186,9 @@ class _StudentInputPageState extends State<StudentInputPage> {
                           value: _selectedIndustryIds.contains(industry["id"]),
                           onChanged: (bool? value) {
                             setState(() {
+                              _selectedIndustryIds.clear();
                               if (value == true) {
                                 _selectedIndustryIds.add(industry["id"]);
-                              } else {
-                                _selectedIndustryIds.remove(industry["id"]);
                               }
                             });
                           },
