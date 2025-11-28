@@ -17,10 +17,12 @@ public class UserDto {
     
 
     // 企業ユーザー用フィールド
+    private Integer companyId;
     private String companyName;
     private String companyAddress;
     private String companyPhoneNumber;
     private String companyDescription;
+    private Integer companyPhotoId;
 
     // ===== Getter / Setter =====
     public Integer getId() {
@@ -102,6 +104,14 @@ public class UserDto {
     }
 
     // 企業用フィールド
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
+    }
+
     public String getCompanyName() {
         return companyName;
     }
@@ -128,5 +138,12 @@ public class UserDto {
     }
     public void setCompanyDescription(String companyDescription) {
         this.companyDescription = companyDescription;
+    }
+
+    public Integer getCompanyPhotoId() {
+        return companyPhotoId;
+    }
+    public void setCompanyPhotoId(Integer companyPhotoId) {
+        this.companyPhotoId = companyPhotoId;
     }
 }

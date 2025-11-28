@@ -7,6 +7,7 @@ import 'dart:async';
 // 'crypto' を現在は使っていないためコメントアウト（将来ハッシュ等を使うなら戻す）
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import '46-forgot-password.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -142,6 +143,20 @@ class _SignInPageState extends State<SignInPage> {
                     _errorMessage,
                     style: const TextStyle(color: Colors.red),
                   ),
+            // ...existing code...
+            const SizedBox(height: 12),
+            Center(
+              child: TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ForgotPasswordPage()),
+                  );
+                },
+                child: Text('パスワードを忘れた方'),
+              ),
+            ),
+            // ...existing code...
             ],
           ),
         ),

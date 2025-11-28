@@ -207,9 +207,18 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
                   title: Text(industry.name),
                   value: industry.isSelected,
                   onChanged: (bool? value) {
-                    setState(() {
-                      industry.isSelected = value ?? true;
-                    });
+                    if (value == true) {
+                      setState(() {
+                        for (var ind in industries) {
+                          ind.isSelected = false;
+                        }
+                        industry.isSelected = true;
+                      });
+                    } else {
+                      setState(() {
+                        industry.isSelected = false;
+                      });
+                    }
                   },
                 );
               }).toList(),
