@@ -513,6 +513,7 @@ class _InterviewPracticeState extends State<InterviewPractice> {
     String label,
     List<String> items,
     String? selectedValue,
+    String? selectedValue,
     Function(String?) onChanged,
   ) {
     return Container(
@@ -556,9 +557,14 @@ class _InterviewPracticeState extends State<InterviewPractice> {
     void Function(void Function()) setModalState,
     bool isFree,
   ) {
+  Widget _buildQuestionTypeCards(
+    void Function(void Function()) setModalState,
+    bool isFree,
+  ) {
     return Column(
       children: [
         _questionTypeCard(
+          setModalState,
           setModalState,
           type: "normal",
           title: "一般質問",
@@ -566,9 +572,11 @@ class _InterviewPracticeState extends State<InterviewPractice> {
           icon: Icons.chat_bubble_outline,
           premium: false,
           isFree: isFree,
+          isFree: isFree,
         ),
         const SizedBox(height: 12),
         _questionTypeCard(
+          setModalState,
           setModalState,
           type: "casual",
           title: "カジュアル",
@@ -576,15 +584,18 @@ class _InterviewPracticeState extends State<InterviewPractice> {
           icon: Icons.emoji_emotions_outlined,
           premium: true,
           isFree: isFree,
+          isFree: isFree,
         ),
         const SizedBox(height: 12),
         _questionTypeCard(
+          setModalState,
           setModalState,
           type: "pressure",
           title: "圧迫気味",
           desc: "少し緊張感のある質問で本番の緊張に慣れましょう。",
           icon: Icons.psychology_outlined,
           premium: true,
+          isFree: isFree,
           isFree: isFree,
         ),
       ],
@@ -593,11 +604,14 @@ class _InterviewPracticeState extends State<InterviewPractice> {
 
   Widget _questionTypeCard(
     void Function(void Function()) setModalState, {
+  Widget _questionTypeCard(
+    void Function(void Function()) setModalState, {
     required String type,
     required String title,
     required String desc,
     required IconData icon,
     required bool premium,
+    required bool isFree,
     required bool isFree,
   }) {
     final bool selected = selectedQuestionType == type;

@@ -127,7 +127,7 @@ public class InterviewController {
         // Service 層に処理を委譲し、評価結果を受け取る
         String evaluationResult = interviewService.saveAnswers(answers, questionType); // questionType を渡す
         return evaluationResult; // 評価結果をそのまま返す
-    }
+   }
 }
 
 

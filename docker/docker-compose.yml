@@ -27,7 +27,6 @@ services:
     - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
 
-
     networks:
       - bridge-network # サービス間の通信に使用するネットワーク
     restart: unless-stopped # コンテナが停止した場合に自動的に再起動

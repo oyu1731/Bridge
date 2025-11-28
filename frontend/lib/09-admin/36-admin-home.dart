@@ -74,16 +74,12 @@ class _AdminHomeState extends State<AdminHome> {
             ),
             Row(
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AdminAccountList(),
-                      ),
-                    );
-                  },
-                ),
+                _buildButton('アカウント管理', buttonWidth, buttonHeight, () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AdminAccountList()),
+                  );
+                }),
                 SizedBox(width: 20),
                 _buildButton('メール送信', buttonWidth, buttonHeight, () {
                   Navigator.push(

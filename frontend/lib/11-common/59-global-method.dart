@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/material.dart';
-import 'dart:js' as js;
-import 'package:http/http.dart' as http;
-import 'package:bridge/06-company/api_config.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:flutter/material.dart'; // ota1128
+import 'dart:js' as js; // ota1128
+import 'package:http/http.dart' as http; // ota1128
+import 'package:bridge/06-company/api_config.dart'; // ota1128
+import 'package:share_plus/share_plus.dart'; // ota1128
 
 class GlobalActions {
   /// ユーザーセッション情報をSharedPreferencesから取得
