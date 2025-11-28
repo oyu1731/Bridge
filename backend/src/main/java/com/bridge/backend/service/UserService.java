@@ -64,4 +64,31 @@ public class UserService {
 
         return savedUser;
     }
+
+    /**
+     * IDに基づいてユーザー情報を取得
+     * @param userId ユーザーID
+     * @return Userオブジェクト (存在しない場合はnull)
+     */
+    public User getUserById(Integer userId) {
+        return userRepository.findById(userId).orElse(null);
+    }
+
+    /**
+     * ユーザーのトークン数を減らす
+     * @param userId ユーザーID
+     * @param tokensToDeduct 減らすトークン数
+     * @return 更新後のUserオブジェクト
+     */
+    public User deductUserTokens(Integer userId, int tokensToDeduct) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        if (user.getToken() < tokensToDeduct) {
+            throw new IllegalArgumentException("Not enough tokens for user with ID: " + userId);
+        }
+
+        user.setToken(user.getToken() - tokensToDeduct);
+        return userRepository.save(user);
+    }
 }

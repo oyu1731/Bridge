@@ -258,7 +258,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                 // スマートフォンサイズ（幅800px以下）かどうかを判定
                 bool isSmallScreen = constraints.maxWidth <= 800;
                 double buttonSpacing = isSmallScreen ? 8 : 20;
-                
+
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -280,9 +280,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                         // スレッドページへの遷移
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => ThreadList(),
-                          ),
+                          MaterialPageRoute(builder: (context) => ThreadList()),
                         );
                       }, isSmallScreen),
                       SizedBox(width: buttonSpacing),
@@ -306,13 +304,17 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  Widget _buildNavButton(String text, VoidCallback onPressed, [bool isSmallScreen = false]) {
+  Widget _buildNavButton(
+    String text,
+    VoidCallback onPressed, [
+    bool isSmallScreen = false,
+  ]) {
     // スマートフォンサイズの場合のサイズ調整
     double fontSize = isSmallScreen ? 11 : 13;
     double horizontalPadding = isSmallScreen ? 12 : 18;
     double verticalPadding = isSmallScreen ? 6 : 8;
     Size minimumSize = isSmallScreen ? const Size(60, 32) : const Size(75, 36);
-    
+
     return Container(
       decoration: BoxDecoration(
         color: Color(0xFFF5F5F5), // より淡いグレー背景
@@ -330,7 +332,10 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
       child: TextButton(
         onPressed: onPressed,
         style: TextButton.styleFrom(
-          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: verticalPadding,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(25),
           ),
@@ -374,18 +379,14 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         // 記事投稿ページへの遷移
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => ArticlePostPage(),
-          ),
+          MaterialPageRoute(builder: (context) => ArticlePostPage()),
         );
         break;
       case 'article_list':
         // 投稿記事一覧ページへの遷移
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => CompanyArticleListPage(),
-          ),
+          MaterialPageRoute(builder: (context) => CompanyArticleListPage()),
         );
         break;
       case 'plan_check':

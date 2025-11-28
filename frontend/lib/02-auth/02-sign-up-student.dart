@@ -264,6 +264,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
                   }
                 }
               },
+
               child: const Text('作成'),
             ),
             if (_errorMessage.isNotEmpty)
