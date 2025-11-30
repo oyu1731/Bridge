@@ -50,7 +50,9 @@ class _StudentInputPageState extends State<StudentInputPage> {
         List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         setState(() {
           _industries =
-              data.map((item) => {"id": item["id"], "name": item["industry"]}).toList();
+              data
+                  .map((item) => {"id": item["id"], "name": item["industry"]})
+                  .toList();
           _isLoading = false;
         });
       } else {
@@ -122,28 +124,8 @@ class _StudentInputPageState extends State<StudentInputPage> {
                     if (value == null || value.isEmpty) {
                       return 'ニックネームを入力してください';
                     }
-<<<<<<< HEAD
-                  } catch (e) {
-                    print('❌ 通信エラー: $e');
-                    setState(() {
-                      _errorMessage = '通信エラーが発生しました: $e';
-                    });
-                  }
-                }
-              },
-
-              child: const Text('作成'),
-            ),
-            if (_errorMessage.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
-                child: Text(
-                  _errorMessage,
-                  style: TextStyle(color: Colors.red),
-=======
                     return null;
                   },
->>>>>>> tentative
                 ),
                 const SizedBox(height: 20),
 
@@ -224,29 +206,32 @@ class _StudentInputPageState extends State<StudentInputPage> {
                 _isLoading
                     ? const CircularProgressIndicator()
                     : Column(
-                        children: _industries.map((industry) {
-                          return CheckboxListTile(
-                            title: Text(
-                              industry["name"],
-                              style: const TextStyle(
-                                color: cyanDark,
-                                fontWeight: FontWeight.w500,
+                      children:
+                          _industries.map((industry) {
+                            return CheckboxListTile(
+                              title: Text(
+                                industry["name"],
+                                style: const TextStyle(
+                                  color: cyanDark,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
-                            value: _selectedIndustryIds.contains(industry["id"]),
-                            activeColor: cyanDark,
-                            onChanged: (bool? value) {
-                              setState(() {
-                                if (value == true) {
-                                  _selectedIndustryIds.add(industry["id"]);
-                                } else {
-                                  _selectedIndustryIds.remove(industry["id"]);
-                                }
-                              });
-                            },
-                          );
-                        }).toList(),
-                      ),
+                              value: _selectedIndustryIds.contains(
+                                industry["id"],
+                              ),
+                              activeColor: cyanDark,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  if (value == true) {
+                                    _selectedIndustryIds.add(industry["id"]);
+                                  } else {
+                                    _selectedIndustryIds.remove(industry["id"]);
+                                  }
+                                });
+                              },
+                            );
+                          }).toList(),
+                    ),
 
                 const SizedBox(height: 20),
 
@@ -283,18 +268,25 @@ class _StudentInputPageState extends State<StudentInputPage> {
                       });
 
                       try {
-                        final response = await http.post(url, headers: headers, body: body);
+                        final response = await http.post(
+                          url,
+                          headers: headers,
+                          body: body,
+                        );
                         if (response.statusCode == 200) {
                           final userData = jsonDecode(response.body);
                           await saveSession(userData);
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => StudentWorkerHome()),
+                            MaterialPageRoute(
+                              builder: (context) => StudentWorkerHome(),
+                            ),
                           );
                         } else {
                           final errorMessage = jsonDecode(response.body);
                           setState(() {
-                            _errorMessage = errorMessage['message'] ?? 'サインアップに失敗しました';
+                            _errorMessage =
+                                errorMessage['message'] ?? 'サインアップに失敗しました';
                           });
                         }
                       } catch (e) {

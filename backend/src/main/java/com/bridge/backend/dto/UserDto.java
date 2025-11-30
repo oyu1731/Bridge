@@ -13,6 +13,7 @@ public class UserDto {
     private Boolean isWithdrawn;
     private Integer societyHistory;
     private List<Integer> desiredIndustries;
+    private Integer token;
     
 
     // 企業ユーザー用フィールド
@@ -90,6 +91,13 @@ public class UserDto {
     }
     public void setDesiredIndustries(List<Integer> desiredIndustries) {
         this.desiredIndustries = desiredIndustries;
+    }
+
+    public Integer getToken() {
+        return token;
+    }
+    public void setToken(Integer token) {
+        this.token = token;
     }
 
     // 企業用フィールド

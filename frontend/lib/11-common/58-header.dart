@@ -1,3 +1,7 @@
+import 'package:bridge/07-ai-training/21-ai-training-list.dart';
+import 'package:bridge/07-ai-training/27-quiz-course-select.dart';
+import 'package:bridge/07-ai-training/28-quiz-question.dart';
+import 'package:bridge/10-payment/55-plan_status.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -11,6 +15,7 @@ import '../06-company/17-company-article-list.dart';
 import '../06-company/19-article-post.dart';
 import '../08-thread/31-thread-list.dart';
 import '../02-auth/50-password-update.dart';
+import 'package:bridge/main.dart'; // main.dartをインポート
 
 class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
   const BridgeHeader({Key? key}) : super(key: key);
@@ -290,10 +295,24 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                       SizedBox(width: buttonSpacing),
                       _buildNavButton('AI練習', () {
                         print('AI練習ページへ遷移');
+                        // AI練習ページへの遷移
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AiTrainingListPage(),
+                          ),
+                        );
                       }, isSmallScreen),
                       SizedBox(width: buttonSpacing),
                       _buildNavButton('1問1答', () {
                         print('1問1答ページへ遷移');
+                        // 1問1答ページへの遷移
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CourseSelectionScreen(),
+                          ),
+                        );
                       }, isSmallScreen),
                       SizedBox(width: buttonSpacing),
                       _buildNavButton('スレッド', () {
@@ -428,21 +447,24 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => StudentProfileEditPage()), // 学生用
+                builder: (context) => StudentProfileEditPage(),
+              ), // 学生用
             );
             break;
           case '社会人':
             Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => WorkerProfileEditPage()), // 社会人用
+                builder: (context) => WorkerProfileEditPage(),
+              ), // 社会人用
             );
             break;
           case '企業':
             Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => CompanyProfileEditPage()), // 企業用
+                builder: (context) => CompanyProfileEditPage(),
+              ), // 企業用
             );
             break;
           default:
@@ -460,11 +482,9 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         // パスワード変更ページへの遷移
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => PasswordUpdatePage(),
-          ),
+          MaterialPageRoute(builder: (context) => PasswordUpdatePage()),
         );
-      break;
+        break;
       case 'post_article':
         // 記事投稿ページへの遷移
         Navigator.push(
@@ -481,23 +501,52 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         break;
       case 'plan_check':
         // プラン確認ページへの遷移（張りぼて）
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('プラン確認ページに遷移します'),
-            backgroundColor: Color(0xFF1976D2),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => FutureBuilder<String>(
+                  future: _getUserAccountType(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const CircularProgressIndicator();
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else {
+                      return PlanStatusScreen(
+                        userType: snapshot.data ?? 'unknown',
+                      );
+                    }
+                  },
+                ),
           ),
         );
         break;
       case 'withdraw':
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DeleteAccountPage(), // 退会確認画面
-            ),
-          );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DeleteAccountPage(), // 退会確認画面
+          ),
+        );
         break;
       case 'logout':
-        // ログアウト確認ダイアログ（張りぼて）
+        // SharedPreferencesからトークンとユーザーセッションを削除
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('auth_token');
+        await prefs.remove('current_user');
+        print('ログアウトしました。');
+
+        // ログインページにリダイレクト
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) =>
+                    const MyApp(initialPage: MyHomePage(title: 'Bridge')),
+          ),
+          (Route<dynamic> route) => false,
+        );
         break;
     }
   }

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,10 @@ public class PhonePracticeService {
 
     private final Logger logger = LoggerFactory.getLogger(PhonePracticeService.class);
     private final ObjectMapper mapper = new ObjectMapper();
+
+    // Groq APIキーをapplication.propertiesから読み込む
+    @Value("${groq.api.key}")
+    private String groqApiKey;
 
     // 会話の状態を保持する簡易的なキャッシュ
     private final Map<String, ConversationState> conversationCache = new HashMap<>();
@@ -217,11 +222,9 @@ public class PhonePracticeService {
         messages.add(Map.of("role", "user", "content", userPrompt));
         apiPayload.put("messages", messages);
 
-        // String apiKey = "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";
-        String apiKey = "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";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(apiKey);
+        headers.setBearerAuth(groqApiKey);
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(apiPayload, headers);
 
@@ -378,11 +381,9 @@ public class PhonePracticeService {
         apiPayload.put("max_tokens", 200);
         apiPayload.put("temperature", 0.2); // 低めにして一貫性を確保
 
-        String apiKey = "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";
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(apiKey);
+        headers.setBearerAuth(groqApiKey);
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(apiPayload, headers);
 
@@ -1758,11 +1759,9 @@ public class PhonePracticeService {
             apiPayload.put("max_tokens", 2000);
             apiPayload.put("temperature", 0.3);
 
-            String apiKey = "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";
-
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(apiKey);
+            headers.setBearerAuth(groqApiKey);
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(apiPayload, headers);
 

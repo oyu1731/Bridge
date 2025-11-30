@@ -79,7 +79,10 @@ class DeleteCompletePage extends StatelessWidget {
                         SizedBox(height: 12),
                         Text(
                           '「Bridge」をご利用いただき、心より感謝申し上げます。\nまたいつでも戻ってきてください。\n皆さんの学びとつながりを、これからも応援しています。',
-                          style: TextStyle(fontSize: 16, color: Color(0xFF424242)),
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF424242),
+                          ),
                         ),
                       ],
                     ),
@@ -95,7 +98,9 @@ class DeleteCompletePage extends StatelessWidget {
                       ElevatedButton.icon(
                         onPressed: () {
                           Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (_) => const MyHomePage(title: 'Bridge')),
+                            MaterialPageRoute(
+                              builder: (_) => const MyHomePage(title: 'Bridge'),
+                            ),
                             (route) => false,
                           );
                         },
@@ -104,8 +109,14 @@ class DeleteCompletePage extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryOrange,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 14,
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],

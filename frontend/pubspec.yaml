@@ -13,7 +13,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences: 2.5.3
   http: ^1.2.0
-  web_socket_channel: ^2.3.0   # ← これを追加
   crypto: ^3.0.3
   image_picker: ^1.2.1
   url_launcher: ^6.3.2
@@ -26,13 +25,13 @@ dependencies:
   share_plus: ^12.0.1 # シェア機能
   screenshot: ^3.0.0 # スクリーンショット取得用
   flutter_stripe: ^12.1.1 # Stripe決済用
-  flutter_stripe_web: ^7.1.1 # webでStripeを実施するよう
+  flutter_stripe_web: ^7.1.1 # webでStripeを実施するようえ
+  web_socket_channel: ^2.3.0
  
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-  payjp_flutter: ^0.7.6
  
 flutter:
   uses-material-design: true

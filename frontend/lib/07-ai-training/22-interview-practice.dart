@@ -35,7 +35,8 @@ class _InterviewPracticeState extends State<InterviewPractice> {
   String selectedQuestionType = "normal";
 
   Map<String, dynamic>? user;
-  String? _authToken;
+  String? _authToken; // 認証トークン
+  int? _availableTokens; // ユーザーが保有するトークン数
   Map<String, dynamic> _companyInfo = {};
 
   @override
@@ -48,11 +49,20 @@ class _InterviewPracticeState extends State<InterviewPractice> {
     user = await GlobalActions().loadUserSession();
     print("userのプラン状態: ${user?['plan_status']}");
 
+    // 認証トークンの取得
     _authToken = await GlobalActions().loadAuthToken();
     if (_authToken != null) {
-      print("取得した認証トークン: $_authToken");
+      print("[_init] 取得した認証トークン: $_authToken");
     } else {
-      print("認証トークンはSharedPreferencesに保存されていません。");
+      print("[_init] 認証トークンはSharedPreferencesに保存されていません。");
+    }
+
+    // ユーザー保有トークン数の取得
+    if (user != null && user!['id'] != null) {
+      _availableTokens = await GlobalActions().fetchUserTokens(
+        user!['id'] as int,
+      );
+      print("[_init] 取得したユーザー保有トークン: $_availableTokens");
     }
 
     if (user != null) {
@@ -152,7 +162,7 @@ class _InterviewPracticeState extends State<InterviewPractice> {
                                   ),
                                 ),
                                 Text(
-                                  _authToken ?? '未取得',
+                                  _availableTokens?.toString() ?? '未取得',
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -513,7 +523,6 @@ class _InterviewPracticeState extends State<InterviewPractice> {
     String label,
     List<String> items,
     String? selectedValue,
-    String? selectedValue,
     Function(String?) onChanged,
   ) {
     return Container(
@@ -557,14 +566,9 @@ class _InterviewPracticeState extends State<InterviewPractice> {
     void Function(void Function()) setModalState,
     bool isFree,
   ) {
-  Widget _buildQuestionTypeCards(
-    void Function(void Function()) setModalState,
-    bool isFree,
-  ) {
     return Column(
       children: [
         _questionTypeCard(
-          setModalState,
           setModalState,
           type: "normal",
           title: "一般質問",
@@ -572,11 +576,9 @@ class _InterviewPracticeState extends State<InterviewPractice> {
           icon: Icons.chat_bubble_outline,
           premium: false,
           isFree: isFree,
-          isFree: isFree,
         ),
         const SizedBox(height: 12),
         _questionTypeCard(
-          setModalState,
           setModalState,
           type: "casual",
           title: "カジュアル",
@@ -584,18 +586,15 @@ class _InterviewPracticeState extends State<InterviewPractice> {
           icon: Icons.emoji_emotions_outlined,
           premium: true,
           isFree: isFree,
-          isFree: isFree,
         ),
         const SizedBox(height: 12),
         _questionTypeCard(
-          setModalState,
           setModalState,
           type: "pressure",
           title: "圧迫気味",
           desc: "少し緊張感のある質問で本番の緊張に慣れましょう。",
           icon: Icons.psychology_outlined,
           premium: true,
-          isFree: isFree,
           isFree: isFree,
         ),
       ],
@@ -604,14 +603,11 @@ class _InterviewPracticeState extends State<InterviewPractice> {
 
   Widget _questionTypeCard(
     void Function(void Function()) setModalState, {
-  Widget _questionTypeCard(
-    void Function(void Function()) setModalState, {
     required String type,
     required String title,
     required String desc,
     required IconData icon,
     required bool premium,
-    required bool isFree,
     required bool isFree,
   }) {
     final bool selected = selectedQuestionType == type;

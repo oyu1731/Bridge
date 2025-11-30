@@ -148,6 +148,8 @@ public class UserService {
             userDto.setPhoneNumber(existingUser.getPhoneNumber());
             userDto.setType(existingUser.getType());
             userDto.setSocietyHistory(existingUser.getSocietyHistory());
+            userDto.setPlanStatus(existingUser.getPlanStatus()); // planStatusをUserDtoに設定
+            userDto.setToken(existingUser.getToken());
             if (existingUser.getType() == 3 && existingUser.getCompanyId() != null) {
                 Optional<Company> company = companyRepository.findById(existingUser.getCompanyId());
                 if (company.isPresent()) {

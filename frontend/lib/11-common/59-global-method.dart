@@ -25,15 +25,14 @@ class GlobalActions {
 
   /// SharedPreferencesからトークンを取得
   Future<String?> loadAuthToken() async {
+    print("トークン取得メソッドを実行");
     final prefs = await SharedPreferences.getInstance();
-    // ここでは、"token"というキーでトークンが保存されていると仮定します。
-    // もし異なるキーで保存されている場合は、適宜変更してください。
-    final String? token = prefs.getString('token');
+    final String? token = prefs.getString('auth_token'); // 'auth_token' キーを使用
     if (token != null) {
-      print('セッションからトークンを取得: $token');
+      print('セッションから認証トークンを取得: $token');
       return token;
     } else {
-      print('セッションにトークン情報はありません');
+      print('セッションに認証トークン情報はありません');
       return null;
     }
   }

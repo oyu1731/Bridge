@@ -46,7 +46,8 @@ public class AuthService {
         userDto.setPhoneNumber(user.getPhoneNumber());
         userDto.setSocietyHistory(user.getSocietyHistory());
         userDto.setType(user.getType() == null ? 0 : user.getType());
-
+        userDto.setPlanStatus(user.getPlanStatus()); // planStatusをUserDtoに設定
+        userDto.setToken(user.getToken());
         return userDto;
     }
 }
