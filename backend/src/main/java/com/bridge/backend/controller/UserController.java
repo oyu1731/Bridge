@@ -42,7 +42,7 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserDto> getUserById(@PathVariable("id") Integer id) {
         try {
-            UserDto userDto = userService.getUserById(id.longValue()); // UserServiceの型に合わせて調整が必要
+            UserDto userDto = userService.getUserById(id);
             if (userDto != null) {
                 return new ResponseEntity<>(userDto, HttpStatus.OK);
             } else {

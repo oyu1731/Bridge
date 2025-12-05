@@ -2,70 +2,86 @@ package com.bridge.backend.service;
 
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
-import com.stripe.model.Customer;
-import com.stripe.model.EphemeralKey;
-import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
-import com.stripe.param.CustomerCreateParams;
-import com.stripe.param.EphemeralKeyCreateParams;
-import com.stripe.param.PaymentIntentCreateParams;
+import com.bridge.backend.entity.Subscription;
+import com.bridge.backend.entity.User;
+import com.bridge.backend.repository.SubscriptionRepository;
+import com.bridge.backend.repository.UserRepository;
 import com.stripe.param.checkout.SessionCreateParams;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional; // [1] トランザクションをインポート
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
 public class PaymentService {
+    // ... (createCheckoutSession メソッドは変更なし)
 
     @Value("${stripe.secretKey}")
     private String stripeSecretKey;
 
-    // 方法1: Checkout Sessionを使用する方法（推奨）
-    public Map<String, String> createCheckoutSession(Long amount, String currency, String planType, String successUrl, String cancelUrl) throws StripeException {
+    private final UserRepository userRepository;
+    private final SubscriptionRepository subscriptionRepository;
+
+    @Autowired
+    public PaymentService(UserRepository userRepository, SubscriptionRepository subscriptionRepository) {
+        this.userRepository = userRepository;
+        this.subscriptionRepository = subscriptionRepository;
+    }
+
+    /**
+     * Stripe Checkout セッション作成
+     */
+    public Map<String, String> createCheckoutSession(Long amount, String currency, String userType,
+                                                     String successUrl, String cancelUrl, Integer userId) throws StripeException {
         Stripe.apiKey = stripeSecretKey;
 
-        // 金額の検証
-        long expectedAmount;
-        switch (planType) {
-            case "個人基本プラン":
-                expectedAmount = 500L;
+        if (userType == null || userType.isEmpty()) {
+            throw new IllegalArgumentException("Invalid user type: " + userType);
+        }
+
+        String planName = "";
+        switch (userType) {
+            case "学生":
+                planName = "学生プレミアム";
                 break;
-            case "企業基本プラン":
-                expectedAmount = 5000L;
+            case "社会人":
+                planName = "社会人プレミアム";
                 break;
-            case "企業プレミアムプラン":
-                expectedAmount = 10000L;
+            case "企業":
+                planName = "企業プレミアム";
                 break;
             default:
-                throw new IllegalArgumentException("Invalid plan type: " + planType);
+                throw new IllegalArgumentException("Invalid user type: " + userType);
         }
 
-        if (!amount.equals(expectedAmount)) {
-            throw new IllegalArgumentException("Amount mismatch for plan type " + planType + ". Expected: " + expectedAmount + ", Received: " + amount);
-        }
 
-        // Checkout Sessionのパラメータ作成
+        // Stripe Checkout セッション作成
         SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
                 .setSuccessUrl(successUrl)
                 .setCancelUrl(cancelUrl)
+                .setClientReferenceId(String.valueOf(userId))
+                .putMetadata("userType", userType)
                 .addLineItem(
-                    SessionCreateParams.LineItem.builder()
-                        .setQuantity(1L)
-                        .setPriceData(
-                            SessionCreateParams.LineItem.PriceData.builder()
-                                .setCurrency(currency)
-                                .setUnitAmount(amount * 100) // 日本円なので100倍
-                                .setProductData(
-                                    SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                                        .setName(planType)
-                                        .build()
+                        SessionCreateParams.LineItem.builder()
+                                .setQuantity(1L)
+                                .setPriceData(
+                                        SessionCreateParams.LineItem.PriceData.builder()
+                                                .setCurrency(currency)
+                                                .setUnitAmount(amount) 
+                                                .setProductData(
+                                                        SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                                                .setName(planName)
+                                                                .build()
+                                                )
+                                                .build()
                                 )
                                 .build()
-                        )
-                        .build()
                 )
                 .build();
 
@@ -77,65 +93,48 @@ public class PaymentService {
         return responseData;
     }
 
-    // 方法2: Payment Intent + 最新のEphemeral Key作成方法
-    public Map<String, String> createPaymentIntent(Long amount, String currency, String planType) throws StripeException {
-        Stripe.apiKey = stripeSecretKey;
+    @Transactional // [2] トランザクション境界を定義
+    public void handleSuccessfulPayment(Integer userId, String userType) {
+        System.out.println("--- DB更新処理開始 ---");
+        System.out.println("handleSuccessfulPayment called with userId: " + userId + ", userType: " + userType);
+        
+        // ユーザーを検索し、存在しない場合は例外をスロー（Controllerに500を返させる）
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid user ID: " + userId + ". User not found."));
 
-        // 金額の検証
-        long expectedAmount;
-        switch (planType) {
-            case "個人基本プラン":
-                expectedAmount = 500L;
+        // 1. ユーザーのプランステータスを更新
+        System.out.println("1. Updating user plan status to プレミアム for userId: " + userId);
+        user.setPlanStatus("プレミアム");
+        userRepository.save(user);
+        System.out.println("   -> User status updated successfully.");
+
+        // 2. 購読レコードを作成・保存
+        Subscription subscription = new Subscription();
+        subscription.setUserId(userId);
+        subscription.setStartDate(LocalDateTime.now());
+        subscription.setIsPlanStatus(true);
+        subscription.setCreatedAt(LocalDateTime.now());
+
+        switch (userType) {
+            case "学生":
+                subscription.setPlanName("学生プレミアム");
+                subscription.setEndDate(LocalDateTime.now().plusMonths(1));
                 break;
-            case "企業基本プラン":
-                expectedAmount = 5000L;
+            case "社会人":
+                subscription.setPlanName("社会人プレミアム");
+                subscription.setEndDate(LocalDateTime.now().plusMonths(1));
                 break;
-            case "企業プレミアムプラン":
-                expectedAmount = 10000L;
+            case "企業":
+                subscription.setPlanName("企業プレミアム");
+                subscription.setEndDate(LocalDateTime.now().plusYears(1));
                 break;
             default:
-                throw new IllegalArgumentException("Invalid plan type: " + planType);
+                // ここで例外をスローすると、トランザクションがロールバックされる
+                throw new IllegalArgumentException("Invalid user type received from Stripe metadata: " + userType);
         }
 
-        long stripeAmount = amount * 100L;
-
-        if (amount.longValue() != expectedAmount) {
-            throw new IllegalArgumentException("Amount mismatch for plan type " + planType + ". Expected: " + expectedAmount + ", Received: " + amount);
-        }
-
-        // 顧客作成
-        CustomerCreateParams customerParams = CustomerCreateParams.builder()
-                .setDescription("Customer for " + planType)
-                .build();
-        Customer customer = Customer.create(customerParams);
-
-        // エフェメラルキーの作成（最新の方法）
-        EphemeralKeyCreateParams ephemeralKeyParams = EphemeralKeyCreateParams.builder()
-                .setCustomer(customer.getId())
-                .setStripeVersion("2022-11-15") // バージョンを直接指定
-                .build();
-        
-        EphemeralKey ephemeralKey = EphemeralKey.create(ephemeralKeyParams);
-
-        // Payment Intent作成
-        PaymentIntentCreateParams params =
-                PaymentIntentCreateParams.builder()
-                        .setAmount(stripeAmount)
-                        .setCurrency(currency)
-                        .setCustomer(customer.getId())
-                        .setAutomaticPaymentMethods(
-                                PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-                                        .setEnabled(true)
-                                        .build()
-                        )
-                        .build();
-
-        PaymentIntent paymentIntent = PaymentIntent.create(params);
-
-        Map<String, String> responseData = new HashMap<>();
-        responseData.put("clientSecret", paymentIntent.getClientSecret());
-        responseData.put("customerId", customer.getId());
-        responseData.put("ephemeralKey", ephemeralKey.getSecret());
-        return responseData;
+        subscriptionRepository.save(subscription);
+        System.out.println("2. Subscription record created successfully.");
+        System.out.println("--- DB更新処理完了 ---");
     }
 }

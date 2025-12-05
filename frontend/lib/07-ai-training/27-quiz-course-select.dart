@@ -24,7 +24,7 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const BridgeHeader(),
+      appBar: BridgeHeader(),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -270,7 +270,7 @@ class _RankingScreenState extends State<RankingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const BridgeHeader(),
+      appBar: BridgeHeader(),
       backgroundColor: Colors.grey[50],
       body: Column(
         children: [

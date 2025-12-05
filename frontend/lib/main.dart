@@ -10,41 +10,75 @@ import 'package:bridge/03-home/08-student-worker-home.dart';
 import 'package:bridge/03-home/09-company-home.dart';
 import 'package:bridge/09-admin/36-admin-home.dart';
 // import 'package:bridge/09-admin/36-admin-home.dart';
+import 'package:bridge/10-payment/54-payment-complete.dart';
+
+import 'package:flutter/foundation.dart' show kIsWeb; // Web判定
+import 'dart:html' as html; // WebのURL取得用
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final prefs = await SharedPreferences.getInstance();
-  final String? jsonString = prefs.getString('current_user');
-  print('【Debug】セッション確認: jsonString = $jsonString');
-
   Widget initialPage;
 
-  if (jsonString != null && jsonString.isNotEmpty) {
-    try {
-      final Map<String, dynamic> userData = jsonDecode(jsonString);
-      final int? type = userData['type'];
-      print('ユーザータイプ: $type');
-      if (type == 1 || type == 2) {
-        print('学生・社会人ホームへ遷移');
-        initialPage = const StudentWorkerHome();
-      } else if (type == 3) {
-        print('企業ホームへ遷移');
-        initialPage = const CompanyHome();
-      } else if (type == 4) {
-        print('管理者ホームへ遷移');
-        initialPage = AdminHome();
+  // Webの場合、URLをチェックしてリダイレクト先を決定
+  if (kIsWeb) {
+    final uri = Uri.parse(html.window.location.href);
+    final fragment = uri.fragment; // "54-payment-complete" のように取得
+    print('【Debug】現在のURL: ${html.window.location.href}');
+    print('【Debug】URL fragment: $fragment');
+
+    // fragment を正確に比較
+    if (fragment == '54-payment-complete') {
+      initialPage = const PaymentSuccessScreen();
+    } else if (fragment == '54-payment-cancel') {
+      initialPage = const PaymentCancelScreen();
+    } else {
+      // 通常のセッションチェック処理
+      final prefs = await SharedPreferences.getInstance();
+      final String? jsonString = prefs.getString('current_user');
+      if (jsonString != null && jsonString.isNotEmpty) {
+        try {
+          final Map<String, dynamic> userData = jsonDecode(jsonString);
+          final int? type = userData['type'];
+          if (type == 1 || type == 2) {
+            initialPage = const StudentWorkerHome();
+          } else if (type == 3) {
+            initialPage = const CompanyHome();
+          } else if (type == 4) {
+            initialPage = AdminHome();
+          } else {
+            initialPage = const MyHomePage(title: 'Bridge');
+          }
+        } catch (e) {
+          initialPage = const MyHomePage(title: 'Bridge');
+        }
       } else {
-        print('ログイン画面へ遷移（タイプ不正）');
         initialPage = const MyHomePage(title: 'Bridge');
       }
-    } catch (e) {
-      print('セッション解析エラー: $e');
-      initialPage = const MyHomePage(title: 'Bridge');
     }
   } else {
-    print('セッションなし - トップ画面へ遷移');
-    initialPage = const MyHomePage(title: 'Bridge');
+    // モバイルアプリのセッションチェック処理
+    final prefs = await SharedPreferences.getInstance();
+    final String? jsonString = prefs.getString('current_user');
+    if (jsonString != null && jsonString.isNotEmpty) {
+      try {
+        final Map<String, dynamic> userData = jsonDecode(jsonString);
+        final int? type = userData['type'];
+        if (type == 1 || type == 2) {
+          initialPage = const StudentWorkerHome();
+        } else if (type == 3) {
+          initialPage = const CompanyHome();
+        } else if (type == 4) {
+          initialPage = AdminHome();
+        } else {
+          initialPage = const MyHomePage(title: 'Bridge');
+        }
+      } catch (e) {
+        initialPage = const MyHomePage(title: 'Bridge');
+      }
+    } else {
+      initialPage = const MyHomePage(title: 'Bridge');
+    }
   }
 
   runApp(MyApp(initialPage: initialPage));
@@ -79,6 +113,23 @@ class MyApp extends StatelessWidget {
         ),
       ),
       title: 'Bridge App',
+      initialRoute: '/',
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/':
+            return MaterialPageRoute(builder: (_) => initialPage);
+          case '/payment-success':
+            return MaterialPageRoute(
+              builder: (_) => const PaymentSuccessScreen(),
+            );
+          case '/payment-cancel':
+            return MaterialPageRoute(
+              builder: (_) => const PaymentCancelScreen(),
+            );
+          default:
+            return MaterialPageRoute(builder: (_) => initialPage);
+        }
+      },
       home: initialPage,
     );
   }
@@ -215,6 +266,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     sampleUsers = {
       '学生': {
+        'id': 1,
         'nickname': '学生ユーザー',
         'type': 1,
         'password': 'hashed_password_student',
@@ -230,6 +282,7 @@ class _MyHomePageState extends State<MyHomePage> {
         'announcement_deletion': 1,
       },
       '社会人': {
+        'id': 2,
         'nickname': '社会人ユーザー',
         'type': 2,
         'password': 'hashed_password_worker',
@@ -237,7 +290,7 @@ class _MyHomePageState extends State<MyHomePage> {
         'email': 'worker@example.com',
         'company_id': null,
         'report_count': 0,
-        'plan_status': '無料',
+        'plan_status': 'プレミアム',
         'is_withdrawn': false,
         'created_at': '2025-11-10',
         'society_history': 5,
@@ -245,6 +298,7 @@ class _MyHomePageState extends State<MyHomePage> {
         'announcement_deletion': 1,
       },
       '企業': {
+        'id': 3,
         'nickname': '企業ユーザー',
         'type': 3,
         'password': 'hashed_password_company',

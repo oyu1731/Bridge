@@ -137,8 +137,8 @@ public class UserService {
     }
 
     // セッションユーザー情報取得
-    public UserDto getUserById(Long id) {
-        Optional<User> user = userRepository.findById(id.intValue());
+    public UserDto getUserById(Integer id) {
+        Optional<User> user = userRepository.findById(id);
         if (user.isPresent()) {
             User existingUser = user.get();
             UserDto userDto = new UserDto();
@@ -148,8 +148,6 @@ public class UserService {
             userDto.setPhoneNumber(existingUser.getPhoneNumber());
             userDto.setType(existingUser.getType());
             userDto.setSocietyHistory(existingUser.getSocietyHistory());
-            userDto.setPlanStatus(existingUser.getPlanStatus()); // planStatusをUserDtoに設定
-            userDto.setToken(existingUser.getToken());
             if (existingUser.getType() == 3 && existingUser.getCompanyId() != null) {
                 Optional<Company> company = companyRepository.findById(existingUser.getCompanyId());
                 if (company.isPresent()) {
@@ -217,7 +215,7 @@ public class UserService {
         }
 
         userRepository.save(user);
-        return getUserById(user.getId().longValue());
+        return getUserById(user.getId().intValue());
     }
 
     // 希望業界の更新
@@ -272,14 +270,6 @@ public class UserService {
         userRepository.save(user);
     }
 
-    /**
-     * IDに基づいてユーザー情報を取得
-     * @param userId ユーザーID
-     * @return Userオブジェクト (存在しない場合はnull)
-     */
-    public User getUserById(Integer userId) {
-        return userRepository.findById(userId).orElse(null);
-    }
 
     /**
      * ユーザーのトークン数を減らす

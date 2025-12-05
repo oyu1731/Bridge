@@ -130,7 +130,7 @@ class _AiTrainingListPageState extends State<AiTrainingListPage> {
     final int currentTokens = _currentTokens;
 
     return Scaffold(
-      appBar: const BridgeHeader(),
+      appBar: BridgeHeader(),
       body: Stack(
         // Stackウィジェットを追加
         children: [

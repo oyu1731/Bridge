@@ -1,9 +1,8 @@
 package com.bridge.backend.dto;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class SubscriptionDto implements Serializable {
+public class SubscriptionDto {
     private Integer id;
     private Integer userId;
     private String planName;
@@ -12,10 +11,25 @@ public class SubscriptionDto implements Serializable {
     private Boolean isPlanStatus;
     private LocalDateTime createdAt;
 
-    // getter / setter
+    // Constructors
+    public SubscriptionDto() {
+    }
+
+    public SubscriptionDto(Integer id, Integer userId, String planName, LocalDateTime startDate, LocalDateTime endDate, Boolean isPlanStatus, LocalDateTime createdAt) {
+        this.id = id;
+        this.userId = userId;
+        this.planName = planName;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.isPlanStatus = isPlanStatus;
+        this.createdAt = createdAt;
+    }
+
+    // Getters and Setters
     public Integer getId() {
         return id;
     }
+
     public void setId(Integer id) {
         this.id = id;
     }
@@ -23,6 +37,7 @@ public class SubscriptionDto implements Serializable {
     public Integer getUserId() {
         return userId;
     }
+
     public void setUserId(Integer userId) {
         this.userId = userId;
     }
@@ -30,6 +45,7 @@ public class SubscriptionDto implements Serializable {
     public String getPlanName() {
         return planName;
     }
+
     public void setPlanName(String planName) {
         this.planName = planName;
     }
@@ -37,6 +53,7 @@ public class SubscriptionDto implements Serializable {
     public LocalDateTime getStartDate() {
         return startDate;
     }
+
     public void setStartDate(LocalDateTime startDate) {
         this.startDate = startDate;
     }
@@ -44,6 +61,7 @@ public class SubscriptionDto implements Serializable {
     public LocalDateTime getEndDate() {
         return endDate;
     }
+
     public void setEndDate(LocalDateTime endDate) {
         this.endDate = endDate;
     }
@@ -51,6 +69,7 @@ public class SubscriptionDto implements Serializable {
     public Boolean getIsPlanStatus() {
         return isPlanStatus;
     }
+
     public void setIsPlanStatus(Boolean isPlanStatus) {
         this.isPlanStatus = isPlanStatus;
     }
@@ -58,6 +77,7 @@ public class SubscriptionDto implements Serializable {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
+
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }

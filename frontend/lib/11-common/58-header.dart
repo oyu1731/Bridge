@@ -1,7 +1,8 @@
+import 'dart:math'; // Randomクラスを使用するためにインポート
 import 'package:bridge/07-ai-training/21-ai-training-list.dart';
 import 'package:bridge/07-ai-training/27-quiz-course-select.dart';
 import 'package:bridge/07-ai-training/28-quiz-question.dart';
-import 'package:bridge/10-payment/55-plan_status.dart';
+import 'package:bridge/10-payment/55-plan-status.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -17,8 +18,50 @@ import '../08-thread/31-thread-list.dart';
 import '../02-auth/50-password-update.dart';
 import 'package:bridge/main.dart'; // main.dartをインポート
 
-class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
+class BridgeHeader extends StatefulWidget implements PreferredSizeWidget {
   const BridgeHeader({Key? key}) : super(key: key);
+
+  @override
+  _BridgeHeaderState createState() => _BridgeHeaderState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(120);
+}
+
+class _BridgeHeaderState extends State<BridgeHeader> {
+  String _userName = 'ゲスト';
+  String _greeting = 'こんにちは'; // 初期値
+  final List<String> _greetings = ['こんにちは', 'いらっしゃいませ', 'ようこそ', 'お帰りなさい'];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+    _setRandomGreeting();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? jsonString = prefs.getString('current_user');
+
+    if (jsonString != null && jsonString.isNotEmpty) {
+      try {
+        final Map<String, dynamic> userData = jsonDecode(jsonString);
+        setState(() {
+          _userName = userData['nickname'] ?? 'ユーザー';
+        });
+      } catch (e) {
+        print('SharedPreferencesからユーザーデータを解析中にエラーが発生しました: $e');
+      }
+    }
+  }
+
+  void _setRandomGreeting() {
+    final _random = Random();
+    setState(() {
+      _greeting = _greetings[_random.nextInt(_greetings.length)];
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +135,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                   child: Row(
                     children: [
                       Text(
-                        'こんにちは、adminさん。',
+                        '$_greeting、$_userNameさん。',
                         style: TextStyle(
                           fontSize: 14,
                           color: Color(0xFF424242),
@@ -550,7 +593,4 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         break;
     }
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(120);
 }

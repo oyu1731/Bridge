@@ -2,19 +2,23 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:html' as html;
 
-Future<void> startWebCheckout(
-  int amount,
-  String currency,
-  String planType,
-) async {
+Future<void> startWebCheckout({
+  required int amount,
+  required String currency,
+  required String planType,
+  String successUrl = "http://localhost:5000/#/payment-success",
+  String cancelUrl = "http://localhost:5000/#/payment-cancel",
+}) async {
   try {
     final response = await http.post(
-      Uri.parse("http://localhost:8080/api/payments/create-checkout-session"),
+      Uri.parse("http://localhost:8080/api/v1/payment/checkout-session"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "amount": amount,
         "currency": currency,
         "planType": planType,
+        "successUrl": successUrl,
+        "cancelUrl": cancelUrl,
       }),
     );
 

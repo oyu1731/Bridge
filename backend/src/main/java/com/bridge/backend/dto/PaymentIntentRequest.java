@@ -4,12 +4,12 @@ public class PaymentIntentRequest {
     private Long amount;
     private String currency;
     private String planType;
+    private String successUrl;
+    private String cancelUrl;
 
-    // Getters and Setters
     public Long getAmount() {
         return amount;
     }
-
     public void setAmount(Long amount) {
         this.amount = amount;
     }
@@ -17,7 +17,6 @@ public class PaymentIntentRequest {
     public String getCurrency() {
         return currency;
     }
-
     public void setCurrency(String currency) {
         this.currency = currency;
     }
@@ -25,8 +24,21 @@ public class PaymentIntentRequest {
     public String getPlanType() {
         return planType;
     }
-
     public void setPlanType(String planType) {
         this.planType = planType;
+    }
+
+    public String getSuccessUrl() {
+        return successUrl;
+    }
+    public void setSuccessUrl(String successUrl) {
+        this.successUrl = successUrl;
+    }
+
+    public String getCancelUrl() {
+        return cancelUrl;
+    }
+    public void setCancelUrl(String cancelUrl) {
+        this.cancelUrl = cancelUrl;
     }
 }
