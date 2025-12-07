@@ -667,6 +667,7 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
         print("[Dart] Calling speechWrapper.start()");
         speechWrapper.start(
           allowInterop((String result) {
+            // web専用コードのためエラーが出ています。気にしなくていい。
             print("[Dart] On speech result: $result");
             setState(() {
               _textEditingController.text = result;
