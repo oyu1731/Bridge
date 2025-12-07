@@ -18,7 +18,7 @@ import java.util.Optional;
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
 public class UserController {
-
+    
     @Autowired
     private UserService userService;
 
@@ -41,14 +41,19 @@ public class UserController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<UserDto> getUserById(@PathVariable("id") Integer id) {
+        // --- デバッグ用ログ追加 ---
+        System.out.println("[API] ユーザー情報取得リクエストを受信。ID: " + id);
         try {
             UserDto userDto = userService.getUserById(id);
             if (userDto != null) {
+                System.out.println("[API] ユーザーID: " + id + " の情報を正常に取得しました。");
                 return new ResponseEntity<>(userDto, HttpStatus.OK);
             } else {
+                System.out.println("[API] ユーザーID: " + id + " は見つかりませんでした (404)。");
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
+            System.err.println("[API] ユーザーID: " + id + " の取得中にサーバーエラーが発生しました: " + e.getMessage());
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

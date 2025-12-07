@@ -141,23 +141,46 @@ class GlobalActions {
 
   /// ユーザーIDに基づいて最新のトークン数を取得
   Future<int?> fetchUserTokens(int userId) async {
+    print("--- fetchUserTokens開始 ---");
     try {
-      print("トークン取得を開始します。ユーザーID: $userId");
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/api/users/$userId'),
-      );
+      final apiUrl = '${ApiConfig.baseUrl}/api/users/$userId';
+      print("トークン取得を開始します。ユーザーID: $userId, URL: $apiUrl");
+      final response = await http.get(Uri.parse(apiUrl));
+
+      print("レスポンスステータスコード: ${response.statusCode}");
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> userData = jsonDecode(response.body);
-        print("取得したトークン数: ${userData['token']}");
-        return userData['token'] as int?;
+        try {
+          final Map<String, dynamic> userData = jsonDecode(response.body);
+
+          // --- デバッグ用ログ追加 ---
+          print("レスポンスボディ (JSON): ${response.body}");
+
+          if (userData.containsKey('token')) {
+            final tokenValue = userData['token'];
+            print("取得したトークン数: $tokenValue (型: ${tokenValue.runtimeType})");
+
+            // トークンがnullの場合もint?型で返す
+            return tokenValue as int?;
+          } else {
+            print("!! 警告: レスポンスJSONに 'token' キーが存在しません。!!");
+            return null;
+          }
+        } on FormatException catch (e) {
+          print('JSONデコードエラー: $e');
+          print('無効なレスポンスボディ: ${response.body}');
+          return null;
+        }
       } else {
-        print('ユーザー情報取得エラー: ${response.statusCode}');
+        print('ユーザー情報取得エラー: ${response.statusCode} - ${response.reasonPhrase}');
+        print('エラーボディ: ${response.body}');
         return null;
       }
     } catch (e) {
-      print('ユーザー情報取得中にエラーが発生しました: $e');
+      print('ユーザー情報取得中にネットワークまたは処理エラーが発生しました: $e');
       return null;
+    } finally {
+      print("--- fetchUserTokens終了 ---");
     }
   }
 

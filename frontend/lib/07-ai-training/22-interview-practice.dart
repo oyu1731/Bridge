@@ -7,6 +7,19 @@ import 'package:bridge/11-common/59-global-method.dart';
 import 'package:http/http.dart' as http;
 import 'package:bridge/07-ai-training/23-interview-result.dart';
 import 'package:bridge/07-ai-training/21-ai-training-list.dart';
+import 'package:js/js.dart';
+
+@JS('speechWrapper')
+external SpeechWrapper get speechWrapper;
+
+@JS()
+@staticInterop
+class SpeechWrapper {}
+
+extension SpeechWrapperExt on SpeechWrapper {
+  external void start(Function onResult);
+  external void stop();
+}
 
 class InterviewPractice extends StatefulWidget {
   const InterviewPractice({super.key});
@@ -832,9 +845,22 @@ class _InterviewScreenState extends State<InterviewScreen> {
     setState(() {
       _isMicOn = !_isMicOn;
       if (_isMicOn) {
-        print("[Dart] InterviewPractice: マイクON");
+        print("[Dart] Calling speechWrapper.start()");
+        speechWrapper.start(
+          allowInterop((String result) {
+            print("[Dart] On speech result: $result");
+            setState(() {
+              _textEditingController.text = result;
+              _textEditingController.selection = TextSelection.fromPosition(
+                TextPosition(offset: _textEditingController.text.length),
+              );
+            });
+          }),
+        );
       } else {
-        print("[Dart] InterviewPractice: マイクOFF");
+        print("[Dart] Calling speechWrapper.stop()");
+        speechWrapper.stop();
+        print("[Dart] PhonePractice: マイクOFF");
       }
     });
     print("[Dart] Toggle mic. After: $_isMicOn");

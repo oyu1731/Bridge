@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:js_util';
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/60-ScreenWrapper.dart';
@@ -50,6 +48,8 @@ class _PhonePracticeState extends State<PhonePractice> {
   final List<String> callAtmospheres = ["穏やか", "厳格", "フレンドリー"];
   final List<String> difficulties = ["簡単", "普通", "難しい"];
 
+  int? _availableTokens; // ユーザーが保有するトークン数
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +60,22 @@ class _PhonePracticeState extends State<PhonePractice> {
     user = await GlobalActions().loadUserSession();
     _authToken = await GlobalActions().loadAuthToken();
     print("userのプラン状態: ${user?['plan_status']}");
+
+    // 認証トークンの取得
+    _authToken = await GlobalActions().loadAuthToken();
+    if (_authToken != null) {
+      print("[_init] 取得した認証トークン: $_authToken");
+    } else {
+      print("[_init] 認証トークンはSharedPreferencesに保存されていません。");
+    }
+
+    // ユーザー保有トークン数の取得
+    if (user != null && user!['id'] != null) {
+      _availableTokens = await GlobalActions().fetchUserTokens(
+        user!['id'] as int,
+      );
+      print("[_init] 取得したユーザー保有トークン: $_availableTokens");
+    }
 
     if (user != null) {
       nameController.text = user!['nickname'] ?? '';
@@ -159,7 +175,7 @@ class _PhonePracticeState extends State<PhonePractice> {
                                   ),
                                 ),
                                 Text(
-                                  _authToken ?? '未取得',
+                                  _availableTokens?.toString() ?? '未取得',
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,

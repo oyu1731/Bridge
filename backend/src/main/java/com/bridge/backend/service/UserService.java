@@ -23,7 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.List;
-
+import java.util.stream.Collectors;
 
 
 @Service
@@ -70,7 +70,13 @@ public class UserService {
         user.setPlanStatus("無料"); // usersテーブルは文字列
         user.setIsWithdrawn(false);
         user.setCreatedAt(LocalDateTime.now());
-
+        
+        // 【追加】初期値を設定: トークン、アイコン、報告数、削除フラグ
+        user.setToken(50); // 新規ユーザーの初期トークンを50に設定
+        user.setIcon(1);
+        user.setReportCount(0);
+        user.setAnnouncementDeletion(1);
+        
         if (userDto.getSocietyHistory() != null) {
             user.setSocietyHistory(userDto.getSocietyHistory());
         }
@@ -148,6 +154,20 @@ public class UserService {
             userDto.setPhoneNumber(existingUser.getPhoneNumber());
             userDto.setType(existingUser.getType());
             userDto.setSocietyHistory(existingUser.getSocietyHistory());
+            
+            // 【重要修正】token, planStatus, isWithdrawn のマッピングを追加
+            // tokenはDBの値（9780）がそのまま使われる
+            userDto.setToken(existingUser.getToken());
+            userDto.setPlanStatus(existingUser.getPlanStatus());
+            userDto.setIsWithdrawn(existingUser.getIsWithdrawn());
+
+            // 希望業界IDのリストを取得し、DTOに設定
+            List<Integer> desiredIndustries = industryRelationRepository.findByUserId(existingUser.getId()).stream()
+                .map(relation -> relation.getIndustry().getId())
+                .collect(Collectors.toList());
+            userDto.setDesiredIndustries(desiredIndustries);
+
+
             if (existingUser.getType() == 3 && existingUser.getCompanyId() != null) {
                 Optional<Company> company = companyRepository.findById(existingUser.getCompanyId());
                 if (company.isPresent()) {
@@ -215,7 +235,9 @@ public class UserService {
         }
 
         userRepository.save(user);
-        return getUserById(user.getId().intValue());
+        
+        // 再度DBから最新の情報を取得して返す
+        return getUserById(user.getId());
     }
 
     // 希望業界の更新
@@ -281,11 +303,14 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
-        if (user.getToken() < tokensToDeduct) {
+        // DBから取得したトークンがnullの場合の安全策
+        Integer currentTokens = user.getToken() != null ? user.getToken() : 0;
+
+        if (currentTokens < tokensToDeduct) {
             throw new IllegalArgumentException("Not enough tokens for user with ID: " + userId);
         }
 
-        user.setToken(user.getToken() - tokensToDeduct);
+        user.setToken(currentTokens - tokensToDeduct);
         return userRepository.save(user);
     }
 }
