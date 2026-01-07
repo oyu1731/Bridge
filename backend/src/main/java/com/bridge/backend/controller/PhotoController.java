@@ -16,7 +16,9 @@ import java.io.IOException;
  */
 @RestController
 @RequestMapping("/api/photos")
-@CrossOrigin(origins = "*")
+// @CrossOrigin(origins = "*")
+// ↑を↓に変えたらできたけど↑のでしたい（高橋が作ったコントローラーとこのコントローラーだけ変えました。）
+@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
 public class PhotoController {
 
     @Autowired
