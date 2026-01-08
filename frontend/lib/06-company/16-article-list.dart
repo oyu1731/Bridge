@@ -22,6 +22,7 @@ class _ArticleListPageState extends State<ArticleListPage> {
   List<String> _selectedTags = [];
   String? _selectedIndustry;
   bool _isStrictMode = false; // すべての条件に当てはまるもののみ表示
+  String _sortOrder = 'newest'; // newest, oldest, mostLiked, leastLiked
 
   // 実際の記事データ（APIから取得）
   List<ArticleDTO> _allArticles = [];
@@ -35,8 +36,14 @@ class _ArticleListPageState extends State<ArticleListPage> {
   @override
   void initState() {
     super.initState();
-    _loadArticles();
+    
+    // 企業名が渡された場合は検索バーに設定
+    if (widget.companyName != null && widget.companyName!.isNotEmpty) {
+      _searchController.text = widget.companyName!;
+    }
+    
     _loadFilterData();
+    _loadArticles();
   }
 
   Future<void> _loadFilterData() async {
@@ -79,6 +86,14 @@ class _ArticleListPageState extends State<ArticleListPage> {
         _filteredArticles = articles;
         _isLoading = false;
       });
+      
+      // 初期ロード時もソートを適用
+      _applySorting();
+      
+      // 企業名が指定されている場合は検索を実行
+      if (widget.companyName != null && widget.companyName!.isNotEmpty) {
+        _searchArticlesFromAPI();
+      }
     } catch (e) {
       setState(() {
         _error = '記事の読み込みエラー: $e';
@@ -109,7 +124,7 @@ class _ArticleListPageState extends State<ArticleListPage> {
         _isLoading = false;
       });
       
-      // Apply remaining local filters (tags) after getting API results
+      // Apply remaining local filters (tags) and sorting after getting API results
       _applyLocalFilters();
     } catch (e) {
       setState(() {
@@ -157,7 +172,45 @@ class _ArticleListPageState extends State<ArticleListPage> {
 
         return matchesTag;
       }).toList();
+      
+      // ソート適用
+      _applySorting();
     });
+  }
+
+  void _applySorting() {
+    switch (_sortOrder) {
+      case 'newest':
+        _filteredArticles.sort((a, b) {
+          if (a.createdAt == null && b.createdAt == null) return 0;
+          if (a.createdAt == null) return 1;
+          if (b.createdAt == null) return -1;
+          return b.createdAt!.compareTo(a.createdAt!);
+        });
+        break;
+      case 'oldest':
+        _filteredArticles.sort((a, b) {
+          if (a.createdAt == null && b.createdAt == null) return 0;
+          if (a.createdAt == null) return 1;
+          if (b.createdAt == null) return -1;
+          return a.createdAt!.compareTo(b.createdAt!);
+        });
+        break;
+      case 'mostLiked':
+        _filteredArticles.sort((a, b) {
+          final aLikes = a.totalLikes ?? 0;
+          final bLikes = b.totalLikes ?? 0;
+          return bLikes.compareTo(aLikes);
+        });
+        break;
+      case 'leastLiked':
+        _filteredArticles.sort((a, b) {
+          final aLikes = a.totalLikes ?? 0;
+          final bLikes = b.totalLikes ?? 0;
+          return aLikes.compareTo(bLikes);
+        });
+        break;
+    }
   }
 
   void _resetFilters() {
@@ -166,7 +219,9 @@ class _ArticleListPageState extends State<ArticleListPage> {
       _selectedTags.clear();
       _selectedIndustry = null;
       _isStrictMode = false;
+      _sortOrder = 'newest';
       _filteredArticles = List.from(_allArticles);
+      _applySorting();
       // _isFilterExpanded は維持して、メニューを閉じないようにする
     });
   }
@@ -183,7 +238,7 @@ class _ArticleListPageState extends State<ArticleListPage> {
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                // 検索バー
+                // 検索バーとソート
                 Row(
                   children: [
                     Expanded(
@@ -254,6 +309,37 @@ class _ArticleListPageState extends State<ArticleListPage> {
                             ),
                           ],
                         ),
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    // ソートドロップダウン
+                    Container(
+                      height: 48,
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Color(0xFFE0E0E0)),
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.white,
+                      ),
+                      child: DropdownButton<String>(
+                        value: _sortOrder,
+                        underline: SizedBox(),
+                        icon: Icon(Icons.arrow_drop_down, color: Color(0xFF757575)),
+                        style: TextStyle(fontSize: 14, color: Color(0xFF424242)),
+                        items: [
+                          DropdownMenuItem(value: 'newest', child: Text('新しい順')),
+                          DropdownMenuItem(value: 'oldest', child: Text('古い順')),
+                          DropdownMenuItem(value: 'mostLiked', child: Text('いいね数が多い順')),
+                          DropdownMenuItem(value: 'leastLiked', child: Text('いいね数が少ない順')),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              _sortOrder = value;
+                              _applyLocalFilters();
+                            });
+                          }
+                        },
                       ),
                     ),
                   ],

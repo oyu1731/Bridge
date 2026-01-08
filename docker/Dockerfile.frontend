@@ -28,8 +28,7 @@ ENV PATH="$PATH:/usr/local/flutter/bin"
 
 # Flutterの設定
 # Flutterの安定版チャンネルに切り替え、SDKを最新の状態に更新し、Web開発を有効にします。
-RUN flutter channel stable
-RUN flutter upgrade
+# flutter upgrade はビルド中に不安定になる可能性があるため削除
 RUN flutter config --enable-web # Webアプリケーションのビルドを有効にする
 
 # 作業ディレクトリの設定

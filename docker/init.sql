@@ -51,7 +51,8 @@ CREATE TABLE users (
     created_at DATETIME NOT NULL,
     society_history INT(2),
     icon INT(10),
-    announcement_deletion INT(1) NOT NULL DEFAULT 1 COMMENT '1=新規お知らせなし、2=新規お知らせあり'
+    announcement_deletion INT(1) NOT NULL DEFAULT 1 COMMENT '1=新規お知らせなし、2=新規お知らせあり',
+    token INT(10) NOT NULL DEFAULT 50 COMMENT '面接練習やメール添削で使用'
 );
 
 
@@ -274,7 +275,7 @@ INSERT INTO industries (industry) VALUES
 
 -- subscriptions
 INSERT INTO subscriptions (user_id, plan_name, start_date, end_date, is_plan_status, created_at) VALUES
-(1, '無料', NOW(), '2026-01-01 00:00:00', TRUE, NOW()),
+(1, 'プレミアム', NOW(), '2026-01-01 00:00:00', TRUE, NOW()),
 (2, 'プレミアム', NOW(), '2026-01-01 00:00:00', TRUE, NOW());
 
 -- articles

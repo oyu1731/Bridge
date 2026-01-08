@@ -11,30 +11,33 @@ class Thread {
   final String id;
   final String title;
   final int type; // 1=公式, 2=非公式
-  final String? lastComment; // 公式のみ
+  final DateTime? lastCommentDate;
   final String timeAgo;
 
   Thread({
     required this.id,
     required this.title,
     required this.type,
-    this.lastComment,
+    this.lastCommentDate,
     required this.timeAgo,
   });
 
   factory Thread.fromJson(Map<String, dynamic> json) {
-    // last_update_date があれば経過時間を計算
     String timeAgoText = "";
-    if (json["last_update_date"] != null) {
-      DateTime lastUpdate = DateTime.parse(json["last_update_date"]);
-      timeAgoText = _formatTimeAgo(lastUpdate);
+    DateTime? lastUpdateDate;
+
+    // lastUpdateDate → timeAgo に使用 & 並び替えにも使う
+    final lastUpdateStr = json["lastUpdateDate"] ?? json["lastUpdateDate"];
+    if (lastUpdateStr != null && lastUpdateStr != "") {
+      lastUpdateDate = DateTime.parse(lastUpdateStr);
+      timeAgoText = _formatTimeAgo(lastUpdateDate);
     }
 
     return Thread(
       id: json['id'].toString(),
       title: json['title']?.toString() ?? '',
       type: json['type'] != null ? int.parse(json['type'].toString()) : 2,
-      lastComment: null, // DB仕様上なし
+      lastCommentDate: lastUpdateDate,  // ← ★ここ重要！
       timeAgo: timeAgoText,
     );
   }
@@ -54,6 +57,7 @@ class Thread {
 Future<List<Thread>> fetchThreads() async {
   final url = Uri.parse('http://localhost:8080/api/threads');
   final response = await http.get(url);
+  print(response.body); 
 
   if (response.statusCode == 200) {
     final List<dynamic> data = json.decode(response.body);
@@ -81,10 +85,17 @@ class _ThreadListState extends State<ThreadList> {
   Future<void> _fetchThreads() async {
     try {
       final threads = await fetchThreads();
+      print(threads.map((t) => t.timeAgo).toList()); 
 
       setState(() {
         officialThreads = threads.where((t) => t.type == 1).toList();
-        hotUnofficialThreads = threads.where((t) => t.type == 2).toList();
+        hotUnofficialThreads = threads.where((t) => t.type == 2)
+          .toList()
+          ..sort((a, b) {
+            final aDate = a.lastCommentDate ?? DateTime(2000);
+            final bDate = b.lastCommentDate ?? DateTime(2000);
+            return bDate.compareTo(aDate); // 新しい順
+          });
       });
     } catch (e) {
       print('スレッド取得に失敗: $e');
@@ -173,7 +184,7 @@ class _ThreadListState extends State<ThreadList> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ThreadUnofficialDetail(
+                        builder: (context) => ThreadUnOfficialDetail(
                           thread: {'id': thread.id, 'title': thread.title},
                         ),
                       ),

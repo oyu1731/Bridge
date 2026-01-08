@@ -13,11 +13,20 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences: 2.5.3
   http: ^1.2.0
-  web_socket_channel: ^2.3.0   # ← これを追加
   crypto: ^3.0.3
-  image_picker: ^1.0.7
-  url_launcher: ^6.3.0
-
+  image_picker: ^1.2.1
+  url_launcher: ^6.3.2
+  audioplayers: ^6.0.0
+  path_provider: ^2.1.2
+  path: ^1.9.0
+  js: ^0.6.7
+  awesome_dialog: ^3.3.0 # ダイアログ
+  flutter_tts: ^4.2.3 # 読み上げ用
+  flutter_stripe: ^12.1.1 # Stripe決済用
+  flutter_stripe_web: ^7.1.1 # webでStripeを実施するようえ
+  web_socket_channel: ^2.3.0
+  share_plus: ^10.0.0
+ 
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -26,9 +35,10 @@ dev_dependencies:
 flutter:
   uses-material-design: true
  
-  # 画像やフォントを追加する場合は、以下のコメントアウトを外して使用
   assets:
     - lib/01-images/
+    - lib/07-ai-training/quiz_data.json
+
  
   # fonts:
   #   - family: CustomFont

@@ -9,10 +9,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins("http://localhost:5000") // フロントエンドのURL
+        registry.addMapping("/**") // API全体（または /api/**）を対象
+                .allowedOrigins("http://localhost:5000") // フロントエンドのURLを明示的に許可
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("Content-Type", "Authorization")
+                .allowedHeaders("*") // 必要なヘッダ（Content-Type, Authorizationなど）をすべて許可
                 .allowCredentials(true);
     }
 }

@@ -14,11 +14,7 @@ class PhotoDTO {
   final String? filePath;
   final String? fileName;
 
-  PhotoDTO({
-    this.id,
-    this.filePath,
-    this.fileName,
-  });
+  PhotoDTO({this.id, this.filePath, this.fileName});
 
   factory PhotoDTO.fromJson(Map<String, dynamic> json) {
     // バックエンドはphotoPathを返すので、それをfilePathにマッピング
@@ -29,7 +25,7 @@ class PhotoDTO {
       // /uploads/photos/xxx.jpg のようなパスを http://localhost:8080/uploads/photos/xxx.jpg に変換
       fullPath = '${ApiConfig.baseUrl}$photoPath';
     }
-    
+
     return PhotoDTO(
       id: json['id'],
       filePath: fullPath,
@@ -44,7 +40,7 @@ class PhotoApiClient {
   static Future<PhotoDTO?> getPhotoById(int id) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/$id'));
-      
+
       if (response.statusCode == 200) {
         return PhotoDTO.fromJson(json.decode(response.body));
       } else if (response.statusCode == 404) {
@@ -81,7 +77,7 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
   List<PhotoDTO?> _photos = [];
   bool _isLoading = true;
   String? _error;
-  
+
   // いいね機能の状態
   bool _isLiked = false;
   bool _isLikeLoading = false;
@@ -115,12 +111,12 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
       // デバッグ用：取得した記事データのphoto_idを確認
       print('Debug: Article data loaded');
       print('Photo1Id: ${article.photo1Id}');
-      print('Photo2Id: ${article.photo2Id}'); 
+      print('Photo2Id: ${article.photo2Id}');
       print('Photo3Id: ${article.photo3Id}');
 
       // 写真データを取得（photo1_id、photo2_id、photo3_idの順）
       List<PhotoDTO?> photos = [];
-      
+
       if (article.photo1Id != null) {
         try {
           print('Debug: Fetching photo1 with id: ${article.photo1Id}');
@@ -192,7 +188,7 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
   Future<void> _saveLikeStatus(bool isLiked) async {
     final prefs = await SharedPreferences.getInstance();
     final likedArticles = prefs.getStringList('liked_articles') ?? [];
-    
+
     if (isLiked) {
       if (!likedArticles.contains(widget.articleId)) {
         likedArticles.add(widget.articleId);
@@ -200,7 +196,7 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
     } else {
       likedArticles.remove(widget.articleId);
     }
-    
+
     await prefs.setStringList('liked_articles', likedArticles);
   }
 
@@ -215,7 +211,7 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
     try {
       final int articleId = _article!.id!;
       final bool willLike = !_isLiked; // 新しい状態を計算
-      
+
       // サーバーに新しい状態を送信
       await _updateLikeCount(articleId, willLike);
 
@@ -223,13 +219,13 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
       setState(() {
         _isLiked = willLike;
       });
-      
+
       // ローカルストレージに保存
       await _saveLikeStatus(_isLiked);
-      
+
       // 記事データを再読み込みしてサーバーの状態と同期
       await _loadArticleData();
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_isLiked ? 'いいねしました！' : 'いいねを取り消しました'),
@@ -254,21 +250,23 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
 
   // サーバーのいいね数を更新
   Future<void> _updateLikeCount(int articleId, bool isLiking) async {
-    print('Debug: _updateLikeCount called with articleId=$articleId, isLiking=$isLiking');
+    print(
+      'Debug: _updateLikeCount called with articleId=$articleId, isLiking=$isLiking',
+    );
     print('Debug: Current _isLiked state: $_isLiked');
-    
-    final requestBody = {'liking': isLiking};  // isLiking から liking に変更
+
+    final requestBody = {'liking': isLiking}; // isLiking から liking に変更
     print('Debug: Sending request body: $requestBody');
-    
+
     final response = await http.post(
       Uri.parse('http://localhost:8080/api/articles/$articleId/like'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode(requestBody),
     );
-    
+
     print('Debug: Response status: ${response.statusCode}');
     print('Debug: Response body: ${response.body}');
-    
+
     if (response.statusCode != 200) {
       throw Exception('いいね操作に失敗しました');
     }
@@ -279,9 +277,7 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
     if (_isLoading) {
       return Scaffold(
         appBar: BridgeHeader(),
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -299,10 +295,7 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
               SizedBox(height: 8),
               Text(_error!),
               SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _loadArticleData,
-                child: Text('再試行'),
-              ),
+              ElevatedButton(onPressed: _loadArticleData, child: Text('再試行')),
             ],
           ),
         ),
@@ -312,9 +305,7 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
     if (_article == null) {
       return Scaffold(
         appBar: BridgeHeader(),
-        body: Center(
-          child: Text('記事が見つかりません'),
-        ),
+        body: Center(child: Text('記事が見つかりません')),
       );
     }
 
@@ -328,24 +319,24 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
             children: [
               // 記事タイトル
               _buildArticleTitle(),
-              
+
               const SizedBox(height: 16),
-              
+
               // 企業名とハッシュタグセクション
               _buildCompanyAndHashtags(),
-              
+
               const SizedBox(height: 24),
-              
+
               // 画像セクション
               _buildImageSection(),
-              
+
               const SizedBox(height: 24),
-              
+
               // 記事内容セクション
               _buildArticleContent(),
-              
+
               const SizedBox(height: 24),
-              
+
               // いいねセクション
               _buildLikeSection(),
             ],
@@ -377,33 +368,31 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
     if (tags.isEmpty) {
       tagWidget = Text(
         'タグなし',
-        style: TextStyle(
-          fontSize: 13,
-          color: Color(0xFF757575),
-        ),
+        style: TextStyle(fontSize: 13, color: Color(0xFF757575)),
       );
     } else {
       tagWidget = Wrap(
         spacing: 6,
         runSpacing: 4,
-        children: tags.map((t) {
-          return Container(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Color(0xFFE3F2FD),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Color(0xFF90CAF9)),
-            ),
-            child: Text(
-              '#$t',
-              style: TextStyle(
-                fontSize: 13,
-                color: Color(0xFF1565C0),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          );
-        }).toList(),
+        children:
+            tags.map((t) {
+              return Container(
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Color(0xFFE3F2FD),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Color(0xFF90CAF9)),
+                ),
+                child: Text(
+                  '#$t',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF1565C0),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              );
+            }).toList(),
       );
     }
 
@@ -415,21 +404,23 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
         GestureDetector(
           onTap: () {
             final companyId = _article?.companyId;
-            final companyName = _article?.companyName ?? widget.companyName ?? '';
+            final companyName =
+                _article?.companyName ?? widget.companyName ?? '';
             if (companyId != null) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => CompanyDetailPage(
-                    companyName: companyName,
-                    companyId: companyId,
-                  ),
+                  builder:
+                      (_) => CompanyDetailPage(
+                        companyName: companyName,
+                        companyId: companyId,
+                      ),
                 ),
               );
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('企業IDが取得できませんでした')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('企業IDが取得できませんでした')));
             }
           },
           child: MouseRegion(
@@ -458,19 +449,25 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
     // 存在する写真のリストを作成
     final isWide = MediaQuery.of(context).size.width >= 900; // PC幅判定
     List<Widget> imageWidgets = [];
-    
+
     // 画像1 (photo1_id) - photo1Idが存在し、かつ写真が取得できた場合のみ追加
-    if (_article?.photo1Id != null && _photos.isNotEmpty && _photos[0] != null) {
+    if (_article?.photo1Id != null &&
+        _photos.isNotEmpty &&
+        _photos[0] != null) {
       imageWidgets.add(_buildPhotoWidget(0, '画像1'));
     }
-    
+
     // 画像2 (photo2_id) - photo2Idが存在し、かつ写真が取得できた場合のみ追加
-    if (_article?.photo2Id != null && _photos.length > 1 && _photos[1] != null) {
+    if (_article?.photo2Id != null &&
+        _photos.length > 1 &&
+        _photos[1] != null) {
       imageWidgets.add(_buildPhotoWidget(1, '画像2'));
     }
-    
+
     // 画像3 (photo3_id) - photo3Idが存在し、かつ写真が取得できた場合のみ追加
-    if (_article?.photo3Id != null && _photos.length > 2 && _photos[2] != null) {
+    if (_article?.photo3Id != null &&
+        _photos.length > 2 &&
+        _photos[2] != null) {
       imageWidgets.add(_buildPhotoWidget(2, '画像3'));
     }
 
@@ -481,7 +478,7 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
 
     // 画像枚数に応じて表示を調整
     int imageCount = imageWidgets.length;
-    
+
     // PC幅かどうかで高さ・最大幅を調整（縦長画像がはみ出さない最大値＋中央寄せ）
     // PCサイズを現状の約3/4に縮小
     double singleHeight = isWide ? 360 : 300; // 480 -> 360
@@ -583,40 +580,41 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
                 child: Image.network(
                   photo.filePath!,
                   fit: BoxFit.contain,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                          : null,
-                    ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.broken_image,
-                          color: Color(0xFF757575),
-                          size: 32,
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          '読み込み\nエラー',
-                          style: TextStyle(
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value:
+                            loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.broken_image,
                             color: Color(0xFF757575),
-                            fontSize: 12,
+                            size: 32,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                          SizedBox(height: 4),
+                          Text(
+                            '読み込み\nエラー',
+                            style: TextStyle(
+                              color: Color(0xFF757575),
+                              fontSize: 12,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -630,18 +628,11 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.image,
-            color: Color(0xFF757575),
-            size: 32,
-          ),
+          Icon(Icons.image, color: Color(0xFF757575), size: 32),
           SizedBox(height: 4),
           Text(
             placeholder,
-            style: TextStyle(
-              color: Color(0xFF757575),
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Color(0xFF757575), fontSize: 12),
           ),
         ],
       ),
@@ -676,7 +667,10 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
 
   // 記事本文内のURLを検出してリンク化
   Widget _buildLinkifiedDescription(String text) {
-    final urlRegExp = RegExp(r'((https?:\/\/|www\.)[^\s]+)', caseSensitive: false);
+    final urlRegExp = RegExp(
+      r'((https?:\/\/|www\.)[^\s]+)',
+      caseSensitive: false,
+    );
     final spans = <TextSpan>[];
     int start = 0;
     final matches = urlRegExp.allMatches(text).toList();
@@ -694,13 +688,14 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
             color: Color(0xFF1976D2),
             decoration: TextDecoration.underline,
           ),
-          recognizer: TapGestureRecognizer()
-            ..onTap = () async {
-              final uri = Uri.parse(url);
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              }
-            },
+          recognizer:
+              TapGestureRecognizer()
+                ..onTap = () async {
+                  final uri = Uri.parse(url);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                },
         ),
       );
       start = m.end;
@@ -744,7 +739,7 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _isLikeLoading
-                    ? SizedBox(
+                      ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
@@ -752,7 +747,7 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
                         ),
                       )
-                    : Icon(
+                      : Icon(
                         _isLiked ? Icons.favorite : Icons.favorite_border,
                         color: _isLiked ? Colors.red : Color(0xFF757575),
                         size: 20,
@@ -798,10 +793,11 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
                       if (loadingProgress == null) return child;
                       return Center(
                         child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
+                          value:
+                              loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
                           color: Colors.white,
                         ),
                       );
@@ -836,11 +832,7 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
                 top: 16,
                 right: 16,
                 child: IconButton(
-                  icon: Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 32,
-                  ),
+                  icon: Icon(Icons.close, color: Colors.white, size: 32),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.black54,
                     padding: EdgeInsets.all(8),

@@ -124,10 +124,10 @@ public class InterviewController {
     ) {
         logger.info("Received answers: {}", answers);
         logger.info("Received questionType: {}", questionType);
-        // Service 層に処理を委譲
-        interviewService.saveAnswers(answers, questionType); // questionType を渡す
-        return "保存完了";
-    }
+        // Service 層に処理を委譲し、評価結果を受け取る
+        String evaluationResult = interviewService.saveAnswers(answers, questionType); // questionType を渡す
+        return evaluationResult; // 評価結果をそのまま返す
+   }
 }
 
 
