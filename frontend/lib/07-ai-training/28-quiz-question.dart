@@ -3,6 +3,7 @@ import 'dart:convert'; // JSONをデコードするために必要
 import 'package:flutter/services.dart' show rootBundle; // rootBundleを使用するために必要
 import 'package:bridge/11-common/58-header.dart'; // BridgeHeader を使用するため追加
 import 'package:bridge/11-common/59-global-method.dart'; // showGenericDialog を使用するため
+import 'package:bridge/11-common/60-ScreenWrapper.dart';
 import '29-quiz-explanation.dart';
 import '30-quiz-score.dart';
 
@@ -55,8 +56,9 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   Widget build(BuildContext context) {
     if (_quizData.isEmpty) {
-      return const Scaffold(
-        body: Center(
+      return ScreenWrapper(
+        appBar: BridgeHeader(),
+        child: const Center(
           child: CircularProgressIndicator(), // データロード中はローディングインジケータを表示
         ),
       );
@@ -64,9 +66,9 @@ class _QuizScreenState extends State<QuizScreen> {
 
     final currentQuestion = _getCurrentQuestion();
 
-    return Scaffold(
+    return ScreenWrapper(
       appBar: BridgeHeader(),
-      body: Padding(
+      child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

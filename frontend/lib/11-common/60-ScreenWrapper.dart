@@ -10,15 +10,15 @@ import 'package:flutter/material.dart';
 class ScreenWrapper extends StatelessWidget {
   final Widget child; // 画面コンテンツ
   final PreferredSizeWidget? appBar; // ヘッダー (BridgeHeaderなど)
-
-  // Scaffoldの主要なプロパティが必要ならここに追加します（例: bottomNavigationBarなど）
-  // final Widget? bottomNavigationBar;
+  final Widget? bottomNavigationBar; // 下部ナビゲーションを受け取れるように
+  final Color? backgroundColor; // 背景色を受け取れるように
 
   const ScreenWrapper({
     super.key,
     required this.child,
     this.appBar,
-    // this.bottomNavigationBar,
+    this.bottomNavigationBar,
+    this.backgroundColor,
   });
 
   @override
@@ -44,8 +44,9 @@ class ScreenWrapper extends StatelessWidget {
 
       child: Scaffold(
         appBar: appBar, // BridgeHeaderがここに設定されます
+        backgroundColor: backgroundColor,
         body: child, // 各画面のメインコンテンツ
-        // bottomNavigationBar: bottomNavigationBar,
+        bottomNavigationBar: bottomNavigationBar,
       ),
     );
   }

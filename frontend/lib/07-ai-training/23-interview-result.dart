@@ -628,24 +628,6 @@ class InterviewResultPage extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () {
-                _shareResults();
-              },
-              icon: const Icon(Icons.share, size: 20),
-              label: const Text('結果をシェア'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF6366F1),
-                side: const BorderSide(color: Color(0xFF6366F1)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
             child: ElevatedButton.icon(
               onPressed: () {
                 Navigator.of(context).pop();

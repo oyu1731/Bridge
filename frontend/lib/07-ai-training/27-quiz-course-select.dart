@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/59-global-method.dart';
+import 'package:bridge/11-common/60-ScreenWrapper.dart';
 import 'package:http/http.dart' as http; // HTTP リクエストのため追加
 import 'dart:convert'; // JSON エンコード/デコードのため追加
 import '28-quiz-question.dart';
@@ -23,9 +24,9 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return ScreenWrapper(
       appBar: BridgeHeader(),
-      body: SingleChildScrollView(
+      child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -269,10 +270,10 @@ class _RankingScreenState extends State<RankingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return ScreenWrapper(
       appBar: BridgeHeader(),
       backgroundColor: Colors.grey[50],
-      body: Column(
+      child: Column(
         children: [
           Container(
             padding: const EdgeInsets.symmetric(vertical: 20),

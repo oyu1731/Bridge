@@ -5,6 +5,7 @@ import 'package:flutter/services.dart'; // Clipboardを使用するために追�
 import 'package:http/http.dart' as http;
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/59-global-method.dart';
+import 'package:bridge/11-common/60-ScreenWrapper.dart';
 
 class EmailCorrectionScreen extends StatefulWidget {
   const EmailCorrectionScreen({super.key});
@@ -173,9 +174,9 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return ScreenWrapper(
       appBar: BridgeHeader(),
-      body: Padding(
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [

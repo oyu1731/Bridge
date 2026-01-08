@@ -6,6 +6,12 @@ import 'dart:js' as js; // ota1128
 import 'package:http/http.dart' as http; // ota1128
 import 'package:bridge/06-company/api_config.dart'; // ota1128
 import 'package:share_plus/share_plus.dart'; // ota1128
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:cross_file/cross_file.dart';
+
+// Web専用API（画像を新しいタブで開く、クリップボードにコピー）
+import 'dart:typed_data';
+import 'dart:html' as html;
 
 class GlobalActions {
   /// ユーザーセッション情報をSharedPreferencesから取得
@@ -600,15 +606,5 @@ if (selectedVoice) {
     js.context.callMethod('eval', [jsCode]);
   } catch (e) {
     print("Error内容:" + e.toString());
-  }
-}
-
-// シェア機能を呼び出す関数
-Future<void> shareContent(String content) async {
-  try {
-    await Share.share(content);
-    print('コンテンツをシェアしました: $content');
-  } catch (e) {
-    print('シェア中にエラーが発生しました: $e');
   }
 }

@@ -7,13 +7,13 @@ import 'package:bridge/11-common/59-global-method.dart';
 import 'package:http/http.dart' as http;
 import 'package:bridge/07-ai-training/23-interview-result.dart';
 import 'package:bridge/07-ai-training/21-ai-training-list.dart';
-import 'package:js/js.dart';
+import 'package:js/js.dart' as js;
 
-@JS('speechWrapper')
+@js.JS('speechWrapper')
 external SpeechWrapper get speechWrapper;
 
-@JS()
-@staticInterop
+@js.JS()
+@js.staticInterop
 class SpeechWrapper {}
 
 extension SpeechWrapperExt on SpeechWrapper {
@@ -847,7 +847,7 @@ class _InterviewScreenState extends State<InterviewScreen> {
       if (_isMicOn) {
         print("[Dart] Calling speechWrapper.start()");
         speechWrapper.start(
-          allowInterop((String result) {
+          js.allowInterop((String result) {
             // web専用コードのためエラーが出ています。気にしなくていい。
             print("[Dart] On speech result: $result");
             setState(() {

@@ -3,6 +3,7 @@ import 'package:bridge/11-common/59-global-method.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:bridge/11-common/58-header.dart';
+import 'package:bridge/11-common/60-ScreenWrapper.dart';
 
 class AnswerExplanationScreen extends StatefulWidget {
   final Map<String, dynamic> question;
@@ -72,10 +73,10 @@ class _AnswerExplanationScreenState extends State<AnswerExplanationScreen> {
     final Color secondaryColor =
         isCorrect ? Color(0xFFECFDF5) : Color(0xFFFEF2F2);
 
-    return Scaffold(
+    return ScreenWrapper(
       appBar: BridgeHeader(),
       backgroundColor: Color(0xFFF8FAFC),
-      body: SingleChildScrollView(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

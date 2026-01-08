@@ -4,8 +4,10 @@ import '22-interview-practice.dart';
 import '26-email-correction.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/59-global-method.dart';
+// ↓ ScreenWrapperのインポートを追加 (パスは環境に合わせて調整してください)
+import 'package:bridge/11-common/60-ScreenWrapper.dart';
 import 'voice_setting_dialog.dart';
-import 'dart:js' as js;
+import 'dart:js' as js; // ※Web以外でエラーになる場合は削除してください
 
 // カスタムのScrollBehaviorを定義
 class NoThumbScrollBehavior extends ScrollBehavior {
@@ -129,9 +131,11 @@ class _AiTrainingListPageState extends State<AiTrainingListPage> {
     // ユーザーのトークン数を取得（デフォルトは0）
     final int currentTokens = _currentTokens;
 
-    return Scaffold(
-      appBar: BridgeHeader(),
-      body: Stack(
+    // 変更点: Scaffold を ScreenWrapper に置き換え
+    return ScreenWrapper(
+      appBar: BridgeHeader(), // ScreenWrapperのappBar引数へ
+      child: Stack(
+        // Scaffoldのbodyだった部分をchild引数へ
         // Stackウィジェットを追加
         children: [
           Container(
