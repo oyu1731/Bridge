@@ -1,11 +1,17 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/03-home/08-student-worker-home.dart';
 import 'package:bridge/03-home/09-company-home.dart';
 import 'package:bridge/main.dart';
+import 'package:bridge/11-common/image_crop_dialog.dart';
+import '../06-company/photo_api_client.dart';
+import 'user_api_client.dart';
 
 class Industry {
   final int id;
@@ -28,6 +34,9 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
   final _nicknameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneNumberController = TextEditingController();
+  int? _iconPhotoId;
+  String? _iconUrl; // 表示用URL
+  bool _uploadingIcon = false;
 
   bool _isSaving = false; // 保存中フラグ
 
@@ -66,7 +75,18 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
           _nicknameController.text = userData['nickname'] ?? '';
           _emailController.text = userData['email'] ?? '';
           _phoneNumberController.text = userData['phoneNumber'] ?? '';
+          _iconPhotoId = userData['icon'];
         });
+
+        // 既存アイコン取得
+        if (_iconPhotoId != null) {
+          try {
+            final photo = await PhotoApiClient.getPhotoById(_iconPhotoId!);
+            setState(() {
+              _iconUrl = photo?.photoPath; // フルURL
+            });
+          } catch (_) {}
+        }
       } else {
         print('Failed to load user data');
       }
@@ -136,13 +156,40 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
             Center(
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.grey.shade300,
-                    child: Icon(Icons.person, size: 60, color: Colors.grey[700]),
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 55,
+                        backgroundColor: Colors.grey.shade200,
+                        child: _iconUrl != null
+                            ? CircleAvatar(
+                                radius: 52,
+                                backgroundImage: NetworkImage(_iconUrl!),
+                              )
+                            : Icon(Icons.person, size: 60, color: Colors.grey[600]),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: InkWell(
+                          onTap: _uploadingIcon ? null : _pickAndUploadIcon,
+                          child: CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.blueAccent,
+                            child: _uploadingIcon
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Icon(Icons.camera_alt, size: 20, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
-                  const Text("プロフィール写真"),
+                  const Text("プロフィールアイコン"),
                 ],
               ),
             ),
@@ -163,9 +210,18 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
                   title: Text(industry.name),
                   value: industry.isSelected,
                   onChanged: (bool? value) {
-                    setState(() {
-                      industry.isSelected = value ?? true;
-                    });
+                    if (value == true) {
+                      setState(() {
+                        for (var ind in industries) {
+                          ind.isSelected = false;
+                        }
+                        industry.isSelected = true;
+                      });
+                    } else {
+                      setState(() {
+                        industry.isSelected = false;
+                      });
+                    }
                   },
                 );
               }).toList(),
@@ -248,6 +304,7 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
       'email': _emailController.text,
       'phoneNumber': _phoneNumberController.text,
       'desiredIndustries': selectedIndustryIds,
+      'icon': _iconPhotoId,
     };
 
     final url = 'http://localhost:8080/api/users/$userId/profile';
@@ -299,4 +356,47 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
     }
   }
 
+  Future<void> _pickAndUploadIcon() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('current_user');
+    if (userJson == null) return;
+    final sessionUser = jsonDecode(userJson);
+    final userId = sessionUser['id'];
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
+    if (picked == null) return;
+
+    // クロップダイアログを表示
+    final bytes = await picked.readAsBytes();
+    if (!mounted) return;
+    
+    final croppedBytes = await showDialog<Uint8List>(
+      context: context,
+      builder: (context) => ImageCropDialog(imageBytes: bytes),
+    );
+    
+    if (croppedBytes == null) return; // キャンセルされた
+    
+    setState(() => _uploadingIcon = true);
+    try {
+      final tempPath = picked.name;
+      final pseudoFile = XFile.fromData(croppedBytes, name: tempPath, mimeType: 'image/jpeg');
+      final uploaded = await PhotoApiClient.uploadPhoto(pseudoFile, userId: userId);
+      final photoId = uploaded.id;
+      if (photoId != null) {
+        await UserApiClient.updateIcon(userId, photoId);
+        setState(() {
+          _iconPhotoId = photoId;
+          _iconUrl = uploaded.photoPath;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('アイコンアップロード失敗: $e')),
+      );
+    } finally {
+      setState(() => _uploadingIcon = false);
+    }
+  }
 }

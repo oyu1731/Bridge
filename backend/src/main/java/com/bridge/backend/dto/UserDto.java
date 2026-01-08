@@ -13,14 +13,16 @@ public class UserDto {
     private Boolean isWithdrawn;
     private Integer societyHistory;
     private List<Integer> desiredIndustries;
-    private Integer token;
+    private Integer icon; // プロフィールアイコン写真ID (photos.id)
     
 
     // 企業ユーザー用フィールド
+    private Integer companyId;
     private String companyName;
     private String companyAddress;
     private String companyPhoneNumber;
     private String companyDescription;
+    private Integer companyPhotoId;
 
     // ===== Getter / Setter =====
     public Integer getId() {
@@ -98,9 +100,23 @@ public class UserDto {
     }
     public void setToken(Integer token) {
         this.token = token;
+    public Integer getIcon() {
+        return icon;
+    }
+
+    public void setIcon(Integer icon) {
+        this.icon = icon;
     }
 
     // 企業用フィールド
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
+    }
+
     public String getCompanyName() {
         return companyName;
     }
@@ -127,5 +143,12 @@ public class UserDto {
     }
     public void setCompanyDescription(String companyDescription) {
         this.companyDescription = companyDescription;
+    }
+
+    public Integer getCompanyPhotoId() {
+        return companyPhotoId;
+    }
+    public void setCompanyPhotoId(Integer companyPhotoId) {
+        this.companyPhotoId = companyPhotoId;
     }
 }

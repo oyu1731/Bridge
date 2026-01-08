@@ -3,10 +3,12 @@ package com.bridge.backend.service;
 import com.bridge.backend.dto.ArticleDTO;
 import com.bridge.backend.entity.Article;
 import com.bridge.backend.entity.ArticleTag;
+import com.bridge.backend.entity.ArticleLike;
 import com.bridge.backend.entity.Company;
 import com.bridge.backend.entity.Tag;
 import com.bridge.backend.repository.ArticleRepository;
 import com.bridge.backend.repository.ArticleTagRepository;
+import com.bridge.backend.repository.ArticleLikeRepository;
 import com.bridge.backend.repository.CompanyRepository;
 import com.bridge.backend.repository.TagRepository;
 import com.bridge.backend.service.CompanyService;
@@ -41,6 +43,9 @@ public class ArticleService {
 
     @Autowired
     private ArticleTagRepository articleTagRepository;
+
+    @Autowired
+    private ArticleLikeRepository articleLikeRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -112,8 +117,31 @@ public class ArticleService {
      * @return ArticleDTO（存在しない場合はnull）
      */
     public ArticleDTO getArticleById(Integer id) {
+        return getArticleById(id, null);
+    }
+
+    /**
+     * IDで記事を取得（ユーザーのいいね状態も含む）
+     * 
+     * @param id 記事ID
+     * @param userId ユーザーID（オプション）
+     * @return ArticleDTO（存在しない場合はnull）
+     */
+    public ArticleDTO getArticleById(Integer id, Integer userId) {
         Article article = articleRepository.findByIdAndIsDeletedFalseWithTags(id);
-        return article != null ? convertToDTO(article) : null;
+        if (article == null) {
+            return null;
+        }
+        
+        ArticleDTO dto = convertToDTO(article);
+        
+        // ユーザーIDが指定されている場合、いいね状態を設定
+        if (userId != null) {
+            boolean isLiked = articleLikeRepository.existsByArticleIdAndUserId(id, userId);
+            dto.setIsLikedByUser(isLiked);
+        }
+        
+        return dto;
     }
 
     /**
@@ -355,21 +383,40 @@ public class ArticleService {
             return null;
         }
 
-        Integer currentLikes = article.getTotalLikes();
-        System.out.println("Debug: Current total_likes=" + currentLikes);
-        
         if (isLiking) {
-            // いいねを追加：total_likesを+1
-            article.setTotalLikes(currentLikes + 1);
-            System.out.println("Debug: Adding like, new total_likes=" + (currentLikes + 1));
+            // いいねを追加
+            // 既にいいね済みかチェック
+            if (!articleLikeRepository.existsByArticleIdAndUserId(articleId, userId)) {
+                ArticleLike like = new ArticleLike(articleId, userId);
+                articleLikeRepository.save(like);
+                
+                // total_likesを更新
+                long totalLikes = articleLikeRepository.countByArticleId(articleId);
+                article.setTotalLikes((int) totalLikes);
+                articleRepository.save(article);
+                
+                System.out.println("Debug: Like added, new total_likes=" + totalLikes);
+            }
         } else {
-            // いいねを削除：total_likesを-1（0より下にならないように）
-            article.setTotalLikes(Math.max(0, currentLikes - 1));
-            System.out.println("Debug: Removing like, new total_likes=" + Math.max(0, currentLikes - 1));
+            // いいねを削除
+            articleLikeRepository.findByArticleIdAndUserId(articleId, userId)
+                .ifPresent(like -> {
+                    articleLikeRepository.delete(like);
+                    
+                    // total_likesを更新
+                    long totalLikes = articleLikeRepository.countByArticleId(articleId);
+                    article.setTotalLikes((int) totalLikes);
+                    articleRepository.save(article);
+                    
+                    System.out.println("Debug: Like removed, new total_likes=" + totalLikes);
+                });
         }
         
-        articleRepository.save(article);
-        
-        return convertToDTO(article);
+        ArticleDTO dto = convertToDTO(article);
+        // データベースから実際のいいね状態を確認して設定
+        boolean actuallyLiked = articleLikeRepository.existsByArticleIdAndUserId(articleId, userId);
+        dto.setIsLikedByUser(actuallyLiked);
+        System.out.println("Debug: Final isLikedByUser=" + actuallyLiked);
+        return dto;
     }
 }

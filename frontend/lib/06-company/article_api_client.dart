@@ -11,6 +11,7 @@ class ArticleDTO {
   final int? totalLikes;
   final bool? isDeleted;
   final String? createdAt;
+  final bool? isLikedByUser;
   final int? photo1Id;
   final int? photo2Id;
   final int? photo3Id;
@@ -26,6 +27,7 @@ class ArticleDTO {
     this.totalLikes,
     this.isDeleted,
     this.createdAt,
+    this.isLikedByUser,
     this.photo1Id,
     this.photo2Id,
     this.photo3Id,
@@ -43,6 +45,7 @@ class ArticleDTO {
       totalLikes: json['totalLikes'],
       isDeleted: json['isDeleted'],
       createdAt: json['createdAt'],
+      isLikedByUser: json['isLikedByUser'],
       photo1Id: json['photo1Id'],
       photo2Id: json['photo2Id'],
       photo3Id: json['photo3Id'],
@@ -61,6 +64,7 @@ class ArticleDTO {
       'totalLikes': totalLikes,
       'isDeleted': isDeleted,
       'createdAt': createdAt,
+      'isLikedByUser': isLikedByUser,
       'photo1Id': photo1Id,
       'photo2Id': photo2Id,
       'photo3Id': photo3Id,
@@ -121,9 +125,13 @@ class ArticleApiClient {
     }
   }
 
-  static Future<ArticleDTO?> getArticleById(int id) async {
+  static Future<ArticleDTO?> getArticleById(int id, {int? userId}) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/$id'));
+      var uri = Uri.parse('$baseUrl/$id');
+      if (userId != null) {
+        uri = uri.replace(queryParameters: {'userId': userId.toString()});
+      }
+      final response = await http.get(uri);
       
       if (response.statusCode == 200) {
         return ArticleDTO.fromJson(json.decode(response.body));
@@ -185,9 +193,16 @@ class ArticleApiClient {
     }
   }
 
-  static Future<void> likeArticle(int id) async {
+  static Future<void> likeArticle(int id, int userId, bool isLiking) async {
     try {
-      final response = await http.post(Uri.parse('$baseUrl/$id/like'));
+      final response = await http.post(
+        Uri.parse('$baseUrl/$id/like'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'userId': userId,
+          'liking': isLiking,
+        }),
+      );
       
       if (response.statusCode != 200) {
         throw Exception('Failed to like article: ${response.statusCode}');
@@ -197,17 +212,7 @@ class ArticleApiClient {
     }
   }
 
-  static Future<void> unlikeArticle(int id) async {
-    try {
-      final response = await http.delete(Uri.parse('$baseUrl/$id/like'));
-      
-      if (response.statusCode != 200) {
-        throw Exception('Failed to unlike article: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error unliking article: $e');
-    }
-  }
+
 
   static Future<List<ArticleDTO>> getArticlesByCompanyId(int companyId) async {
     try {
