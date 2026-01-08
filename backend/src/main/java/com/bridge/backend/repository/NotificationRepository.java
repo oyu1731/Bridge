@@ -11,6 +11,21 @@ import java.util.List;
 public interface NotificationRepository extends JpaRepository<Notification, Integer> {
 
     /**
+     * 削除されていないお知らせを全取得
+     */
+    List<Notification> findByIsDeletedFalse();
+
+    /**
+     * 削除申請中：削除されていないお知らせを取得
+     */
+    Notification findByIdAndIsDeletedFalse(Integer id);
+
+    /**
+     * 予約日時 < 現在 かつ send_flag_int = 1 のデータを検索
+     */
+    List<Notification> findByReservationTimeBeforeAndSendFlagInt(LocalDateTime reservationTime, int sendFlagInt);
+
+    /**
      * 送信済み（sendFlagInt=2）のお知らせを取得
      */
     List<Notification> findBySendFlagInt(Integer sendFlagInt);

@@ -204,6 +204,8 @@ CREATE TABLE notifications (
     reservation_time DATETIME,
     send_flag DATETIME COMMENT '送信フラグが2になった時の日付',
     send_flag_int INT(1) NOT NULL COMMENT '1=予約, 2=送信完了',
+    category INT(1) NOT NULL COMMENT '1=運営情報, 2=重要',
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
@@ -390,9 +392,9 @@ INSERT INTO phone_exercises (example, difficulty) VALUES
 ('電話対応例題2', 2);
 
 -- notifications
-INSERT INTO notifications (type, title, content, user_id, created_at, reservation_time, send_flag, send_flag_int) VALUES
-(7, '全体お知らせ', '全体向けのお知らせです', NULL, NOW(), NULL, NULL, 2),
-(1, '学生向けお知らせ', '学生向けのお知らせです', 1, NOW(), '2025-11-05 10:00:00', NULL, 1);
+INSERT INTO notifications (type, title, content, user_id, created_at, reservation_time, send_flag, send_flag_int, category, is_deleted) VALUES
+(7, '全体お知らせ', '全体向けのお知らせです', NULL, NOW(), NULL, NOW(), 2, 2, FALSE),
+(1, '学生向けお知らせ', '学生向けのお知らせです', NULL, NOW(), '2025-12-05 10:00:00', NULL, 1, 1, FALSE);
 
 -- notices
 INSERT INTO notices (from_user_id, to_user_id, type, thread_id, chat_id, created_at) VALUES

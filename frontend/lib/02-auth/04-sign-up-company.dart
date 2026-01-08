@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:bridge/03-home/09-company-home.dart';
 import 'package:http/http.dart' as http;
-import 'package:payjp_flutter/payjp_flutter.dart';
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform, kIsWeb;
-import 'package:flutter/services.dart' show MissingPluginException;
+import 'package:flutter/services.dart';
+
+import 'package:bridge/main.dart';
+import 'package:bridge/03-home/09-company-home.dart';
 
 class CompanyInputPage extends StatefulWidget {
   const CompanyInputPage({super.key});
@@ -14,16 +13,9 @@ class CompanyInputPage extends StatefulWidget {
   State<CompanyInputPage> createState() => _CompanyInputPageState();
 }
 
-Future<void> saveSession(dynamic userData) async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setString('current_user', jsonEncode(userData));
-}
-
-Future<void> _initPayjp() async {
-  await Payjp.init(publicKey: 'pk_test_fc1c2a514fc1023cd2fffbab');
-}
-
 class _CompanyInputPageState extends State<CompanyInputPage> {
+  final _formKey = GlobalKey<FormState>();
+
   final TextEditingController _nicknameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -33,42 +25,36 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
   List<Map<String, dynamic>> _industries = [];
   List<int> _selectedIndustryIds = [];
 
+  bool _obscurePassword = true;
   bool _isLoading = true;
+
   String _errorMessage = '';
+  String _industryError = '';
+
+  static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
+  static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
+  static const Color errorOrange = Color.fromARGB(255, 239, 108, 0);
+  static const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
 
   @override
   void initState() {
     super.initState();
     _fetchIndustries();
-    // Payjp はネイティブ (Android/iOS) のみ対応のため、対応プラットフォームでのみ初期化する
-    final bool _payjpSupported = !kIsWeb &&
-        (defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS);
-    if (_payjpSupported) {
-      _initPayjp();
-    }
   }
 
-  /// ✅ 業界を ID + 名前 で取得する
   Future<void> _fetchIndustries() async {
     try {
       final response = await http.get(
         Uri.parse('http://localhost:8080/api/industries'),
       );
-
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
-
         setState(() {
-          _industries =
-              data
-                  .map((item) => {"id": item["id"], "name": item["industry"]})
-                  .toList();
-
+          _industries = data
+              .map((item) => {"id": item["id"], "name": item["industry"]})
+              .toList();
           _isLoading = false;
         });
-
-        print("✅取得した業界一覧: $_industries");
       } else {
         setState(() {
           _errorMessage = '業界の取得に失敗しました: ${response.statusCode}';
@@ -80,213 +66,254 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
         _errorMessage = 'エラーが発生しました: $e';
         _isLoading = false;
       });
-      print("❌ 業界取得エラー: $e");
     }
   }
-
+  
   @override
   void dispose() {
     _nicknameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _phoneNumberController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('企業サインアップ')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _nicknameController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: '企業名',
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'メールアドレス',
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'パスワード',
-              ),
-              obscureText: true,
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _phoneNumberController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: '電話番号',
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _addressController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: '住所',
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              '所属業界:',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-
-            _isLoading
-                ? const CircularProgressIndicator()
-                : Column(
-                    children: _industries.map((industry) {
-                      return CheckboxListTile(
-                        title: Text(industry["name"]),
-                        value:
-                            _selectedIndustryIds.contains(industry["id"]),
-                        onChanged: (bool? value) {
-                          setState(() {
-                            _selectedIndustryIds.clear();
-                            if (value == true) {
-                              _selectedIndustryIds.add(industry["id"]);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-            const SizedBox(height: 20),
-            /*課金部分*/ 
-            // ElevatedButton(
-            //   onPressed: () async {
-            //     // Payjp plugin supports only Android/iOS. Skip on other platforms.
-            //     final bool supportedPlatform = !kIsWeb &&
-            //         (defaultTargetPlatform == TargetPlatform.android ||
-            //             defaultTargetPlatform == TargetPlatform.iOS);
-
-            //     if (!supportedPlatform) {
-            //       setState(() {
-            //         _errorMessage = 'このプラグインは現在のプラットフォームでサポートされていません';
-            //       });
-            //       return;
-            //     }
-
-            //     try {
-            //       await Payjp.startCardForm(
-            //         onCardFormProducedTokenCallback: (token) async {
-            //           // TODO: send token to server
-            //           print('Got token: $token');
-            //           return CallbackResultOk();
-            //         },
-            //         onCardFormCompletedCallback: () {
-            //           print('Card form completed');
-            //         },
-            //       );
-            //     } on MissingPluginException catch (e) {
-            //       // More specific message for plugin not found
-            //       print('MissingPluginException: $e');
-            //       setState(() {
-            //         _errorMessage = '決済プラグインがネイティブ側で見つかりません: $e';
-            //       });
-            //     } catch (e) {
-            //       print('Payjp error: $e');
-            //       setState(() {
-            //         _errorMessage = '決済フォームの起動に失敗しました: $e';
-            //       });
-            //     }
-            //   },
-            //   child: const Text('次へ'),
-            // ),
-
-            ElevatedButton(
-              onPressed: () async {
-                final nickName = _nicknameController.text;
-                final email = _emailController.text;
-                final password = _passwordController.text;
-                final phoneNumber = _phoneNumberController.text;
-                final address = _addressController.text;
-
-                final url = Uri.parse('http://localhost:8080/api/users');
-                final headers = {
-                  'Content-Type': 'application/json; charset=UTF-8',
-                };
-
-                final body = jsonEncode({
-                  'nickname': nickName,
-                  'email': email,
-                  'password': password,
-                  'phoneNumber': phoneNumber,
-                  'companyName': nickName,
-                  'companyAddress': address,
-                  'companyPhoneNumber': phoneNumber,
-                  'companyDescription': '',
-                  'type': 3,
-                  'desiredIndustries': _selectedIndustryIds,
-                });
-
-                print("📤 送信JSON: $body");
-
-                try {
-                  final response = await http.post(
-                    url,
-                    headers: headers,
-                    body: body,
-                  );
-
-                  if (response.statusCode == 200) {
-                    print('✅ サインアップ成功: ${response.body}');
-                    final userData = jsonDecode(response.body);
-                    await saveSession(userData);
-                    print('✅ 保存したセッションデータ: $userData');
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CompanyHome(),
-                      ),
-                    );
-                  } else {
-                    print('❌ サインアップ失敗: ${response.statusCode}');
-                    final errorMessage = jsonDecode(response.body);
-                    print('❌ エラーメッセージ: $errorMessage');
-                    setState(() {
-                      _errorMessage =
-                          errorMessage['message'] ?? 'サインアップに失敗しました';
-                    });
-                  }
-                } catch (e) {
-                  print('❌ 通信エラー: $e');
-                  setState(() {
-                    _errorMessage = '通信エラーが発生しました: $e';
-                  });
-                }
-              },
-              child: const Text('作成'),
-            ),
-
-            if (_errorMessage.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
-                child: Text(
-                  _errorMessage,
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
+    final base = Theme.of(context);
+    final pageTheme = base.copyWith(
+      colorScheme: base.colorScheme.copyWith(error: errorOrange),
+      inputDecorationTheme: base.inputDecorationTheme.copyWith(
+        errorStyle: const TextStyle(color: errorOrange),
+        errorBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: errorOrange),
+        ),
+        focusedErrorBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: errorOrange, width: 2),
+        ),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: MaterialStateProperty.all<Color>(cyanMedium),
+        checkColor: MaterialStateProperty.all<Color>(Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+          side: const BorderSide(
+            color: cyanDark,
+            width: 2,
           ),
         ),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(color: cyanDark),
+    );
+
+    return Theme(
+      data: pageTheme,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('企業サインアップ'),
+          backgroundColor: cyanMedium,
+          foregroundColor: Colors.white,
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _nicknameController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: '企業名',
+                  ),
+                  validator: (v) =>
+                      v == null || v.isEmpty ? '企業名を入力してください' : null,
+                ),
+                const SizedBox(height: 20),
+
+                TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'メールアドレス',
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) {
+                      return 'メールアドレスを入力してください';
+                    }
+                    if (!v.contains('@')) {
+                      return '正しいメールアドレスを入力してください';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    labelText: 'パスワード',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: textCyanDark,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.length < 8) {
+                      return '8文字以上で入力してください';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                TextFormField(
+                  controller: _phoneNumberController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: '電話番号',
+                  ),
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9-]')),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                TextFormField(
+                  controller: _addressController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: '住所',
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                const Text(
+                  '業界:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: textCyanDark,
+                  ),
+                ),
+
+                _isLoading
+                    ? const CircularProgressIndicator()
+                    : Column(
+                        children: _industries.map((industry) {
+                          return CheckboxListTile(
+                            title: Text(
+                              industry['name'],
+                              style: const TextStyle(
+                                color: cyanDark,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            value: _selectedIndustryIds.contains(industry['id']),
+                            activeColor: cyanDark,
+                            onChanged: (v) {
+                              setState(() {
+                                v == true
+                                    ? _selectedIndustryIds.add(industry['id'])
+                                    : _selectedIndustryIds.remove(industry['id']);
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+
+                if (_industryError.isNotEmpty)
+                  Text(_industryError,
+                      style: const TextStyle(color: errorOrange)),
+
+                const SizedBox(height: 20),
+
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orangeAccent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () async {
+                    if (!_formKey.currentState!.validate()) return;
+
+                    if (_selectedIndustryIds.isEmpty) {
+                      setState(() {
+                        _industryError = '業界を1つ以上選択してください';
+                      });
+                      return;
+                    }
+
+                    final body = jsonEncode({
+                      'nickname': _nicknameController.text,
+                      'email': _emailController.text,
+                      'password': _passwordController.text,
+                      'phoneNumber': _phoneNumberController.text,
+                      'companyAddress': _addressController.text,
+                      'type': 3,
+                      'desiredIndustries': _selectedIndustryIds,
+                    });
+
+                    try {
+                      final res = await http.post(
+                        Uri.parse('http://localhost:8080/api/users'),
+                        headers: {
+                          'Content-Type': 'application/json; charset=UTF-8'
+                        },
+                        body: body,
+                      );
+
+                      if (res.statusCode == 200) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CompanyHome(),
+                          ),
+                        );
+                      } else {
+                        setState(() {
+                          _errorMessage = 'サインアップに失敗しました';
+                        });
+                      }
+                    } catch (e) {
+                      setState(() {
+                        _errorMessage = '通信エラー: $e';
+                      });
+                    }
+                  },
+                  child: const Text('作成'),
+                ),
+
+                if (_errorMessage.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Text(
+                      _errorMessage,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
