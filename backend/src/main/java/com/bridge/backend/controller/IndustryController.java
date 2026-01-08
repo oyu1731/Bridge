@@ -12,7 +12,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/industries")
-@CrossOrigin(origins = "*")
+// @CrossOrigin(origins = "*")
+// ↑を↓に変えたらできたけど↑のでしたい（高橋が作ったコントローラーとこのコントローラーだけ変えました。）
+@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
 public class IndustryController {
 
     private static final Logger logger = LoggerFactory.getLogger(IndustryController.class);
