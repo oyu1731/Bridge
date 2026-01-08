@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:bridge/11-common/58-header.dart';
 
 class ThreadCreate extends StatefulWidget {
@@ -11,17 +13,42 @@ class _ThreadCreateState extends State<ThreadCreate> {
   final TextEditingController _descriptionController = TextEditingController();
 
   String _selectedCondition = '全員';
-  Map<String, bool> _industry = {
-    'メーカー': false,
-    '商社': false,
-    '流通・小売': false,
-    '金融': false,
-    'サービス・インフラ': false,
-    'ソフトウェア・通信': false,
-    '広告・出版・マスコミ': false,
-    '官公庁・公社・団体': false,
-    'その他': false,
-  };
+
+  // APIから取得した業界リスト
+  List<Map<String, dynamic>> _industries = [];
+  Map<int, bool> _selectedIndustries = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchIndustries();
+  }
+
+  // APIから業界データ取得
+  Future<void> _fetchIndustries() async {
+    try {
+      final response = await http.get(Uri.parse('http://localhost:8080/api/industries'));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+
+        setState(() {
+          _industries = data.map((e) => {
+            'id': e['id'],
+            'name': e['industry'], // DBカラム名に合わせる
+          }).toList();
+
+          _selectedIndustries = {
+            for (var item in _industries) item['id'] as int: false
+          };
+        });
+      } else {
+        print('Failed to fetch industries: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching industries: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,18 +114,19 @@ class _ThreadCreateState extends State<ThreadCreate> {
             const SizedBox(height: 6),
             Wrap(
               spacing: 12,
-              runSpacing: 0, // 改行時の縦余白なし
-              children: _industry.keys.map((key) {
+              runSpacing: 0,
+              children: _industries.map((industry) {
+                final id = industry['id'] as int;
                 return SizedBox(
-                  width: (MediaQuery.of(context).size.width - 20 * 2 - 24) / 3,
+                  width: (MediaQuery.of(context).size.width - 40 - 24) / 3,
                   child: CheckboxListTile(
-                    title: Text(key, style: TextStyle(fontSize: 14)),
-                    contentPadding: EdgeInsets.zero,
+                    title: Text(industry['name'], style: TextStyle(fontSize: 14)),
+                    value: _selectedIndustries[id],
                     controlAffinity: ListTileControlAffinity.leading,
-                    value: _industry[key],
+                    contentPadding: EdgeInsets.zero,
                     onChanged: (val) {
                       setState(() {
-                        _industry[key] = val!;
+                        _selectedIndustries[id] = val!;
                       });
                     },
                   ),
@@ -127,12 +155,15 @@ class _ThreadCreateState extends State<ThreadCreate> {
     );
   }
 
-  void _handleCreate() {
+  void _handleCreate() async {
     final title = _titleController.text.trim();
     final description = _descriptionController.text.trim();
     final condition = _selectedCondition;
-    final selectedIndustries =
-        _industry.entries.where((e) => e.value).map((e) => e.key).toList();
+
+    final selectedIndustryIds = _selectedIndustries.entries
+        .where((e) => e.value)
+        .map((e) => e.key)
+        .toList();
 
     if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -145,14 +176,31 @@ class _ThreadCreateState extends State<ThreadCreate> {
       'title': title,
       'description': description.isNotEmpty ? description : null,
       'condition': condition,
-      'industries': selectedIndustries.isNotEmpty ? selectedIndustries : [],
-      'type': 'unofficial',
+      'industryIds': selectedIndustryIds,
+      'userId': 1, // ここに作成者IDを入れる
     };
 
-    print(threadData);
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:8080/api/threads/unofficial'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(threadData),
+      );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('スレッドの作成が完了しました\nスレッドへの書き込みが可能になります。')),
-    );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('スレッドの作成が完了しました')),
+        );
+        // 必要なら画面遷移やリスト更新もここで
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('スレッド作成に失敗しました: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('エラーが発生しました: $e')),
+      );
+    }
   }
 }

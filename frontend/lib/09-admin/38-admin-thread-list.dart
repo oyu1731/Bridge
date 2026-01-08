@@ -5,7 +5,7 @@ import 'admin-thread-list.dart';
 
 // Thread モデル
 class Thread {
-  final String id;
+  final int id;
   final String title;
   final String? lastComment;
   final String timeAgo;
@@ -19,7 +19,7 @@ class Thread {
 
   factory Thread.fromJson(Map<String, dynamic> json) {
     return Thread(
-      id: json['id'].toString(),
+      id: json['id'],
       title: json['title'] as String,
       lastComment: json['lastComment'] as String?,
       timeAgo: json['timeAgo'] as String,
@@ -47,28 +47,28 @@ class _AdminThreadListState extends State<AdminThreadList> {
     setState(() {
       officialThreads = [
         Thread(
-            id: '1',
+            id: 1,
             title: '学生・社会人',
             lastComment: '最近忙しいけど頑張ってる！',
             timeAgo: '3分前'),
         Thread(
-            id: '2',
+            id: 2,
             title: '学生',
             lastComment: 'テスト期間でやばいです…',
             timeAgo: '15分前'),
         Thread(
-            id: '3',
+            id: 3,
             title: '社会人',
             lastComment: '残業が多くてつらい…',
             timeAgo: '42分前'),
       ];
 
       unofficialThreads = [
-        Thread(id: 't1', title: '業界別の面接対策', timeAgo: '3分前'),
-        Thread(id: 't2', title: '社会人一年目の過ごし方', timeAgo: '10分前'),
-        Thread(id: 't3', title: 'おすすめの資格', timeAgo: '25分前'),
-        Thread(id: 't4', title: '働きながら転職活動するには', timeAgo: '50分前'),
-        Thread(id: 't5', title: '就活で意識すべきこと', timeAgo: '1時間前'),
+        Thread(id: 4, title: '業界別の面接対策', timeAgo: '3分前'),
+        Thread(id: 5, title: '社会人一年目の過ごし方', timeAgo: '10分前'),
+        Thread(id: 6, title: 'おすすめの資格', timeAgo: '25分前'),
+        Thread(id: 7, title: '働きながら転職活動するには', timeAgo: '50分前'),
+        Thread(id: 8, title: '就活で意識すべきこと', timeAgo: '1時間前'),
       ];
     });
   }
@@ -107,7 +107,7 @@ class _AdminThreadListState extends State<AdminThreadList> {
           context,
           MaterialPageRoute(
             builder: (context) => AdminThreadDetail(
-              thread: {'id': thread.id, 'title': thread.title},
+              threadId: thread.id,
             ),
           ),
         );
@@ -168,14 +168,42 @@ class _AdminThreadListState extends State<AdminThreadList> {
             ),
             SizedBox(height: 10),
             Column(
-              children: List.generate(officialThreads.length, (index) {
-                return _buildThreadCard(
-                  officialThreads[index],
-                  officialThreads,
-                  index,
-                  showLastComment: true,
+              children: officialThreads.map((thread) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AdminThreadDetail(threadId: thread.id),
+                      ),
+                    );
+                  },
+                  child: Card(
+                    margin: EdgeInsets.symmetric(vertical: 6),
+                    elevation: 2,
+                    child: ListTile(
+                      title: Text(
+                        thread.title,
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: thread.lastComment != null
+                          ? Text(
+                              thread.lastComment!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  color: Colors.black87, fontSize: 14),
+                            )
+                          : null,
+                      trailing: Text(
+                        thread.timeAgo,
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
                 );
-              }),
+              }).toList(),
             ),
             SizedBox(height: 30),
 
@@ -205,10 +233,33 @@ class _AdminThreadListState extends State<AdminThreadList> {
             ),
             SizedBox(height: 10),
             Column(
-              children: List.generate(unofficialThreads.length, (index) {
-                return _buildThreadCard(
-                    unofficialThreads[index], unofficialThreads, index);
-              }),
+              children: unofficialThreads.map((thread) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AdminThreadDetail(threadId: thread.id),
+                      ),
+                    );
+                  },
+                  child: Card(
+                    margin: EdgeInsets.symmetric(vertical: 6),
+                    elevation: 2,
+                    child: ListTile(
+                      title: Text(
+                        thread.title,
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      trailing: Text(
+                        thread.timeAgo,
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
           ],
         ),
