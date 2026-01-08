@@ -3,6 +3,7 @@ package com.bridge.backend.repository;
 import com.bridge.backend.entity.IndustryRelation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
+import java.util.List;
 
 /**
  * IndustryRelationRepository
@@ -18,4 +19,5 @@ public interface IndustryRelationRepository extends JpaRepository<IndustryRelati
      * @return 業界関係
      */
     Optional<IndustryRelation> findByUserIdAndType(Integer userId, int type);
+    List<IndustryRelation> findByUserId(Integer userId);
 }

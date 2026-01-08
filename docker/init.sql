@@ -47,6 +47,7 @@ CREATE TABLE users (
     report_count INT(10) NOT NULL DEFAULT 0,
     plan_status VARCHAR(20) NOT NULL DEFAULT '無料',
     is_withdrawn BOOLEAN NOT NULL,
+    is_deleted BOOLEAN NOT NULL,
     created_at DATETIME NOT NULL,
     society_history INT(2),
     icon INT(10),
@@ -259,11 +260,11 @@ INSERT INTO companies (name, address, phone_number, description, plan_status, is
 ('株式会社Bridge', '東京都渋谷区', '03-1234-5678', 'IT企業です', 1, FALSE, NOW(), 1);
 
 -- users
-INSERT INTO users (nickname, type, password, phone_number, email, company_id, report_count, plan_status, is_withdrawn, created_at, society_history, icon, announcement_deletion) VALUES
-('学生ユーザー', 1, 'hashed_password_student', '090-1111-2222', 'student@example.com', NULL, 0, '無料', FALSE, NOW(), NULL, 1, 1),
-('社会人ユーザー', 2, 'hashed_password_worker', '080-3333-4444', 'worker@example.com', NULL, 0, '無料', FALSE, NOW(), 5, 2, 1),
-('企業ユーザー', 3, 'hashed_password_company', '070-5555-6666', 'company@example.com', 1, 0, '無料', FALSE, NOW(), NULL, 3, 1),
-('管理者ユーザー', 4, 'hashed_password_admin', '060-7777-8888', 'admin@example.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1);
+INSERT INTO users (nickname, type, password, phone_number, email, company_id, report_count, plan_status, is_withdrawn, is_deleted, created_at, society_history, icon, announcement_deletion) VALUES
+('学生ユーザー', 1, 'hashed_password_student', '090-1111-2222', 'student@example.com', NULL, 0, '無料', FALSE, FALSE, NOW(), NULL, 1, 1),
+('社会人ユーザー', 2, 'hashed_password_worker', '080-3333-4444', 'worker@example.com', NULL, 0, '無料', FALSE, FALSE, NOW(), 5, 2, 1),
+('企業ユーザー', 3, 'hashed_password_company', '070-5555-6666', 'company@example.com', 1, 0, '無料', FALSE, FALSE, NOW(), NULL, 3, 1),
+('管理者ユーザー', 4, 'hashed_password_admin', '060-7777-8888', 'admin@example.com', NULL, 0, '無料', FALSE, FALSE, NOW(), NULL, NULL, 1);
 
 -- industries
 INSERT INTO industries (industry) VALUES

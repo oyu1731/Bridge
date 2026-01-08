@@ -20,17 +20,16 @@ class _AdminAccountListState extends State<AdminAccountList> {
   @override
   void initState() {
     super.initState();
-    _fetchUsers(); // 画面開いた瞬間に初期表示
+    _fetchUsers();
   }
 
-  // 初期表示: 上位30件
   Future<void> _fetchUsers() async {
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
     try {
-      final response = await http.get(Uri.parse('http://localhost:8080/api/users?limit=30'));
+      final response = await http.get(Uri.parse('http://localhost:8080/api/users/list'));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
         setState(() {
@@ -51,7 +50,6 @@ class _AdminAccountListState extends State<AdminAccountList> {
     }
   }
 
-  // 検索ボタン押下時
   Future<void> _searchUsers() async {
     final keyword = _searchController.text;
     final type = _selectedType ?? '';
@@ -60,8 +58,9 @@ class _AdminAccountListState extends State<AdminAccountList> {
       _errorMessage = '';
     });
     try {
+      // 日本語も安全に送れるようにエンコード
       final url = Uri.parse(
-          'http://localhost:8080/api/users/search?keyword=$keyword&type=$type');
+          'http://localhost:8080/api/users/search?keyword=${Uri.encodeComponent(keyword)}&type=$type');
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
@@ -84,28 +83,25 @@ class _AdminAccountListState extends State<AdminAccountList> {
   }
 
   void _deleteUser(int index) async {
+    final userId = _users[index]['id'];
+
     bool confirm = await showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('削除確認'),
         content: const Text('このアカウントを削除しますか？'),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('キャンセル')),
-          TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('削除')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('キャンセル')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('削除')),
         ],
       ),
     );
 
-    if (confirm) {
-      // 削除処理はバックエンド側にAPIを呼び出すこと
-      setState(() {
-        _users.removeAt(index);
-      });
-    }
+    if (!confirm) return;
+
+    await http.put(Uri.parse('http://localhost:8080/api/users/$userId/delete'));
+
+    _fetchUsers(); // DBから再取得
   }
 
   String _getTypeLabel(int type) {
@@ -149,73 +145,49 @@ class _AdminAccountListState extends State<AdminAccountList> {
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade400),
         borderRadius: BorderRadius.circular(8),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 2))
-        ],
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Center(
-            child:
-                Text('アカウント検索', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          ),
+          const Center(child: Text('アカウント検索', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade400),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      hintText: 'アカウント名で検索',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                    ),
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: TextField(
+                  controller: _searchController,
+                  decoration: const InputDecoration(
+                    hintText: 'アカウント名で検索',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: DropdownButtonFormField<String>(
-                    value: _selectedType,
-                    decoration: const InputDecoration(
-                      labelText: 'アカウントタイプ',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: '1', child: Text('学生')),
-                      DropdownMenuItem(value: '2', child: Text('社会人')),
-                      DropdownMenuItem(value: '3', child: Text('企業')),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedType = value;
-                      });
-                    },
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: DropdownButtonFormField<String>(
+                  value: _selectedType,
+                  decoration: const InputDecoration(
+                    labelText: 'アカウントタイプ',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                   ),
+                  items: const [
+                    DropdownMenuItem(value: '1', child: Text('学生')),
+                    DropdownMenuItem(value: '2', child: Text('社会人')),
+                    DropdownMenuItem(value: '3', child: Text('企業')),
+                  ],
+                  onChanged: (value) => setState(() => _selectedType = value),
                 ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    _searchUsers();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  ),
-                  child: const Text('検索'),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(onPressed: _searchUsers, child: const Text('検索')),
+            ],
           ),
         ],
       ),
@@ -226,58 +198,54 @@ class _AdminAccountListState extends State<AdminAccountList> {
     return Column(
       children: _users.map((user) {
         return Container(
-          width: double.infinity,
           margin: const EdgeInsets.symmetric(vertical: 8),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border.all(color: Colors.grey.shade300),
             borderRadius: BorderRadius.circular(8),
-            boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))
-            ],
+            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))],
           ),
           child: Row(
             children: [
-              CircleAvatar(radius: 30, child: Text(user['icon'] ?? '?')),
+              CircleAvatar(
+                radius: 30,
+                backgroundImage: user['photoPath'] != null && user['photoPath'].isNotEmpty
+                    ? NetworkImage(user['photoPath'])
+                    : null, // 画像がなければデフォルトアイコンを表示
+                child: user['photoPath'] == null || user['photoPath'].isEmpty
+                    ? const Icon(Icons.person, size: 30)
+                    : null,
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     InkWell(
-                      onTap: () {
-                        Navigator.push(
+                      onTap: () async {
+                        final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                AdminAccountDetail(userId: user['id']),
+                            builder: (_) => AdminAccountDetail(userId: user['id']),
                           ),
                         );
+
+                        if (result == true) {
+                          _fetchUsers(); // ← これだけ
+                        }
                       },
-                      child: Text(
-                        user['nickname'] ?? '',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
+                      child: Text(user['nickname'] ?? '',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue, decoration: TextDecoration.underline)),
                     ),
                     const SizedBox(height: 4),
-                    Text(_getTypeLabel(user['type'] ?? 0)),
+                    Text(_getTypeLabel(int.tryParse('${user['type']}') ?? 0)),
                     const SizedBox(height: 2),
                     Text('通報回数: ${user['reportCount'] ?? 0}'),
                   ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.black),
-                onPressed: () {
-                  _deleteUser(_users.indexOf(user));
-                },
-              ),
+              IconButton(icon: const Icon(Icons.delete), onPressed: () => _deleteUser(_users.indexOf(user))),
             ],
           ),
         );

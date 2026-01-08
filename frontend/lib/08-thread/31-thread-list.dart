@@ -75,20 +75,12 @@ class _ThreadListState extends State<ThreadList> {
   @override
   void initState() {
     super.initState();
-<<<<<<< HEAD
     _fetchThreads(); // DBから取得
   }
 
   Future<void> _fetchThreads() async {
     try {
       final threads = await fetchThreads();
-=======
-    _loadDummyThreads();
-  }
-
-  Future<void> _loadDummyThreads() async {
-    await Future.delayed(Duration(milliseconds: 300));
->>>>>>> yoshida
 
       setState(() {
         officialThreads = threads.where((t) => t.type == 1).toList();
@@ -131,7 +123,6 @@ class _ThreadListState extends State<ThreadList> {
                     color: Colors.white, // 背景を白に設定
                     margin: EdgeInsets.symmetric(vertical: 6),
                     elevation: 2,
-<<<<<<< HEAD
                     child: ListTile(
                       title: Text(
                         thread.title,
@@ -141,52 +132,6 @@ class _ThreadListState extends State<ThreadList> {
                       trailing: Text(
                         thread.timeAgo,
                         style: TextStyle(color: Colors.grey),
-=======
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: Row(
-                        children: [
-                          // タイトル
-                          Expanded(
-                            flex: 3,
-                            child: Text(
-                              thread.title,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-
-                          // 最新コメント
-                          if (thread.lastComment != null)
-                            Expanded(
-                              flex: 5,
-                              child: Text(
-                                thread.lastComment!,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black87,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                            ),
-                          SizedBox(width: 8),
-
-                          // 経過時間
-                          Text(
-                            thread.timeAgo,
-                            style: TextStyle(color: Colors.grey, fontSize: 13),
-                          ),
-                        ],
->>>>>>> yoshida
                       ),
                     ),
                   ),
