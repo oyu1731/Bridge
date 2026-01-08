@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 
 class AdminAccountDetail extends StatefulWidget {
-  final String userId;
 
-  const AdminAccountDetail({Key? key, required this.userId}) : super(key: key);
+  final int userId;
+  const AdminAccountDetail({required this.userId, super.key});
 
   @override
   _AdminAccountDetailState createState() => _AdminAccountDetailState();
