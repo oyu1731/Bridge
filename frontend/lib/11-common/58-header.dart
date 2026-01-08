@@ -86,13 +86,19 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                   ),
                   child: Row(
                     children: [
-                      Text(
-                        'こんにちは、adminさん。',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF424242),
-                          fontWeight: FontWeight.w500,
-                        ),
+                      FutureBuilder<String>(
+                        future: _getSavedUserName(), // 上で作ったメソッドを呼び出す
+                        builder: (context, snapshot) {
+                          String displayName = snapshot.data ?? '読み込み中...';
+                          return Text(
+                            'こんにちは、${displayName}さん。',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF424242),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(width: 16),
                       // プロフィールメニュー
@@ -368,6 +374,17 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
       ),
     );
   }
+
+  // ユーザー名を取得するヘルパーメソッド
+  Future<String> _getSavedUserName() async {
+  final prefs = await SharedPreferences.getInstance();
+  final String? userJson = prefs.getString('current_user');
+  if (userJson != null) {
+    final userData = jsonDecode(userJson);
+    return userData['name'] ?? 'ゲスト'; // JSON内の 'name' キーを取得
+  }
+  return 'ゲスト';
+}
 
   // ユーザーのアカウントタイプを取得するヘルパーメソッド
   Future<String> _getUserAccountType() async {

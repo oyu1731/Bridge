@@ -31,6 +31,7 @@ class _WorkerInputPageState extends State<WorkerInputPage> {
   bool _isLoading = true;
   String _errorMessage = '';
   String _industryError = '';
+  bool _obscurePassword = true;
 
   // 統一カラー
   static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
@@ -150,15 +151,26 @@ class _WorkerInputPageState extends State<WorkerInputPage> {
                   },
                 ),
                 const SizedBox(height: 20),
-
+                
                 TextFormField(
                   controller: _passwordController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
                     labelText: 'パスワード',
                     hintText: '英数字８文字以上で入力してください',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
                   ),
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'パスワードを入力してください';

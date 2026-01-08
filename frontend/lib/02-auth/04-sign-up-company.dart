@@ -31,6 +31,7 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
 
   List<Map<String, dynamic>> _industries = [];
   List<int> _selectedIndustryIds = [];
+  bool _obscurePassword = true;
 
   bool _isLoading = true;
   String _errorMessage = '';
@@ -160,12 +161,23 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
 
                 TextFormField(
                   controller: _passwordController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
                     labelText: 'パスワード',
-                    hintText: '8文字以上で入力してください',
+                    hintText: '英数字８文字以上で入力してください',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
                   ),
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'パスワードを入力してください';

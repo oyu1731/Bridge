@@ -25,6 +25,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
 
   List<Map<String, dynamic>> _industries = [];
   List<int> _selectedIndustryIds = [];
+  bool _obscurePassword = true;
 
   bool _isLoading = true;
   String _errorMessage = '';
@@ -33,6 +34,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
   static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
   static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
   static const Color errorOrange = Color.fromARGB(255, 239, 108, 0);
+  static const Color textCyanDark = Color.fromARGB(255, 6, 62, 85);
 
   @override
   void initState() {
@@ -91,8 +93,19 @@ class _StudentInputPageState extends State<StudentInputPage> {
         ),
       ),
       checkboxTheme: CheckboxThemeData(
-        fillColor: MaterialStateProperty.all<Color>(cyanDark),
+        fillColor: MaterialStateProperty.all<Color>(
+          cyanMedium,
+        ),
         checkColor: MaterialStateProperty.all<Color>(Colors.white),
+
+        // ← 枠線はここに入れる
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+          side: const BorderSide(
+            color: cyanDark,  // ← 枠線の色
+            width: 2,
+          ),
+        ),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(color: cyanDark),
     );
@@ -148,12 +161,23 @@ class _StudentInputPageState extends State<StudentInputPage> {
 
                 TextFormField(
                   controller: _passwordController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
                     labelText: 'パスワード',
                     hintText: '英数字８文字以上で入力してください',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
                   ),
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'パスワードを入力してください';
@@ -197,7 +221,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color.fromARGB(255, 6, 62, 85),
+                    color: textCyanDark,
                   ),
                 ),
 

@@ -4,8 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bridge/03-home/08-student-worker-home.dart';
 import 'package:bridge/03-home/09-company-home.dart';
 import 'dart:convert';
-import 'dart:async';
-import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 class SignInPage extends StatefulWidget {
@@ -13,54 +11,78 @@ class SignInPage extends StatefulWidget {
   @override
   State<SignInPage> createState() => _SignInPageState();
 }
+
 Future<void> saveSession(dynamic userData) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('current_user', jsonEncode(userData));
 }
 
-
 class _SignInPageState extends State<SignInPage> {
-  
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  
   String _errorMessage = '';
 
-    @override
-  void initState() {
-    super.initState();
-    // _fetchIndustries();
+  // 統一カラー
+  static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
+  static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
+  static const Color errororange = Color.fromARGB(255, 239, 108, 0);
+
+  InputDecoration _inputStyle(String label, {String? hint}) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: cyanMedium, width: 2),
+      ),
+    );
   }
-  //   @override
-  // void dispose() {
-  //   _emailController.dispose();
-  //   _passwordController.dispose();
-  //   super.dispose();
-  // }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final base = Theme.of(context);
+    final pageTheme = base.copyWith(
+      colorScheme: base.colorScheme.copyWith(
+        error: Colors.orange[800],
+      ),
+      inputDecorationTheme: base.inputDecorationTheme.copyWith(
+        errorStyle: const TextStyle(color: errororange),
+        errorBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: errororange),
+        ),
+        focusedErrorBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: errororange, width: 2),
+        ),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: MaterialStateProperty.all<Color>(cyanDark),
+        checkColor: MaterialStateProperty.all<Color>(Colors.white),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: cyanDark,
+      ),
+    );
+    
+    return Theme(
+      data: pageTheme,
+    child: Scaffold(
       appBar: AppBar(
         title: const Text('サインイン'),
-        backgroundColor: const Color.fromARGB(255, 24, 147, 178),
+        backgroundColor: cyanMedium,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextFormField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'メールアドレス',
-                ),
+                decoration: _inputStyle('メールアドレス'),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -76,10 +98,9 @@ class _SignInPageState extends State<SignInPage> {
 
               TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'パスワード',
-                  hintText: '英数字８文字以上で入力してください',
+                decoration: _inputStyle(
+                  'パスワード',
+                  hint: '英数字8文字以上で入力してください',
                 ),
                 obscureText: true,
                 validator: (value) {
@@ -89,35 +110,41 @@ class _SignInPageState extends State<SignInPage> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    // フォームが有効な場合の処理
+              const SizedBox(height: 25),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orangeAccent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () async {
+                    if (!_formKey.currentState!.validate()) return;
+
                     String email = _emailController.text;
                     String password = _passwordController.text;
 
-                    // SharedPreferences は saveSession で使うためここでは不要
-
-                    // サインインリクエストの送信
-                    // NOTE: ホスト/ポート指定のタイポを修正しました。
-                    var response = await http
-                        .post(
-                      Uri.parse('http://127.0.0.1:8080/api/auth/signin'),
-                      headers: {'Content-Type': 'application/json'},
-                      body: jsonEncode({
-                        'email': email,
-                        'password': password,
-                      }),
-                    )
-                        .timeout(const Duration(seconds: 10));
-
                     try {
+                      var response = await http
+                          .post(
+                        Uri.parse('http://127.0.0.1:8080/api/auth/signin'),
+                        headers: {'Content-Type': 'application/json'},
+                        body: jsonEncode({
+                          'email': email,
+                          'password': password,
+                        }),
+                      )
+                          .timeout(const Duration(seconds: 10));
+
                       if (response.statusCode == 200) {
-                        print('✅ サインイン成功: ${response.body}');
                         final userData = jsonDecode(response.body);
                         await saveSession(userData);
-                        print('✅ 保存したセッションデータ: ${userData}');
+
                         final int? type = userData['type'];
                         Widget homePage;
                         if (type == 1 || type == 2) {
@@ -125,38 +152,42 @@ class _SignInPageState extends State<SignInPage> {
                         } else if (type == 3) {
                           homePage = const CompanyHome();
                         } else {
-                          // 予期しないタイプの場合は、とりあえずトップページに戻す
                           homePage = const MyHomePage(title: 'Bridge');
                         }
+
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(builder: (context) => homePage),
                         );
                       } else {
-                        print('❌ サインイン失敗: ${response.statusCode}');
                         final errorMessage = jsonDecode(response.body);
-                        print('❌ エラーメッセージ: ${errorMessage}');
                         setState(() {
-                          _errorMessage = errorMessage['message'] ?? 'サインインに失敗しました';
+                          _errorMessage =
+                              errorMessage['message'] ?? 'サインインに失敗しました';
                         });
                       }
                     } catch (e) {
-                      print('❌ 通信エラー: $e');
                       setState(() {
                         _errorMessage = '通信エラーが発生しました: $e';
                       });
                     }
-                  }
-                },
-                child: const Text('サインイン'),
+                  },
+                  child: const Text('サインイン'),
+                ),
               ),
-                const SizedBox(height: 12),
-                if (_errorMessage.isNotEmpty)
-                  Text(
-                    _errorMessage,
-                    style: TextStyle(color: Colors.orange[800]),
+
+              const SizedBox(height: 10),
+
+              if (_errorMessage.isNotEmpty)
+                Text(
+                  _errorMessage,
+                  style: TextStyle(
+                    color: errororange,
+                    fontWeight: FontWeight.bold,
                   ),
-            ],
+                )
+              ],
+            ),
           ),
         ),
       ),
