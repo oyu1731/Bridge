@@ -39,6 +39,12 @@ public class Notification {
     @Column(name = "send_flag_int", nullable = false)
     private Integer sendFlagInt; // 送信フラグ: 1=予約, 2=送信完了
 
+    @Column(name = "category", nullable = false)
+    private Integer category; // カテゴリ: 1=運営情報, 2=重要
+
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted; // 削除済みフラグ
+
     /**
      * JPAが必要とする引数なしコンストラクタ
      */
@@ -56,8 +62,10 @@ public class Notification {
      * @param reservationTime 予約送信日時
      * @param sendFlag 送信フラグが2になった時の日付
      * @param sendFlagInt 送信フラグ
+     * @param category カテゴリ
+     * @param isDeleted 削除済みフラグ
      */
-    public Notification(Integer id, Integer type, String title, String content, Integer userId, LocalDateTime createdAt, LocalDateTime reservationTime, LocalDateTime sendFlag, Integer sendFlagInt) {
+    public Notification(Integer id, Integer type, String title, String content, Integer userId, LocalDateTime createdAt, LocalDateTime reservationTime, LocalDateTime sendFlag, Integer sendFlagInt, Integer category, Boolean isDeleted) {
         this.id = id;
         this.type = type;
         this.title = title;
@@ -67,6 +75,8 @@ public class Notification {
         this.reservationTime = reservationTime;
         this.sendFlag = sendFlag;
         this.sendFlagInt = sendFlagInt;
+        this.category = category;
+        this.isDeleted = isDeleted;
     }
 
     @PrePersist
@@ -74,6 +84,9 @@ public class Notification {
         createdAt = LocalDateTime.now();
         if (sendFlagInt == null) {
             sendFlagInt = 1; // デフォルトは予約
+        }
+        if (isDeleted == null) {
+            isDeleted = false;
         }
     }
 
@@ -148,5 +161,21 @@ public class Notification {
 
     public void setSendFlagInt(Integer sendFlagInt) {
         this.sendFlagInt = sendFlagInt;
+    }
+
+    public Integer getCategory() {
+        return category;
+    }
+
+    public void setCategory(Integer category) {
+        this.category = category;
+    }
+
+    public Boolean getIsDeleted() {
+        return isDeleted;
+    }
+
+    public void setIsDeleted(Boolean Deleted) {
+        isDeleted = Deleted;
     }
 }
