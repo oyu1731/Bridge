@@ -20,6 +20,7 @@ public class ArticleDTO {
     private Integer photo3Id;
     private List<String> tags; // タグ名のリスト
     private String industry; // 会社の業界名
+    private Boolean isLikedByUser; // 現在のユーザーがいいねしているか
 
     // デフォルトコンストラクタ
     public ArticleDTO() {
@@ -148,6 +149,14 @@ public class ArticleDTO {
 
     public void setIndustry(String industry) {
         this.industry = industry;
+    }
+
+    public Boolean getIsLikedByUser() {
+        return isLikedByUser;
+    }
+
+    public void setIsLikedByUser(Boolean isLikedByUser) {
+        this.isLikedByUser = isLikedByUser;
     }
 
     @Override

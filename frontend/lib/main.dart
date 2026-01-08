@@ -180,7 +180,7 @@ class _MyHomePageState extends State<MyHomePage> {
     if (label == '学生') {
       nextPage = const StudentInputPage();
     } else if (label == '社会人') {
-      nextPage = const ProfessionalInputPage();
+      nextPage = const WorkerInputPage();
     } else if (label == '企業') {
       nextPage = const CompanyInputPage();
     } else {
