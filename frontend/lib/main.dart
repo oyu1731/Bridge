@@ -94,12 +94,12 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromARGB(255, 0, 100, 120), // 暗めのシアン
+          seedColor: const Color.fromARGB(255, 0, 100, 120),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromARGB(255, 0, 100, 120), // ボタンも統一
-            foregroundColor: Colors.white, // 文字色
+            backgroundColor: const Color.fromARGB(255, 0, 100, 120),
+            foregroundColor: Colors.white,
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
@@ -216,18 +216,14 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  icon,
-                  size: size * 0.3,
-                  color: const Color.fromARGB(255, 9, 70, 95),
-                ),
+                Icon(icon, size: size * 0.3, color: const Color.fromARGB(255, 6, 62, 85)),
                 Text(
                   label,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontSize: size * 0.16,
-                    color: const Color.fromARGB(255, 6, 62, 85),
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontSize: size * 0.13,
+                        color: const Color.fromARGB(255, 6, 62, 85),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ],
             ),
@@ -348,6 +344,47 @@ class _MyHomePageState extends State<MyHomePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 40),
+              Image.asset(
+                'lib/01-images/bridge-logo.png',
+                height: 100, // サイズを少し小さく
+                width: 220, // 横幅も調整
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Row(
+                    children: [
+                      Icon(
+                        Icons.home_outlined,
+                        color: Colors.blue,
+                        size: 44,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Bridge',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1976D2),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const Text(
+                'Bridgeへようこそ！',
+                style: TextStyle(
+                  fontSize: 23,
+                  color: const Color.fromARGB(255, 6, 62, 85),
+                ),
+              ),
+              const Text(
+                '以下の３つのタイプから選択して、アカウントを作成してください。',
+                style: TextStyle(
+                  fontSize: 17,
+                  color: const Color.fromARGB(255, 6, 62, 85),
+                ),
+              ),
+              const SizedBox(height: 30),
 
               // レスポンシブレイアウト
               if (isSmallScreen)
@@ -400,7 +437,13 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               const SizedBox(height: 20),
               TextButton(
-                child: const Text("サインインはこちら"),
+                child: const Text(
+                  "サインインはこちら",
+                  style: TextStyle(
+                    decoration: TextDecoration.underline,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 onPressed: () {
                   Navigator.push(
                     context,
