@@ -117,6 +117,7 @@ public class UserController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
+    }
     @PutMapping("/{id}/icon")
     public ResponseEntity<UserDto> updateIcon(
             @PathVariable Integer id,

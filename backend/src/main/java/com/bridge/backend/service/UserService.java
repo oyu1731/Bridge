@@ -250,7 +250,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setIcon(photoId);
         userRepository.save(user);
-        return getUserById(userId.longValue());
+        return getUserById(userId);
     }
 
     // 希望業界の更新
