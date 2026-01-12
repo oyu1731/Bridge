@@ -107,6 +107,9 @@ public class PaymentService {
         // 3. ユーザーのプランステータスを更新
         System.out.println("1. Updating user plan status to プレミアム for userId: " + userId);
         user.setPlanStatus("プレミアム");
+        // 現在のトークン量を取得し、500を加算する（nullの場合は0からスタート）
+        Integer currentToken = (user.getToken() != null) ? user.getToken() : 0;
+        user.setToken(currentToken + 500);
         userRepository.save(user);
         System.out.println("   -> User status updated successfully. New plan status: " + user.getPlanStatus());
 
