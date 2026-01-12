@@ -14,7 +14,7 @@ public class UserDto {
     private Integer societyHistory;
     private List<Integer> desiredIndustries;
     private Integer icon; // プロフィールアイコン写真ID (photos.id)
-    private Integer token; // パスワードリセット用トークン
+    private Integer token; // トークン数
     
 
     // 企業ユーザー用フィールド
