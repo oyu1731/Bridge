@@ -11,7 +11,7 @@ import com.stripe.param.checkout.SessionCreateParams;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // [1] トランザクションをインポート
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -19,7 +19,6 @@ import java.util.Map;
 
 @Service
 public class PaymentService {
-    // ... (createCheckoutSession メソッドは変更なし)
 
     @Value("${stripe.secretKey}")
     private String stripeSecretKey;
@@ -59,8 +58,6 @@ public class PaymentService {
                 throw new IllegalArgumentException("Invalid user type: " + userType);
         }
 
-
-        // Stripe Checkout セッション作成
         SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
                 .setSuccessUrl(successUrl)
@@ -93,32 +90,35 @@ public class PaymentService {
         return responseData;
     }
 
-    @Transactional // [2] トランザクション境界を定義
+    @Transactional
     public void handleSuccessfulPayment(Integer userId, String userType) {
         System.out.println("--- DB更新処理開始 ---");
         System.out.println("handleSuccessfulPayment called with userId: " + userId + ", userType: " + userType);
         
-        // ユーザーを検索し、存在しない場合は例外をスロー（Controllerに500を返させる）
+        // 1. userType の null チェック（ガード節）
+        // stripe trigger 等で null が来る場合に備え、デフォルト値を設定
+        String safeUserType = (userType == null) ? "社会人" : userType; 
+
+        // 2. ユーザーを検索
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid user ID: " + userId + ". User not found."));
         System.out.println("User found: " + user.getId() + ", current plan status: " + user.getPlanStatus());
 
-        // 1. ユーザーのプランステータスを更新
+        // 3. ユーザーのプランステータスを更新
         System.out.println("1. Updating user plan status to プレミアム for userId: " + userId);
         user.setPlanStatus("プレミアム");
         userRepository.save(user);
         System.out.println("   -> User status updated successfully. New plan status: " + user.getPlanStatus());
 
-        // 2. 購読レコードを作成・保存
+        // 4. 購読レコードを作成・保存
         Subscription subscription = new Subscription();
         subscription.setUserId(userId);
         subscription.setStartDate(LocalDateTime.now());
         subscription.setIsPlanStatus(true);
         subscription.setCreatedAt(LocalDateTime.now());
-        System.out.println("   -> Initializing new subscription record. UserId: " + subscription.getUserId() + ", StartDate: " + subscription.getStartDate());
 
-
-        switch (userType) {
+        // switch 文に渡す前に null を回避した safeUserType を使用する
+        switch (safeUserType) {
             case "学生":
                 subscription.setPlanName("学生プレミアム");
                 subscription.setEndDate(LocalDateTime.now().plusMonths(1));
@@ -132,9 +132,9 @@ public class PaymentService {
                 subscription.setEndDate(LocalDateTime.now().plusYears(1));
                 break;
             default:
-                // ここで例外をスローすると、トランザクションがロールバックされる
-                throw new IllegalArgumentException("Invalid user type received from Stripe metadata: " + userType);
+                throw new IllegalArgumentException("Invalid user type received: " + safeUserType);
         }
+        
         System.out.println("   -> Subscription plan details set. PlanName: " + subscription.getPlanName() + ", EndDate: " + subscription.getEndDate());
 
         subscriptionRepository.save(subscription);
