@@ -101,12 +101,13 @@ public class PaymentService {
         // ユーザーを検索し、存在しない場合は例外をスロー（Controllerに500を返させる）
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid user ID: " + userId + ". User not found."));
+        System.out.println("User found: " + user.getId() + ", current plan status: " + user.getPlanStatus());
 
         // 1. ユーザーのプランステータスを更新
         System.out.println("1. Updating user plan status to プレミアム for userId: " + userId);
         user.setPlanStatus("プレミアム");
         userRepository.save(user);
-        System.out.println("   -> User status updated successfully.");
+        System.out.println("   -> User status updated successfully. New plan status: " + user.getPlanStatus());
 
         // 2. 購読レコードを作成・保存
         Subscription subscription = new Subscription();
@@ -114,6 +115,8 @@ public class PaymentService {
         subscription.setStartDate(LocalDateTime.now());
         subscription.setIsPlanStatus(true);
         subscription.setCreatedAt(LocalDateTime.now());
+        System.out.println("   -> Initializing new subscription record. UserId: " + subscription.getUserId() + ", StartDate: " + subscription.getStartDate());
+
 
         switch (userType) {
             case "学生":
@@ -132,9 +135,10 @@ public class PaymentService {
                 // ここで例外をスローすると、トランザクションがロールバックされる
                 throw new IllegalArgumentException("Invalid user type received from Stripe metadata: " + userType);
         }
+        System.out.println("   -> Subscription plan details set. PlanName: " + subscription.getPlanName() + ", EndDate: " + subscription.getEndDate());
 
         subscriptionRepository.save(subscription);
-        System.out.println("2. Subscription record created successfully.");
+        System.out.println("2. Subscription record created successfully. Subscription ID: " + subscription.getId());
         System.out.println("--- DB更新処理完了 ---");
     }
 }
