@@ -40,6 +40,13 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
 
   bool _isSaving = false; // 保存中フラグ
 
+
+  // 統一カラー
+  static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
+  static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
+  static const Color errorOrange = Color.fromARGB(255, 239, 108, 0);
+  static const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
+
   @override
   void initState() {
     super.initState();
@@ -189,7 +196,12 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Text("プロフィールアイコン"),
+                  const Text("プロフィールアイコン",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: textCyanDark
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -229,6 +241,10 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
             const SizedBox(height: 30),
             Center(
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orangeAccent, // ← 背景色
+                  foregroundColor: Colors.white,         // ← 文字色
+                ),
                 onPressed: _isSaving
                     ? null
                     : () async {
@@ -238,7 +254,12 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
                       },
                 child: _isSaving
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('編集'),
+                    : const Text('編集',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                    ),
               ),
             ),
           ],
@@ -250,7 +271,11 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
   Widget _buildLabel(String text) {
     return Text(
       text,
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: textCyanDark,
+      ),
     );
   }
 

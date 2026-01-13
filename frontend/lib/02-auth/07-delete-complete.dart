@@ -10,6 +10,13 @@ class DeleteCompletePage extends StatelessWidget {
     final borderGray = const Color(0xFFE0E0E0);
     final lightGray = const Color(0xFFF5F5F5);
     final primaryOrange = const Color(0xFFFFA000);
+        
+
+    // ページ共通カラー（このファイル内で使う）
+    const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
+    const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
+    const Color orangeAccent = Color(0xFFFF9800);
+    const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -73,7 +80,7 @@ class DeleteCompletePage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF212121),
+                            color: textCyanDark,
                           ),
                         ),
                         SizedBox(height: 12),
@@ -81,7 +88,7 @@ class DeleteCompletePage extends StatelessWidget {
                           '「Bridge」をご利用いただき、心より感謝申し上げます。\nまたいつでも戻ってきてください。\n皆さんの学びとつながりを、これからも応援しています。',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Color(0xFF424242),
+                            color: textCyanDark,
                           ),
                         ),
                       ],

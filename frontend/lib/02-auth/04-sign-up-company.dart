@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:bridge/main.dart';
 import 'package:bridge/03-home/09-company-home.dart';
@@ -12,6 +13,12 @@ class CompanyInputPage extends StatefulWidget {
   @override
   State<CompanyInputPage> createState() => _CompanyInputPageState();
 }
+
+Future<void> saveSession(dynamic userData) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('current_user', jsonEncode(userData));
+}
+
 
 class _CompanyInputPageState extends State<CompanyInputPage> {
   final _formKey = GlobalKey<FormState>();
@@ -47,6 +54,9 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
       final response = await http.get(
         Uri.parse('http://localhost:8080/api/industries'),
       );
+
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         setState(() {
@@ -62,13 +72,14 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = 'エラーが発生しました: $e';
         _isLoading = false;
       });
     }
   }
-  
+
   @override
   void dispose() {
     _nicknameController.dispose();
@@ -98,13 +109,11 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
         checkColor: MaterialStateProperty.all<Color>(Colors.white),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(4),
-          side: const BorderSide(
-            color: cyanDark,
-            width: 2,
-          ),
+          side: const BorderSide(color: cyanDark, width: 2),
         ),
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(color: cyanDark),
+      progressIndicatorTheme:
+          const ProgressIndicatorThemeData(color: cyanDark),
     );
 
     return Theme(
@@ -171,12 +180,8 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                       },
                     ),
                   ),
-                  validator: (v) {
-                    if (v == null || v.length < 8) {
-                      return '8文字以上で入力してください';
-                    }
-                    return null;
-                  },
+                  validator: (v) =>
+                      v == null || v.length < 8 ? '8文字以上で入力してください' : null,
                 ),
                 const SizedBox(height: 20),
 
@@ -212,7 +217,7 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                 ),
 
                 _isLoading
-                    ? const CircularProgressIndicator()
+                    ? const Center(child: CircularProgressIndicator())
                     : Column(
                         children: _industries.map((industry) {
                           return CheckboxListTile(
@@ -223,13 +228,19 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            value: _selectedIndustryIds.contains(industry['id']),
-                            activeColor: cyanDark,
+                            value: _selectedIndustryIds
+                                .contains(industry['id']),
                             onChanged: (v) {
                               setState(() {
-                                v == true
-                                    ? _selectedIndustryIds.add(industry['id'])
-                                    : _selectedIndustryIds.remove(industry['id']);
+                                if (v == true &&
+                                    !_selectedIndustryIds
+                                        .contains(industry['id'])) {
+                                  _selectedIndustryIds.add(industry['id']);
+                                } else {
+                                  _selectedIndustryIds
+                                      .remove(industry['id']);
+                                }
+                                _industryError = '';
                               });
                             },
                           );
@@ -266,7 +277,10 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                       'email': _emailController.text,
                       'password': _passwordController.text,
                       'phoneNumber': _phoneNumberController.text,
+                      'companyName': _nicknameController.text,
                       'companyAddress': _addressController.text,
+                      'companyPhoneNumber': _phoneNumberController.text,
+                      'companyDescription': '',
                       'type': 3,
                       'desiredIndustries': _selectedIndustryIds,
                     });
@@ -281,6 +295,8 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                       );
 
                       if (res.statusCode == 200) {
+                        final userData = jsonDecode(res.body);
+                        await saveSession(userData);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -293,6 +309,7 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                         });
                       }
                     } catch (e) {
+                      if (!mounted) return;
                       setState(() {
                         _errorMessage = '通信エラー: $e';
                       });
