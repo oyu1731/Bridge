@@ -10,7 +10,8 @@ import '../06-company/16-article-list.dart';
 import '../06-company/18-article-detail.dart';
 
 class StudentWorkerHome extends StatefulWidget {
-  const StudentWorkerHome({Key? key}) : super(key: key);
+  final String? initialMessage;
+  const StudentWorkerHome({Key? key, this.initialMessage}) : super(key: key);
 
   @override
   State<StudentWorkerHome> createState() => _StudentWorkerHomeState();
@@ -83,14 +84,42 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: BridgeHeader(),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _buildTopPageTab(context),
-          Center(child: Text('タブ2の内容')),
-          Center(child: Text('タブ3の内容')),
-          Center(child: Text('タブ4の内容')),
-          Center(child: Text('タブ5の内容')),
+          if (widget.initialMessage != null)
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Card(
+                color: Colors.blue.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          widget.initialMessage ?? '',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildTopPageTab(context),
+                Center(child: Text('タブ2の内容')),
+                Center(child: Text('タブ3の内容')),
+                Center(child: Text('タブ4の内容')),
+                Center(child: Text('タブ5の内容')),
+              ],
+            ),
+          ),
         ],
       ),
     );

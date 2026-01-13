@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:bridge/main.dart';
 import 'package:bridge/03-home/09-company-home.dart';
+import '../10-payment/53-payment-input-company.dart';
 
 class CompanyInputPage extends StatefulWidget {
   const CompanyInputPage({super.key});
@@ -18,7 +19,6 @@ Future<void> saveSession(dynamic userData) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('current_user', jsonEncode(userData));
 }
-
 
 class _CompanyInputPageState extends State<CompanyInputPage> {
   final _formKey = GlobalKey<FormState>();
@@ -60,9 +60,10 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         setState(() {
-          _industries = data
-              .map((item) => {"id": item["id"], "name": item["industry"]})
-              .toList();
+          _industries =
+              data
+                  .map((item) => {"id": item["id"], "name": item["industry"]})
+                  .toList();
           _isLoading = false;
         });
       } else {
@@ -112,8 +113,7 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
           side: const BorderSide(color: cyanDark, width: 2),
         ),
       ),
-      progressIndicatorTheme:
-          const ProgressIndicatorThemeData(color: cyanDark),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(color: cyanDark),
     );
 
     return Theme(
@@ -137,8 +137,8 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                     border: OutlineInputBorder(),
                     labelText: '企業名',
                   ),
-                  validator: (v) =>
-                      v == null || v.isEmpty ? '企業名を入力してください' : null,
+                  validator:
+                      (v) => v == null || v.isEmpty ? '企業名を入力してください' : null,
                 ),
                 const SizedBox(height: 20),
 
@@ -180,8 +180,9 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                       },
                     ),
                   ),
-                  validator: (v) =>
-                      v == null || v.length < 8 ? '8文字以上で入力してください' : null,
+                  validator:
+                      (v) =>
+                          v == null || v.length < 8 ? '8文字以上で入力してください' : null,
                 ),
                 const SizedBox(height: 20),
 
@@ -219,37 +220,41 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                 _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : Column(
-                        children: _industries.map((industry) {
-                          return CheckboxListTile(
-                            title: Text(
-                              industry['name'],
-                              style: const TextStyle(
-                                color: cyanDark,
-                                fontWeight: FontWeight.w500,
+                      children:
+                          _industries.map((industry) {
+                            return CheckboxListTile(
+                              title: Text(
+                                industry['name'],
+                                style: const TextStyle(
+                                  color: cyanDark,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
-                            value: _selectedIndustryIds
-                                .contains(industry['id']),
-                            onChanged: (v) {
-                              setState(() {
-                                if (v == true &&
-                                    !_selectedIndustryIds
-                                        .contains(industry['id'])) {
-                                  _selectedIndustryIds.add(industry['id']);
-                                } else {
-                                  _selectedIndustryIds
-                                      .remove(industry['id']);
-                                }
-                                _industryError = '';
-                              });
-                            },
-                          );
-                        }).toList(),
-                      ),
+                              value: _selectedIndustryIds.contains(
+                                industry['id'],
+                              ),
+                              onChanged: (v) {
+                                setState(() {
+                                  if (v == true &&
+                                      !_selectedIndustryIds.contains(
+                                        industry['id'],
+                                      )) {
+                                    _selectedIndustryIds.add(industry['id']);
+                                  } else {
+                                    _selectedIndustryIds.remove(industry['id']);
+                                  }
+                                  _industryError = '';
+                                });
+                              },
+                            );
+                          }).toList(),
+                    ),
 
                 if (_industryError.isNotEmpty)
-                  Text(_industryError,
-                      style: const TextStyle(color: errorOrange)),
+                  Text(
+                    _industryError,
+                    style: const TextStyle(color: errorOrange),
+                  ),
 
                 const SizedBox(height: 20),
 
@@ -286,26 +291,36 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                     });
 
                     try {
-                      final res = await http.post(
-                        Uri.parse('http://localhost:8080/api/users'),
+                      // 1) 一時サインアップを作成して tempId を取得
+                      final tempRes = await http.post(
+                        Uri.parse('http://localhost:8080/api/v1/temp-signups'),
                         headers: {
-                          'Content-Type': 'application/json; charset=UTF-8'
+                          'Content-Type': 'application/json; charset=UTF-8',
                         },
                         body: body,
                       );
 
-                      if (res.statusCode == 200) {
-                        final userData = jsonDecode(res.body);
-                        await saveSession(userData);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CompanyHome(),
-                          ),
+                      if (tempRes.statusCode == 200 ||
+                          tempRes.statusCode == 201) {
+                        final tempData = jsonDecode(tempRes.body);
+                        final tempId = tempData['tempId'];
+
+                        // 2) Stripe Checkout を開始 (企業は金額例: 5000)
+                        await startWebCheckout(
+                          amount: 5000,
+                          currency: 'JPY',
+                          planType: 'プレミアム',
+                          companyName: _nicknameController.text,
+                          companyEmail: _emailController.text,
+                          tempId:
+                              tempId is int
+                                  ? tempId
+                                  : int.tryParse(tempId.toString()),
                         );
+                        // Checkout にリダイレクトされるため、ここでの画面遷移は不要
                       } else {
                         setState(() {
-                          _errorMessage = 'サインアップに失敗しました';
+                          _errorMessage = '一時サインアップの作成に失敗しました';
                         });
                       }
                     } catch (e) {

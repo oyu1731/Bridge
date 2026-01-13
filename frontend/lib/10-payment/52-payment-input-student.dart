@@ -48,6 +48,14 @@ Future<void> startWebCheckout({
     "cancelUrl": cancelUrl,
   };
 
+  // successUrl に userType と session_id プレースホルダを付与しておく
+  final String effectiveSuccessUrl =
+      successUrl.contains('?')
+          ? '$successUrl&userType=${Uri.encodeComponent(userType)}&session_id={CHECKOUT_SESSION_ID}'
+          : '$successUrl?userType=${Uri.encodeComponent(userType)}&session_id={CHECKOUT_SESSION_ID}';
+
+  payload['successUrl'] = effectiveSuccessUrl;
+
   print("===== Stripe Checkout リクエスト開始 =====");
   print("送信先: http://localhost:8080/api/v1/payment/checkout-session");
   print("送信データ(JSON): ${jsonEncode(payload)}");
