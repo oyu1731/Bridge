@@ -208,7 +208,7 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                 const SizedBox(height: 20),
 
                 const Text(
-                  '業界:',
+                  '所属業界:',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

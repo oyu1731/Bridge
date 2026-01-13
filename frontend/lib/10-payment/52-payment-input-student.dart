@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:html' as html;
 
 /// Web版 Stripe Checkout
+/// 修正点：Stripeリダイレクト前にバックエンドのサブスクリプション更新APIを実行するようにしました。
 Future<void> startWebCheckout({
   required int amount,
   required String currency,
@@ -12,6 +13,31 @@ Future<void> startWebCheckout({
   String successUrl = "http://localhost:5000/#/payment-success",
   String cancelUrl = "http://localhost:5000/#/payment-cancel",
 }) async {
+  // ---------------------------------------------------------
+  // 【追加】決済画面に遷移する前にDBを先行して更新する（学生と同様の挙動）
+  // ---------------------------------------------------------
+  try {
+    print("--- DB先行更新リクエスト開始 ---");
+    final dbResponse = await http.post(
+      Uri.parse("http://localhost:8080/api/subscriptions/subscribe"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "userId": userId,
+        "planName": userType == '社会人' ? "社会人プレミアム" : "プレミアム",
+        "durationMonths": 1,
+      }),
+    );
+
+    if (dbResponse.statusCode == 200) {
+      print("✅ DB先行更新成功: ${dbResponse.body}");
+    } else {
+      print("⚠️ DB更新警告 (Status: ${dbResponse.statusCode}): ${dbResponse.body}");
+    }
+  } catch (e) {
+    print("❌ DB更新エラー (決済処理は続行します): $e");
+  }
+  // ---------------------------------------------------------
+
   final payload = {
     "amount": amount,
     "currency": currency,
@@ -33,8 +59,8 @@ Future<void> startWebCheckout({
       body: jsonEncode(payload),
     );
 
-    print("レスポンスコード: ${response.statusCode}");
-    print("レスポンスボディ: ${response.body}");
+    print("Stripeレスポンスコード: ${response.statusCode}");
+    print("Stripeレスポンスボディ: ${response.body}");
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -42,16 +68,15 @@ Future<void> startWebCheckout({
 
       if (url != null && url.isNotEmpty) {
         print("CheckoutURL: $url へリダイレクトします");
-        html.window.open(url, "_self");
+        // ブラウザの新しいタブまたは現在のタブでStripe決済ページを開く
+        html.window.location.href = url;
       } else {
-        print("エラー: Checkout URL が null or 空");
+        print("エラー: チェックアウトURLが空です");
       }
     } else {
-      print("サーバーエラー発生: ${response.body}");
+      print("エラー: Stripeセッション作成に失敗しました (Status: ${response.statusCode})");
     }
   } catch (e) {
     print("通信エラー: $e");
   }
-
-  print("===== Stripe Checkout リクエスト終了 =====");
 }
