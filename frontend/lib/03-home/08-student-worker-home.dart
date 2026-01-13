@@ -1,6 +1,10 @@
 import 'package:bridge/02-auth/06-delete-account.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
+import 'package:bridge/11-common/59-global-method.dart'; // loadUserSession 等のため
+import 'package:shared_preferences/shared_preferences.dart'; // セッション保存用
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../06-company/article_api_client.dart';
 import '../06-company/16-article-list.dart';
 import '../06-company/18-article-detail.dart';
@@ -15,11 +19,52 @@ class StudentWorkerHome extends StatefulWidget {
 class _StudentWorkerHomeState extends State<StudentWorkerHome>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final GlobalActions _globalActions = GlobalActions(); // グローバルアクション利用
+  Map<String, dynamic>? _user;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this); // タブ5個
+    _tabController = TabController(length: 5, vsync: this);
+    // ホーム表示時にリアルタイムで状態を更新する
+    _refreshUserStatus();
+  }
+
+  /// サーバーから最新のプラン状態を取得し、セッションを更新する
+  Future<void> _refreshUserStatus() async {
+    // 1. 現在のローカルセッションを読み込む
+    _user = await _globalActions.loadUserSession();
+
+    if (_user != null && _user!['id'] != null) {
+      final userId = _user!['id'];
+
+      try {
+        // 2. サーバーから最新の planStatus を取得
+        final response = await http
+            .get(
+              Uri.parse(
+                "http://localhost:8080/api/subscriptions/status/$userId",
+              ),
+            )
+            .timeout(const Duration(seconds: 5));
+
+        if (response.statusCode == 200) {
+          final String latestStatus = response.body;
+          print('ホーム画面：最新ステータスを取得 -> $latestStatus');
+
+          // 3. セッション情報(SharedPreferences)を更新
+          final prefs = await SharedPreferences.getInstance();
+          _user!['planStatus'] = latestStatus; // メモリ上のデータを更新
+          await prefs.setString('current_user', jsonEncode(_user)); // 保存
+
+          if (mounted) {
+            setState(() {}); // 画面再描画
+          }
+        }
+      } catch (e) {
+        print('ホーム画面：リアルタイム更新に失敗しました: $e');
+      }
+    }
   }
 
   @override
@@ -79,14 +124,17 @@ Widget _buildTopPageTab(BuildContext context) {
                 children: [
                   const Text(
                     '最新スレッド',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textCyanDark),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: textCyanDark,
+                    ),
                   ),
                   TextButton(
                     onPressed: () {},
-                    child: const Text('>スレッド一覧',
-                      style: TextStyle(
-                        color: textCyanDark,
-                      )
+                    child: const Text(
+                      '>スレッド一覧',
+                      style: TextStyle(color: textCyanDark),
                     ),
                   ),
                 ],
@@ -96,20 +144,11 @@ Widget _buildTopPageTab(BuildContext context) {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
                 children: [
-                  _buildThreadCard(
-                    title: 'これは、学生・社会人トップです。',
-                    time: '1分前',
-                  ),
+                  _buildThreadCard(title: 'これは、学生・社会人トップです。', time: '1分前'),
                   const SizedBox(height: 12),
-                  _buildThreadCard(
-                    title: '株式会社AAAーフリースレッド',
-                    time: '2分前',
-                  ),
+                  _buildThreadCard(title: '株式会社AAAーフリースレッド', time: '2分前'),
                   const SizedBox(height: 12),
-                  _buildThreadCard(
-                    title: '学生×社会人スレッド',
-                    time: '7分前',
-                  ),
+                  _buildThreadCard(title: '学生×社会人スレッド', time: '7分前'),
                 ],
               ),
             ),
@@ -123,7 +162,11 @@ Widget _buildTopPageTab(BuildContext context) {
                 children: [
                   const Text(
                     '注目記事',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textCyanDark),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: textCyanDark,
+                    ),
                   ),
                   TextButton(
                     onPressed: () {
@@ -132,10 +175,9 @@ Widget _buildTopPageTab(BuildContext context) {
                         MaterialPageRoute(builder: (_) => ArticleListPage()),
                       );
                     },
-                    child: const Text('>記事一覧',
-                      style: TextStyle(
-                        color: textCyanDark,
-                      )
+                    child: const Text(
+                      '>記事一覧',
+                      style: TextStyle(color: textCyanDark),
                     ),
                   ),
                 ],
@@ -145,54 +187,65 @@ Widget _buildTopPageTab(BuildContext context) {
             // スマホ: 横スクロール / PC: PageView＋ボタン（3枚ずつ）
             SizedBox(
               height: 260,
-              child: isMobile
-                  ? ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      itemCount: articles.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 16),
-                      itemBuilder: (context, i) {
-                        final a = articles[i];
-                        return _buildArticleCard(
-                          title: a.title,
-                          companyName: a.companyName ?? '',
-                          totalLikes: a.totalLikes ?? 0,
-                          link: '',
-                          onTitleTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ArticleDetailPage(
-                                  articleTitle: a.title,
-                                  articleId: a.id?.toString() ?? '',
-                                  companyName: a.companyName,
-                                  description: a.description,
+              child:
+                  isMobile
+                      ? ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        itemCount: articles.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 16),
+                        itemBuilder: (context, i) {
+                          final a = articles[i];
+                          return _buildArticleCard(
+                            title: a.title,
+                            companyName: a.companyName ?? '',
+                            totalLikes: a.totalLikes ?? 0,
+                            link: '',
+                            onTitleTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => ArticleDetailPage(
+                                        articleTitle: a.title,
+                                        articleId: a.id?.toString() ?? '',
+                                        companyName: a.companyName,
+                                        description: a.description,
+                                      ),
                                 ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    )
-                  : _ArticlePager(articles: articles.map((a) => {
-                        "title": a.title,
-                        "companyName": a.companyName ?? '',
-                        "totalLikes": a.totalLikes ?? 0,
-                        "link": '',
-                        "onTitleTap": () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ArticleDetailPage(
-                                articleTitle: a.title,
-                                articleId: a.id?.toString() ?? '',
-                                companyName: a.companyName,
-                                description: a.description,
-                              ),
-                            ),
+                              );
+                            },
                           );
-                        }
-                      }).toList()),
+                        },
+                      )
+                      : _ArticlePager(
+                        articles:
+                            articles
+                                .map(
+                                  (a) => {
+                                    "title": a.title,
+                                    "companyName": a.companyName ?? '',
+                                    "totalLikes": a.totalLikes ?? 0,
+                                    "link": '',
+                                    "onTitleTap": () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (_) => ArticleDetailPage(
+                                                articleTitle: a.title,
+                                                articleId:
+                                                    a.id?.toString() ?? '',
+                                                companyName: a.companyName,
+                                                description: a.description,
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                  },
+                                )
+                                .toList(),
+                      ),
             ),
 
             const SizedBox(height: 24),
@@ -206,10 +259,7 @@ Widget _buildTopPageTab(BuildContext context) {
 // =====================
 // スレッドカード
 // =====================
-Widget _buildThreadCard({
-  required String title,
-  required String time,
-}) {
+Widget _buildThreadCard({required String title, required String time}) {
   return Container(
     width: double.infinity,
     margin: const EdgeInsets.symmetric(vertical: 4),
@@ -223,19 +273,10 @@ Widget _buildThreadCard({
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
-        Text(
-          time,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(time, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
       ],
     ),
   );
@@ -267,7 +308,11 @@ Widget _buildArticleCard({
               onTap: onTitleTap,
               child: Text(
                 title,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.blue),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -289,7 +334,10 @@ Widget _buildArticleCard({
             children: [
               const Icon(Icons.thumb_up, size: 16, color: Colors.redAccent),
               const SizedBox(width: 4),
-              Text('$totalLikes', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              Text(
+                '$totalLikes',
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
             ],
           ),
         ),
@@ -316,14 +364,18 @@ class _ArticlePagerState extends State<_ArticlePager> {
   void _nextPage() {
     if (_currentPage < (widget.articles.length / 3).ceil() - 1) {
       _pageController.nextPage(
-          duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
   void _prevPage() {
     if (_currentPage > 0) {
       _pageController.previousPage(
-          duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
@@ -346,15 +398,18 @@ class _ArticlePagerState extends State<_ArticlePager> {
 
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: pageArticles
-                    .map((a) => _buildArticleCard(
-                          title: a["title"] ?? '',
-                          companyName: a["companyName"] ?? '',
-                          totalLikes: a["totalLikes"] ?? 0,
-                          link: a["link"] ?? '',
-                          onTitleTap: a["onTitleTap"],
-                        ))
-                    .toList(),
+                children:
+                    pageArticles
+                        .map(
+                          (a) => _buildArticleCard(
+                            title: a["title"] ?? '',
+                            companyName: a["companyName"] ?? '',
+                            totalLikes: a["totalLikes"] ?? 0,
+                            link: a["link"] ?? '',
+                            onTitleTap: a["onTitleTap"],
+                          ),
+                        )
+                        .toList(),
               );
             },
           ),
