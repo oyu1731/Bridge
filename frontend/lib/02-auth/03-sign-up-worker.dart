@@ -214,7 +214,7 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                 const SizedBox(height: 20),
 
                 const Text(
-                  '所属業界:',
+                  '現職業界:',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

@@ -21,6 +21,4 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     // パスワード更新のためのメソッド
     Optional<User> findById(Integer id);
 
-    // メールアドレスでユーザーを検索
-    Optional<User> findByEmail(String email);
 }
