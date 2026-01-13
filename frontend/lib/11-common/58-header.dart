@@ -11,6 +11,7 @@ import '../06-company/17-company-article-list.dart';
 import '../06-company/19-article-post.dart';
 import '../08-thread/31-thread-list.dart';
 import '../02-auth/50-password-update.dart';
+import '../02-auth/06-delete-account.dart';
 import '../03-home/09-company-home.dart';
 import '../03-home/08-student-worker-home.dart';
 import '../06-company/photo_api_client.dart';
@@ -401,11 +402,11 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
     return {'accountType': 'unknown', 'nickname': '', 'iconPath': ''};
   }
 
-    // ユーザーのアカウント種別のみ取得
-    Future<String> _getUserAccountType() async {
-      final userInfo = await _getUserInfo();
-      return userInfo['accountType'] ?? 'unknown';
-    }
+  // ユーザーのアカウント種別のみ取得
+  Future<String> _getUserAccountType() async {
+    final userInfo = await _getUserInfo();
+    return userInfo['accountType'] ?? 'unknown';
+  }
 
   // プロフィールメニューの選択処理
   void _handleProfileMenuSelection(BuildContext context, String value) async {
@@ -484,7 +485,14 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         );
         break;
       case 'withdraw':
-        // 退会手続きの確認ダイアログ（張りぼて）
+        debugPrint('退会手続きが選択されました');
+        // 退会手続きページへの遷移
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DeleteAccountPage(),
+          ),
+        );
         break;
       case 'logout':
         // ログアウト確認ダイアログ
