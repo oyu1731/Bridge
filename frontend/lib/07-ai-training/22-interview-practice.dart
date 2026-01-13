@@ -60,7 +60,7 @@ class _InterviewPracticeState extends State<InterviewPractice> {
 
   Future<void> _init() async {
     user = await GlobalActions().loadUserSession();
-    print("userのプラン状態: ${user?['plan_status']}");
+    print("userのプラン状態: ${user?['planStatus']}");
 
     // 認証トークンの取得
     _authToken = await GlobalActions().loadAuthToken();
@@ -98,7 +98,7 @@ class _InterviewPracticeState extends State<InterviewPractice> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            bool isFree = (user?['plan_status'] ?? '無料') == '無料';
+            bool isFree = (user?['planStatus'] ?? '無料') == '無料';
 
             return Container(
               padding: const EdgeInsets.all(20),
@@ -355,7 +355,7 @@ class _InterviewPracticeState extends State<InterviewPractice> {
 
                           final payload = {
                             "userId": user!['id'],
-                            "planStatus": user!['plan_status'],
+                            "planStatus": user!['planStatus'],
                             "questionType": selectedQuestionType,
                             "questionCount": questionCount,
                             "reviewType": reviewType,
