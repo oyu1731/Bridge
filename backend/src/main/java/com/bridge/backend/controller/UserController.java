@@ -16,7 +16,10 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
+//@CrossOrigin(allowedOriginPatterns = "*", allowCredentials = "true") ←バージョンが古くて使えないワイルドカード
+//ここはデプロイした後に変わるかもしれないンゴ～
+@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
 public class UserController {
     
     @Autowired
