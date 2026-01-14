@@ -16,9 +16,7 @@ class DeleteAccountPage extends StatefulWidget {
 const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
 const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
 const Color orangeAccent = Color(0xFFFF9800);
-const Color lightGray = Color(0xFFF5F5F5);
-const Color borderGray = Color(0xFFE0E0E0);
-const Color textGray = Color(0xFF616161);
+const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
 
 class _DeleteAccountPageState extends State<DeleteAccountPage> {
   bool _isProcessing = false;
@@ -134,36 +132,42 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                   Container(height: 1, color: const Color(0xFFF0F0F0)),
                   const SizedBox(height: 16),
 
-                  // タイトル
                   const Text(
                     '退会手続き',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF212121)),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textCyanDark),
                   ),
 
                   const SizedBox(height: 12),
 
-                  // 説明カード（シアン系のアクセントを薄く入れる）
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: lightGray,
+                      color: Colors.grey[50],
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: borderGray),
+                      border: Border.all(color: cyanDark),
                     ),
                     child: const Text(
-                      '会員登録を解除します。',
-                      style: TextStyle(fontSize: 16, color: Color(0xFF424242)),
+                      '会員登録を解除します。\n退会すると、あなたのアカウント情報は削除され元に戻せません。本当に退会しますか？',
+                      style: TextStyle(fontSize: 16, color: textCyanDark),
                     ),
                   ),
-
-                  const Spacer(),
-
-                  // 退会ボタン + ステップバッジ
+                  const SizedBox(height: 30),
+                  // 退会ボタン
                   Row(
                     children: [
 
-                      // 退会ボタン（オレンジ）: 処理中は無効化してインジケータを表示
+                      TextButton(
+                        onPressed: _isProcessing ? null : () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          foregroundColor: textCyanDark,
+                          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        child: const Text('戻る'),
+                      ),
+
+                      const SizedBox(width: 30),
+
                       ElevatedButton.icon(
                         onPressed: _isProcessing ? null : _confirmAndDelete,
                         icon: _isProcessing
@@ -184,15 +188,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
 
                       const SizedBox(width: 12),
 
-                      // 補助ボタン（キャンセル）をシアン系で用意（任意）
-                      TextButton(
-                        onPressed: _isProcessing ? null : () => Navigator.of(context).pop(),
-                        style: TextButton.styleFrom(
-                          foregroundColor: cyanDark,
-                          textStyle: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        child: const Text('戻る'),
-                      ),
+                      
                     ],
                   ),
                 ],

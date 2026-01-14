@@ -12,12 +12,13 @@ public interface UserRepository extends JpaRepository<User, Integer> {
      */
     Optional<User> findByCompanyId(Integer companyId);
     
+    // メールアドレスでユーザーを検索（認証で使用）
+    Optional<User> findByEmail(String email);
+    
     // メールアドレス重複チェック
     boolean existsByEmail(String email);
 
     // パスワード更新のためのメソッド
     Optional<User> findById(Integer id);
 
-    // メールアドレスでユーザーを検索
-    Optional<User> findByEmail(String email);
 }
