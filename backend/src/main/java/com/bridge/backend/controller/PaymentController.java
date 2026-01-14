@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/v1/payment")
@@ -35,10 +36,35 @@ public class PaymentController {
             String userType = request.get("userType").toString();
             String successUrl = request.get("successUrl").toString();
             String cancelUrl = request.get("cancelUrl").toString();
-            Integer userId = Integer.valueOf(request.get("userId").toString());
+
+            // userId は個人ユーザー用。企業サインアップ時は null/未提供でもよい
+            Integer userId = null;
+            if (request.get("userId") != null) {
+                userId = Integer.valueOf(request.get("userId").toString());
+            }
+
+            // メタデータ（company 登録に必要な情報を含める）
+            Map<String, String> metadata = new HashMap<>();
+            if ("company".equalsIgnoreCase(userType)) {
+                Object companyName = request.get("companyName");
+                Object companyEmail = request.get("companyEmail");
+                if (companyName == null || companyEmail == null) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "companyName and companyEmail are required for company signups"));
+                }
+                metadata.put("userType", "company");
+                metadata.put("companyName", companyName.toString());
+                metadata.put("companyEmail", companyEmail.toString());
+
+                // 任意で tempId やその他情報を格納可能
+                if (request.get("tempId") != null) {
+                    metadata.put("tempId", request.get("tempId").toString());
+                }
+            } else {
+                metadata.put("userType", userType);
+            }
 
             Map<String, String> response = paymentService.createCheckoutSession(
-                    amount, currency, userType, successUrl, cancelUrl, userId
+                    amount, currency, userType, successUrl, cancelUrl, userId, metadata
             );
 
             return ResponseEntity.ok(response);
@@ -61,28 +87,38 @@ public class PaymentController {
             if ("checkout.session.completed".equals(event.getType())) {
                 System.out.println("Processing checkout.session.completed event.");
                 Session session = (Session) event.getData().getObject();
-                
-                // 各種データの取得（nullの可能性があるため安全に取得）
+
                 String clientReferenceId = session.getClientReferenceId();
                 Map<String, String> metadata = session.getMetadata();
-                String userType = (metadata != null) ? metadata.get("userType") : "standard";
+                String userType = (metadata != null && metadata.get("userType") != null) ? metadata.get("userType") : "standard";
 
                 System.out.println("Session ID: " + session.getId());
                 System.out.println("Client Reference ID (User ID): " + clientReferenceId);
                 System.out.println("User Type: " + userType);
 
-                // clientReferenceId が null または空文字でないかチェック
-                if (clientReferenceId != null && !clientReferenceId.trim().isEmpty()) {
-                    try {
-                        Integer userId = Integer.valueOf(clientReferenceId);
-                        paymentService.handleSuccessfulPayment(userId, userType);
-                        System.out.println("Successfully processed payment for User ID: " + userId);
-                    } catch (NumberFormatException e) {
-                        System.err.println("Error: client_reference_id is not a valid integer: " + clientReferenceId);
+                if ("company".equalsIgnoreCase(userType)) {
+                    // 企業サインアップ: metadata から会社情報を取り出してアカウント作成
+                    String companyName = (metadata != null) ? metadata.get("companyName") : null;
+                    String companyEmail = (metadata != null) ? metadata.get("companyEmail") : null;
+                    if (companyName != null && companyEmail != null) {
+                        paymentService.createCompanyAccount(companyName, companyEmail, metadata);
+                        System.out.println("Created company account for: " + companyEmail);
+                    } else {
+                        System.err.println("Missing company metadata: cannot create account");
                     }
                 } else {
-                    // stripe trigger 等のテストデータではここに入る
-                    System.out.println("Notice: Client Reference ID is null or empty. Skipping database update.");
+                    // 個人ユーザー処理（既存ロジック）
+                    if (clientReferenceId != null && !clientReferenceId.trim().isEmpty()) {
+                        try {
+                            Integer userId = Integer.valueOf(clientReferenceId);
+                            paymentService.handleSuccessfulPayment(userId, userType);
+                            System.out.println("Successfully processed payment for User ID: " + userId);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Error: client_reference_id is not a valid integer: " + clientReferenceId);
+                        }
+                    } else {
+                        System.out.println("Notice: Client Reference ID is null or empty. Skipping database update.");
+                    }
                 }
 
                 System.out.println("Finished processing checkout.session.completed event.");
@@ -100,6 +136,23 @@ public class PaymentController {
             System.err.println("Internal server error during webhook processing: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/session/{sessionId}")
+    public ResponseEntity<?> getUserFromSession(@PathVariable String sessionId) {
+        try {
+            java.util.Map<String, Object> info = paymentService.getUserInfoFromSession(sessionId);
+            if (info == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(java.util.Map.of("error", "user_not_found"));
+            }
+            return ResponseEntity.ok(info);
+        } catch (com.stripe.exception.StripeException se) {
+            System.err.println("Stripe error retrieving session: " + se.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("error", se.getMessage()));
+        } catch (Exception e) {
+            System.err.println("Error retrieving session user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("error", e.getMessage()));
         }
     }
 }

@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:bridge/03-home/09-company-home.dart';
+import 'package:bridge/03-home/08-student-worker-home.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ===============================
 // 決済完了画面（軽量版）
 // ===============================
 class PaymentSuccessScreen extends StatefulWidget {
-  const PaymentSuccessScreen({Key? key}) : super(key: key);
+  final String? userType;
+  const PaymentSuccessScreen({Key? key, this.userType}) : super(key: key);
 
   @override
   State<PaymentSuccessScreen> createState() => _PaymentSuccessScreenState();
@@ -41,6 +47,135 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
         if (mounted) setState(() => _showConfetti = false);
       });
     });
+
+    // 決済完了後はまず session_id があればバックエンドからユーザー情報を取得して保存してから遷移する
+    _handleSessionAndNavigate();
+  }
+
+  Future<void> _handleSessionAndNavigate() async {
+    // 1) 優先順: widget.userType -> query param -> fragment
+    String userType = widget.userType ?? '';
+    if (userType.isEmpty) userType = Uri.base.queryParameters['userType'] ?? '';
+    // extract session_id (query or fragment)
+    String? sessionId = Uri.base.queryParameters['session_id'];
+    if (sessionId == null || sessionId.isEmpty) {
+      // try fragment parsing
+      final frag =
+          Uri
+              .base
+              .fragment; // '/payment-success?userType=company&session_id=cs_...'
+      if (frag.contains('?')) {
+        final parts = frag.split('?');
+        if (parts.length > 1) {
+          try {
+            final qmap = Uri.splitQueryString(parts[1]);
+            sessionId = qmap['session_id'];
+            if ((userType.isEmpty) && qmap.containsKey('userType'))
+              userType = qmap['userType'] ?? '';
+          } catch (_) {
+            sessionId = null;
+          }
+        }
+      }
+    }
+
+    if (sessionId != null && sessionId.isNotEmpty) {
+      // Poll backend for user info (webhook may not have finished yet)
+      const int maxAttempts = 6;
+      int attempt = 0;
+      Map<String, dynamic>? user;
+      while (attempt < maxAttempts && mounted) {
+        try {
+          final res = await http.get(
+            Uri.parse(
+              'http://localhost:8080/api/v1/payment/session/$sessionId',
+            ),
+          );
+          if (res.statusCode == 200) {
+            user = jsonDecode(res.body) as Map<String, dynamic>;
+            break;
+          }
+        } catch (_) {
+          // ignore and retry
+        }
+        attempt++;
+        await Future.delayed(const Duration(seconds: 1));
+      }
+
+      if (user != null) {
+        // save to SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('current_user', jsonEncode(user));
+        // determine userType from returned user if available
+        final int? type =
+            user['type'] is int
+                ? user['type'] as int
+                : (user['type'] is String ? int.tryParse(user['type']) : null);
+        String finalUserType = userType;
+        if (type != null) {
+          if (type == 3)
+            finalUserType = 'company';
+          else if (type == 1)
+            finalUserType = '学生';
+          else if (type == 2)
+            finalUserType = '社会人';
+        }
+        // short delay to show success animation
+        await Future.delayed(const Duration(milliseconds: 800));
+        _navigateByUserType(finalUserType);
+        return;
+      } else {
+        // fallback: session present but user not ready — keep success screen and let user press button
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('アカウントの準備が整うまで少しお待ちください。ホームへはボタンから移動できます。'),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    // session_id が無ければ従来の遅延遷移を行う
+    await Future.delayed(const Duration(milliseconds: 6000));
+    _navigateByUserType(userType.isEmpty ? 'company' : userType);
+  }
+
+  void _navigateByUserType(String userType) {
+    String message;
+    switch (userType) {
+      case '学生':
+      case 'student':
+        message = '決済が完了しました。ご利用ありがとうございます！';
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => StudentWorkerHome(initialMessage: message),
+          ),
+          (route) => false,
+        );
+        return;
+      case '社会人':
+      case 'worker':
+        message = '決済が完了しました。ご利用ありがとうございます！';
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => StudentWorkerHome(initialMessage: message),
+          ),
+          (route) => false,
+        );
+        return;
+      case 'company':
+      case '企業':
+      default:
+        message = '企業アカウントの登録と決済が完了しました。ありがとうございます！';
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => CompanyHome(initialMessage: message),
+          ),
+          (route) => false,
+        );
+    }
   }
 
   @override
@@ -163,9 +298,12 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
                     const SizedBox(height: 40),
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.of(
-                          context,
-                        ).popUntil((route) => route.isFirst);
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (_) => const CompanyHome(),
+                          ),
+                          (route) => false,
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
@@ -251,7 +389,10 @@ class PaymentCancelScreen extends StatelessWidget {
                 const SizedBox(height: 40),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).popUntil((route) => route.isFirst);
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const CompanyHome()),
+                      (route) => false,
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,

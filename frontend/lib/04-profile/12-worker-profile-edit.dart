@@ -136,7 +136,6 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
     if (response.statusCode == 200) {
       final List<dynamic> selectedIndustriesData = jsonDecode(response.body);
 
-      // 修正ポイント: industry は文字列で返るのでシンプルに取得
       final List<String> selectedIndustryNames = selectedIndustriesData.map((e) {
         return e['industry'].toString();
       }).toList();

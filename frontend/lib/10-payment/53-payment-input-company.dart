@@ -6,20 +6,35 @@ Future<void> startWebCheckout({
   required int amount,
   required String currency,
   required String planType,
+  required String companyName,
+  required String companyEmail,
+  int? tempId,
+  String userType = 'company',
   String successUrl = "http://localhost:5000/#/payment-success",
   String cancelUrl = "http://localhost:5000/#/payment-cancel",
 }) async {
   try {
+    final String successUrlWithParam =
+        successUrl.contains('?')
+            ? '$successUrl&userType=${Uri.encodeComponent(userType)}&session_id={CHECKOUT_SESSION_ID}'
+            : '$successUrl?userType=${Uri.encodeComponent(userType)}&session_id={CHECKOUT_SESSION_ID}';
+
+    final Map<String, dynamic> payload = {
+      "amount": amount,
+      "currency": currency,
+      "planType": planType,
+      "userType": userType,
+      "companyName": companyName,
+      "companyEmail": companyEmail,
+      "successUrl": successUrlWithParam,
+      "cancelUrl": cancelUrl,
+    };
+    if (tempId != null) payload["tempId"] = tempId;
+
     final response = await http.post(
       Uri.parse("http://localhost:8080/api/v1/payment/checkout-session"),
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "amount": amount,
-        "currency": currency,
-        "planType": planType,
-        "successUrl": successUrl,
-        "cancelUrl": cancelUrl,
-      }),
+      body: jsonEncode(payload),
     );
 
     if (response.statusCode == 200) {
