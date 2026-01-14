@@ -5,12 +5,15 @@ import 'package:bridge/11-common/58-header.dart';
 import '32-thread-official-detail.dart';
 import '33-thread-unofficial-detail.dart';
 import 'thread-unofficial-list.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Thread モデル
 class Thread {
   final String id;
   final String title;
   final int type; // 1=公式, 2=非公式
+  final String description;
+  final int entryCriteria;//1=全員, 2=学生のみ, 3=社会人のみ
   final DateTime? lastCommentDate;
   final String timeAgo;
 
@@ -18,6 +21,8 @@ class Thread {
     required this.id,
     required this.title,
     required this.type,
+    required this.description,
+    required this.entryCriteria,
     this.lastCommentDate,
     required this.timeAgo,
   });
@@ -37,7 +42,9 @@ class Thread {
       id: json['id'].toString(),
       title: json['title']?.toString() ?? '',
       type: json['type'] != null ? int.parse(json['type'].toString()) : 2,
-      lastCommentDate: lastUpdateDate,  // ← ★ここ重要！
+      description: json['description']?.toString() ?? '',
+      entryCriteria: json['entryCriteria'],
+      lastCommentDate: lastUpdateDate,  // ← ここ重要！
       timeAgo: timeAgoText,
     );
   }
@@ -75,7 +82,19 @@ class ThreadList extends StatefulWidget {
 class _ThreadListState extends State<ThreadList> {
   List<Thread> officialThreads = [];
   List<Thread> hotUnofficialThreads = [];
+  //ユーザ情報取得
+  int? userType;
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('current_user');
+    if (jsonString == null) return;
 
+    final userData = jsonDecode(jsonString);
+
+    setState(() {
+      userType = userData['type']+1;
+    });
+  }
   @override
   void initState() {
     super.initState();
@@ -84,18 +103,27 @@ class _ThreadListState extends State<ThreadList> {
 
   Future<void> _fetchThreads() async {
     try {
+      //ちゃんと読み込めるようにawaitを付ける！
+      await _loadUserData();
+      print("aaaa");
+      print(userType);
+      print("aaaa");
       final threads = await fetchThreads();
       print(threads.map((t) => t.timeAgo).toList()); 
 
       setState(() {
         officialThreads = threads.where((t) => t.type == 1).toList();
-        hotUnofficialThreads = threads.where((t) => t.type == 2)
+        print(userType);
+        //リスト（ソートされた）を作る
+        hotUnofficialThreads = threads.where((t) => t.type == 2 && (t.entryCriteria == userType || t.entryCriteria == 1))
           .toList()
           ..sort((a, b) {
             final aDate = a.lastCommentDate ?? DateTime(2000);
             final bDate = b.lastCommentDate ?? DateTime(2000);
             return bDate.compareTo(aDate); // 新しい順
           });
+        //作られたリストに対して上位５件を取得
+        hotUnofficialThreads = hotUnofficialThreads.take(5).toList();
       });
     } catch (e) {
       print('スレッド取得に失敗: $e');
@@ -139,6 +167,15 @@ class _ThreadListState extends State<ThreadList> {
                         thread.title,
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      //スレッドの説明文
+                      subtitle: Text(
+                        thread.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                        ),
                       ),
                       trailing: Text(
                         thread.timeAgo,
@@ -202,6 +239,15 @@ class _ThreadListState extends State<ThreadList> {
                         thread.title,
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      //スレッドの説明文
+                      subtitle: Text(
+                        thread.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                        ),
                       ),
                       trailing: Text(
                         thread.timeAgo,

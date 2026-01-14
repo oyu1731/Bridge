@@ -4,18 +4,21 @@ import 'package:http/http.dart' as http;
 import 'package:bridge/11-common/58-header.dart';
 import '34-thread-create.dart';
 import '33-thread-unofficial-detail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Thread モデル（公式一覧と同じ構造に統一）
 class Thread {
   final String id;
   final String title;
   final int type; // 1=公式, 2=非公式
+  final int entryCriteria;// 1=全員,2=学生のみ,3=社会人のみ
   final String timeAgo;
 
   Thread({
     required this.id,
     required this.title,
     required this.type,
+    required this.entryCriteria,
     required this.timeAgo,
   });
 
@@ -32,6 +35,7 @@ class Thread {
       id: json['id'].toString(),
       title: json['title']?.toString() ?? '',
       type: json['type'] != null ? int.parse(json['type'].toString()) : 2,
+      entryCriteria: json['entryCriteria'],
       timeAgo: timeAgoText,
     );
   }
@@ -68,6 +72,19 @@ class ThreadUnofficialList extends StatefulWidget {
 class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
   List<Thread> unofficialThreads = [];
   List<Thread> filteredThreads = [];
+  //ユーザ情報取得
+  int? userType;
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('current_user');
+    if (jsonString == null) return;
+
+    final userData = jsonDecode(jsonString);
+
+    setState(() {
+      userType = userData['type']+1;
+    });
+  }
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -79,11 +96,11 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
 
   Future<void> _fetchUnofficialThreads() async {
     try {
+      _loadUserData();
       final allThreads = await fetchThreads();
-
       setState(() {
         unofficialThreads =
-            allThreads.where((t) => t.type == 2).toList(); // 非公式だけ取る
+            allThreads.where((t) => t.type == 2 && (t.entryCriteria == userType || t.entryCriteria == 1)).toList(); // 非公式だけ取る
         filteredThreads = List.from(unofficialThreads);
       });
     } catch (e) {
