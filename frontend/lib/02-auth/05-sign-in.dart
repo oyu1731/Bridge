@@ -19,6 +19,7 @@ class SignInPage extends StatefulWidget {
   @override
   State<SignInPage> createState() => _SignInPageState();
 }
+
 Future<void> saveSession(dynamic userData) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('current_user', jsonEncode(userData));
@@ -53,9 +54,7 @@ class _SignInPageState extends State<SignInPage> {
   Widget build(BuildContext context) {
     final base = Theme.of(context);
     final pageTheme = base.copyWith(
-      colorScheme: base.colorScheme.copyWith(
-        error: Colors.orange[800],
-      ),
+      colorScheme: base.colorScheme.copyWith(error: Colors.orange[800]),
       inputDecorationTheme: base.inputDecorationTheme.copyWith(
         errorStyle: const TextStyle(color: errorOrange),
         errorBorder: const OutlineInputBorder(
@@ -69,11 +68,9 @@ class _SignInPageState extends State<SignInPage> {
         fillColor: MaterialStateProperty.all<Color>(cyanDark),
         checkColor: MaterialStateProperty.all<Color>(Colors.white),
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: cyanDark,
-      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(color: cyanDark),
     );
-    
+
     return Theme(
       data: pageTheme,
     child: Scaffold(

@@ -391,7 +391,7 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
       builder: (context) => ImageCropDialog(imageBytes: bytes),
     );
     
-    if (croppedBytes == null) return; // キャンセルされた
+    if (croppedBytes == null) return;
     
     setState(() => _uploadingIcon = true);
     try {

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:bridge/main.dart';
 import 'package:bridge/03-home/09-company-home.dart';
+import '../10-payment/53-payment-input-company.dart';
 
 class CompanyInputPage extends StatefulWidget {
   const CompanyInputPage({super.key});
@@ -100,9 +101,10 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         setState(() {
-          _industries = data
-              .map((item) => {"id": item["id"], "name": item["industry"]})
-              .toList();
+          _industries =
+              data
+                  .map((item) => {"id": item["id"], "name": item["industry"]})
+                  .toList();
           _isLoading = false;
         });
       } else {
@@ -175,6 +177,14 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                       ),
                     ),
                     const SizedBox(height: 10),
+                    Text(
+                      '企業用アカウントは有料プランに加入していただく必要があります。',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.orange[700],
+                      ),
+                    ),
+                    const SizedBox(height: 5),
                     Text(
                       '※学生・社会人の方は、このページでは登録できません。',
                       style: TextStyle(
@@ -374,6 +384,12 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                                 ),
                               ),
                             ),
+                            validator: (v) {
+                              if (v == null || v.isEmpty) {
+                                return '所在地を入力してください';
+                              }
+                              return null;
+                            },
                           ),
                         ),
                       ],
@@ -482,38 +498,48 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                           'desiredIndustries': _selectedIndustryIds,
                         });
 
-                        try {
-                          final res = await http.post(
-                            Uri.parse('http://localhost:8080/api/users'),
-                            headers: {
-                              'Content-Type': 'application/json; charset=UTF-8'
-                            },
-                            body: body,
-                          );
+                    try {
+                      // 1) 一時サインアップを作成して tempId を取得
+                      final tempRes = await http.post(
+                        Uri.parse('http://localhost:8080/api/v1/temp-signups'),
+                        headers: {
+                          'Content-Type': 'application/json; charset=UTF-8',
+                        },
+                        body: body,
+                      );
 
-                          if (res.statusCode == 200) {
-                            final userData = jsonDecode(res.body);
-                            await saveSession(userData);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => CompanyHome(),
-                              ),
-                            );
-                          } else {
-                            setState(() {
-                              _errorMessage = 'サインアップに失敗しました';
-                            });
-                          }
-                        } catch (e) {
-                          if (!mounted) return;
-                          setState(() {
-                            _errorMessage = '通信エラー: $e';
-                          });
-                        }
-                      },
-                      child: const Text('作成'),
-                    ),
+                      if (tempRes.statusCode == 200 ||
+                          tempRes.statusCode == 201) {
+                        final tempData = jsonDecode(tempRes.body);
+                        final tempId = tempData['tempId'];
+
+                        // 2) Stripe Checkout を開始 (企業は金額例: 5000)
+                        await startWebCheckout(
+                          amount: 5000,
+                          currency: 'JPY',
+                          planType: 'プレミアム',
+                          companyName: _nicknameController.text,
+                          companyEmail: _emailController.text,
+                          tempId:
+                              tempId is int
+                                  ? tempId
+                                  : int.tryParse(tempId.toString()),
+                        );
+                        // Checkout にリダイレクトされるため、ここでの画面遷移は不要
+                      } else {
+                        setState(() {
+                          _errorMessage = '一時サインアップの作成に失敗しました';
+                        });
+                      }
+                    } catch (e) {
+                      if (!mounted) return;
+                      setState(() {
+                        _errorMessage = '通信エラー: $e';
+                      });
+                    }
+                  },
+                  child: const Text('次へ'),
+                ),
 
                     if (_errorMessage.isNotEmpty)
                       Padding(

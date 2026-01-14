@@ -41,8 +41,8 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
   String? _iconUrl;
   bool _uploadingIcon = false;
 
-  bool _isSaving = false; // 保存中フラグ
-  
+  bool _isSaving = false;
+
   // 統一カラー
   // static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
   // static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
@@ -153,7 +153,6 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
     if (response.statusCode == 200) {
       final List<dynamic> selectedIndustriesData = jsonDecode(response.body);
 
-      // 修正ポイント: industry は文字列で返るのでシンプルに取得
       final List<String> selectedIndustryNames = selectedIndustriesData.map((e) {
         return e['industry'].toString();
       }).toList();
