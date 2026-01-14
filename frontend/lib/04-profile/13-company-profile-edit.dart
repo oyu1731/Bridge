@@ -42,6 +42,12 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
   bool _uploadingIcon = false;
 
   bool _isSaving = false; // 保存中フラグ
+  
+  // 統一カラー
+  // static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
+  // static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
+  // static const Color errorOrange = Color.fromARGB(255, 239, 108, 0);
+  static const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
 
   @override
   void initState() {
@@ -177,6 +183,12 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
             Center(
               child: Column(
                 children: [
+                  Text("プロフィールアイコン",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: textCyanDark
+                    ),
+                  ),
                   Stack(
                     children: [
                       CircleAvatar(
@@ -210,7 +222,6 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Text("プロフィールアイコン"),
                 ],
               ),
             ),
@@ -260,25 +271,16 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
             _buildLabel("詳細"),
             _buildTextField(_companyDescriptionController, maxLines: 5),
             const SizedBox(height: 30),
-            _buildLabel("業界"),
+            _buildLabel("所属業界"),
             Column(
               children: industries.map((industry) {
                 return CheckboxListTile(
                   title: Text(industry.name),
                   value: industry.isSelected,
                   onChanged: (bool? value) {
-                    if (value == true) {
-                      setState(() {
-                        for (var ind in industries) {
-                          ind.isSelected = false;
-                        }
-                        industry.isSelected = true;
-                      });
-                    } else {
-                      setState(() {
-                        industry.isSelected = false;
-                      });
-                    }
+                    setState(() {
+                      industry.isSelected = value ?? false;
+                    });
                   },
                 );
               }).toList(),
@@ -286,6 +288,10 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
             const SizedBox(height: 30),
             Center(
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orangeAccent[400],
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: _isSaving
                     ? null
                     : () async {
@@ -295,7 +301,10 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
                       },
                 child: _isSaving
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('編集'),
+                    : const Text('編集',
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),),
               ),
             ),
           ],
@@ -307,7 +316,11 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
   Widget _buildLabel(String text) {
     return Text(
       text,
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: textCyanDark,
+      ),
     );
   }
 

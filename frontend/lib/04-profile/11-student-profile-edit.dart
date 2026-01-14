@@ -42,9 +42,9 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
 
 
   // 統一カラー
-  static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
-  static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
-  static const Color errorOrange = Color.fromARGB(255, 239, 108, 0);
+  // static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
+  // static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
+  // static const Color errorOrange = Color.fromARGB(255, 239, 108, 0);
   static const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
 
   @override
@@ -165,6 +165,12 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
                 children: [
                   Stack(
                     children: [
+                      Text("プロフィールアイコン",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: textCyanDark
+                        ),
+                      ),
                       CircleAvatar(
                         radius: 55,
                         backgroundColor: Colors.grey.shade200,
@@ -196,12 +202,6 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Text("プロフィールアイコン",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: textCyanDark
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -215,25 +215,16 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
             _buildLabel("電話番号"),
             _buildTextField(_phoneNumberController),
             const SizedBox(height: 20),
-            _buildLabel("業界"),
+            _buildLabel("希望業界"),
             Column(
               children: industries.map((industry) {
                 return CheckboxListTile(
                   title: Text(industry.name),
                   value: industry.isSelected,
                   onChanged: (bool? value) {
-                    if (value == true) {
-                      setState(() {
-                        for (var ind in industries) {
-                          ind.isSelected = false;
-                        }
-                        industry.isSelected = true;
-                      });
-                    } else {
-                      setState(() {
-                        industry.isSelected = false;
-                      });
-                    }
+                    setState(() {
+                      industry.isSelected = value ?? false;
+                    });
                   },
                 );
               }).toList(),
@@ -242,8 +233,8 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
             Center(
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orangeAccent, // ← 背景色
-                  foregroundColor: Colors.white,         // ← 文字色
+                  backgroundColor: Colors.orangeAccent[400],
+                  foregroundColor: Colors.white,
                 ),
                 onPressed: _isSaving
                     ? null
@@ -257,7 +248,6 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
                     : const Text('編集',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w600,
                         ),
                     ),
               ),
