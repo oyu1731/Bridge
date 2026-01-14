@@ -72,7 +72,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: orangeAccent,
+              backgroundColor: Colors.orangeAccent[400],
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -179,7 +179,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                             : const Icon(Icons.exit_to_app),
                         label: Text(_isProcessing ? '処理中...' : '退会する'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: orangeAccent,
+                          backgroundColor: Colors.orangeAccent[400],
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
