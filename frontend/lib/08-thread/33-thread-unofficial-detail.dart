@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:bridge/11-common/58-header.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ThreadUnOfficialDetail extends StatefulWidget {
 final Map<String, dynamic> thread;
@@ -23,8 +24,18 @@ final TextEditingController _messageController = TextEditingController();
 final TextEditingController _searchController = TextEditingController();
 final ScrollController _scrollController = ScrollController();
 //ユーザーidを持ってくるが、今は固定値で作っている
-//Stringの場合
-final String currentUserId = '2';
+//initでユーザのIDを入れる
+  String currentUserId="";
+  //ユーザ情報取得
+  Future<void> _loadCurrentUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('current_user');
+    if (jsonString == null) return;
+    final userData = jsonDecode(jsonString);
+    setState(() {
+      currentUserId = userData['id'].toString();
+    });
+  }
 //useridを指定して情報を取得する箱
 Map<String, String> _userNicknames = {};
 List<Map<String, dynamic>> _messages = [];
@@ -41,22 +52,22 @@ String? _webImageName;
 bool _isUploading = false;
 
 Future<void> pickImage() async {
-final picker = ImagePicker();
-final XFile? picked = await picker.pickImage(source: ImageSource.gallery);
-if (picked == null) return;
-if (kIsWeb) {
-final bytes = await picked.readAsBytes();
-setState(() {
-_webImageBytes = bytes;
-_webImageName = picked.name;
-_selectedImage = null;
-});
-} else {
-setState(() {
-_selectedImage = File(picked.path);
-_webImageBytes = null;
-});
-}
+  final picker = ImagePicker();
+  final XFile? picked = await picker.pickImage(source: ImageSource.gallery);
+  if (picked == null) return;
+  if (kIsWeb) {
+    final bytes = await picked.readAsBytes();
+    setState(() {
+    _webImageBytes = bytes;
+    _webImageName = picked.name;
+    _selectedImage = null;
+    });
+  } else {
+    setState(() {
+      _selectedImage = File(picked.path);
+      _webImageBytes = null;
+    });
+  }
 }
 
 Future<int?> uploadImage() async {
@@ -75,7 +86,7 @@ if (kIsWeb) {
 } else {
   request.files.add(await http.MultipartFile.fromPath(
     'file', _selectedImage!.path,
-    contentType: MediaType('image', 'jpeg'),
+    // contentType: MediaType('image', 'jpeg'),
   ));
 }
 
@@ -83,9 +94,11 @@ try {
   final response = await request.send();
   final body = await response.stream.bytesToString();
   if (response.statusCode == 201) {
-    final int? photoId = int.tryParse(
-      RegExp(r'"id"\s*:\s*(\d+)').firstMatch(body)?.group(1) ?? '',
-    );
+    final jsonBody = jsonDecode(body);
+    final photoId = jsonBody['id'];
+    // final int? photoId = int.tryParse( 
+    //   RegExp(r'"id"\s*:\s*(\d+)').firstMatch(body)?.group(1) ?? '',
+    // );
     return photoId;
   }
   return null;
@@ -108,43 +121,44 @@ return null;
 
 @override
 void initState() {
-super.initState();
-_messageStreamController = StreamController<List<Map<String, dynamic>>>.broadcast();
-_fetchMessages();
-_channel = WebSocketChannel.connect(
-  Uri.parse('ws://localhost:8080/ws/chat/${widget.thread['id']}'),
-);
+  super.initState();
+  _messageStreamController = StreamController<List<Map<String, dynamic>>>.broadcast();
+  _loadCurrentUser();
+  _fetchMessages();
+  _channel = WebSocketChannel.connect(
+    Uri.parse('ws://localhost:8080/ws/chat/${widget.thread['id']}'),
+  );
 
-_channel.stream.listen((data) {
-  try {
-    final msg = Map<String, dynamic>.from(jsonDecode(data));
-    if (!_messages.any((m) => m['id'] == msg['id'])) {
-      _messages.add({
-        'id': msg['id'],
-        'user_id': msg['userId'].toString(),
-        'text': msg['content'],
-        'created_at': msg['createdAt'],
-        'photoId': msg['photoId'],
-      });
-      _messages.sort((a, b) =>
-          DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
-      _messageStreamController.add(List.from(_messages));
-      // _scrollToBottom();
+  _channel.stream.listen((data) {
+    try {
+      final msg = Map<String, dynamic>.from(jsonDecode(data));
+      if (!_messages.any((m) => m['id'] == msg['id'])) {
+        _messages.add({
+          'id': msg['id'],
+          'user_id': msg['userId'].toString(),
+          'text': msg['content'],
+          'created_at': msg['createdAt'],
+          'photoId': msg['photoId'],
+        });
+        _messages.sort((a, b) =>
+            DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+        _messageStreamController.add(List.from(_messages));
+        // _scrollToBottom();
+      }
+    } catch (e) {
+      print("WebSocket parse error: $e");
     }
-  } catch (e) {
-    print("WebSocket parse error: $e");
-  }
-});
+  });
 }
 
 @override
 void dispose() {
-_channel.sink.close();
-_messageStreamController.close();
-_scrollController.dispose();
-_messageController.dispose();
-_searchController.dispose();
-super.dispose();
+  _channel.sink.close();
+  _messageStreamController.close();
+  _scrollController.dispose();
+  _messageController.dispose();
+  _searchController.dispose();
+  super.dispose();
 }
 
 Future<void> _fetchMessages() async {
