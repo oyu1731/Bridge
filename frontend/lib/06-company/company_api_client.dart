@@ -15,6 +15,7 @@ class CompanyDTO {
   final int? photoId;
   final String? photoPath; // 写真パスを追加
   final String? industry; // 業界情報を追加
+  final int? iconId; // ユーザーのアイコンID
 
   CompanyDTO({
     this.id,
@@ -29,6 +30,7 @@ class CompanyDTO {
     this.photoId,
     this.photoPath, // 写真パスを追加
     this.industry, // 業界情報を追加
+    this.iconId,
   });
 
   factory CompanyDTO.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,7 @@ class CompanyDTO {
       photoId: json['photoId'],
       photoPath: fullPhotoPath, // フルURLに変換した写真パス
       industry: json['industry'], // 業界情報を追加
+      iconId: json['iconId'], // ユーザーのアイコンID
     );
   }
 
@@ -70,6 +73,7 @@ class CompanyDTO {
       'photoId': photoId,
       'photoPath': photoPath, // 写真パスを追加
       'industry': industry, // 業界情報を追加
+      'iconId': iconId, // ユーザーのアイコンID
     };
   }
 }

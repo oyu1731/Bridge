@@ -133,9 +133,9 @@ Future<void> _onSubmit() async {
                   const SizedBox(height: 28),
 
                   // --- タイトル ---
-                  const Text('パスワード編集', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Text('パスワード変更', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
-                  const Text('パスワードの変更を行います。\n現在のパスワードと、新しいパスワードを入力してください。',
+                  const Text('現在のパスワードと、新しいパスワードを入力してください。',
                       style: TextStyle(color: Colors.black54)),
 
                   const SizedBox(height: 28),

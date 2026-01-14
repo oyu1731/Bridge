@@ -16,6 +16,7 @@ public class CompanyDTO {
     private Boolean isWithdrawn;
 
     private Integer userId;
+    private Integer iconId; // ユーザーのアイコンID
     
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -174,5 +175,13 @@ public class CompanyDTO {
 
     public void setUserId(Integer userId) {
         this.userId = userId;
+    }
+    
+    public Integer getIconId() {
+        return iconId;
+    }
+    
+    public void setIconId(Integer iconId) {
+        this.iconId = iconId;
     }
 }

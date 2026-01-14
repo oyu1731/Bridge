@@ -14,6 +14,31 @@ import java.util.Optional;
 @RequestMapping("/api/companies")
 @CrossOrigin(origins = "*") // Flutter アプリからのアクセスを許可
 public class CompanyController {
+        /**
+         * 企業写真IDを更新
+         * PUT /api/companies/{id}/photo
+         */
+        @PutMapping("/{id}/photo")
+        public ResponseEntity<Void> updateCompanyPhoto(@PathVariable Integer id, @RequestBody PhotoIdRequest request) {
+            try {
+                boolean updated = companyService.updateCompanyPhotoId(id, request.getPhotoId());
+                if (updated) {
+                    return ResponseEntity.ok().build();
+                } else {
+                    return ResponseEntity.notFound().build();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        }
+
+        // リクエスト用DTO
+        public static class PhotoIdRequest {
+            private Integer photo_id;
+            public Integer getPhotoId() { return photo_id; }
+            public void setPhotoId(Integer photo_id) { this.photo_id = photo_id; }
+        }
     
     @Autowired
     private CompanyService companyService;
