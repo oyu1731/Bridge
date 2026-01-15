@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 
 class AdminAccountDetail extends StatefulWidget {
-
   final int userId;
   const AdminAccountDetail({required this.userId, super.key});
 
@@ -34,11 +33,7 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
           'comment': 'IT業界に興味があります！',
           'date': '2025-10-20',
         },
-        {
-          'thread': '自己紹介スレッド',
-          'comment': 'よろしくお願いします！',
-          'date': '2025-10-01',
-        },
+        {'thread': '自己紹介スレッド', 'comment': 'よろしくお願いします！', 'date': '2025-10-01'},
       ],
     },
     {
@@ -95,7 +90,9 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
     if (user.isNotEmpty) {
       setState(() {
         _userData = user;
-        _commentHistory = List<Map<String, dynamic>>.from(user['comments'] ?? []);
+        _commentHistory = List<Map<String, dynamic>>.from(
+          user['comments'] ?? [],
+        );
       });
     }
   }
@@ -117,19 +114,21 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: BridgeHeader(),
-      body: _userData == null
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildUserInfoCard(),
-                  const SizedBox(height: 32),
-                  _buildCommentHistoryTable(),
-                ],
+      body:
+          _userData == null
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildUserInfoCard(),
+                    const SizedBox(height: 32),
+                    _buildCommentHistoryTable(),
+                  ],
+                ),
               ),
-            ),
     );
   }
 
@@ -144,7 +143,11 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
             border: Border.all(color: Colors.grey.shade400),
             borderRadius: BorderRadius.circular(8),
             boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
             ],
           ),
           child: Column(
@@ -154,10 +157,7 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 40,
-                    child: Text(_userData!['icon']),
-                  ),
+                  CircleAvatar(radius: 40, child: Text(_userData!['icon'])),
                   const SizedBox(width: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,7 +172,10 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Text('アカウントID: ', style: TextStyle(color: Colors.grey)),
+                          const Text(
+                            'アカウントID: ',
+                            style: TextStyle(color: Colors.grey),
+                          ),
                           Text(_userData!['accountId']),
                         ],
                       ),
@@ -219,20 +222,24 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text('削除確認'),
-                  content: const Text('このアカウント情報を削除しますか？'),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('キャンセル')),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                        // TODO: バック側で削除処理
-                      },
-                      child: const Text('削除'),
+                builder:
+                    (_) => AlertDialog(
+                      title: const Text('削除確認'),
+                      content: const Text('このアカウント情報を削除しますか？'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('キャンセル'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context, true);
+                            // TODO: バック側で削除処理
+                          },
+                          child: const Text('削除'),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
               );
             },
             tooltip: 'アカウント削除',
@@ -247,7 +254,13 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          SizedBox(width: 90, child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold))),
+          SizedBox(
+            width: 90,
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
           Expanded(child: Text(value)),
         ],
       ),
@@ -265,7 +278,10 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('コメント履歴', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text(
+            'コメント履歴',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 12),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -274,24 +290,33 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
                 height: 300,
                 child: Scrollbar(
                   child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
                     scrollDirection: Axis.vertical,
                     child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
                       scrollDirection: Axis.horizontal,
                       child: ConstrainedBox(
-                        constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                        constraints: BoxConstraints(
+                          minWidth: constraints.maxWidth,
+                        ),
                         child: DataTable(
                           columns: const [
                             DataColumn(label: Text('スレッド名')),
                             DataColumn(label: Text('コメント')),
                             DataColumn(label: Text('日付')),
                           ],
-                          rows: _commentHistory
-                              .map((comment) => DataRow(cells: [
-                                    DataCell(Text(comment['thread'])),
-                                    DataCell(Text(comment['comment'])),
-                                    DataCell(Text(comment['date'])),
-                                  ]))
-                              .toList(),
+                          rows:
+                              _commentHistory
+                                  .map(
+                                    (comment) => DataRow(
+                                      cells: [
+                                        DataCell(Text(comment['thread'])),
+                                        DataCell(Text(comment['comment'])),
+                                        DataCell(Text(comment['date'])),
+                                      ],
+                                    ),
+                                  )
+                                  .toList(),
                         ),
                       ),
                     ),

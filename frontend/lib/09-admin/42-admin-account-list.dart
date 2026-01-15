@@ -140,6 +140,7 @@ class _AdminAccountListState extends State<AdminAccountList> {
               : _errorMessage.isNotEmpty
               ? Center(child: Text(_errorMessage))
               : SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [

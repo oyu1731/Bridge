@@ -162,6 +162,7 @@ class _AiTrainingListPageState extends State<AiTrainingListPage> {
                         behavior:
                             NoThumbScrollBehavior(), // カスタムのScrollBehaviorを適用
                         child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
                           padding: EdgeInsets.symmetric(
                             horizontal: isLargeScreen ? 40.0 : 20.0,
                             vertical: 20.0,

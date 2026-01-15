@@ -116,6 +116,7 @@ class _PhonePracticeState extends State<PhonePractice> {
                 ),
               ),
               child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -965,6 +966,7 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
                       const SizedBox(height: 16),
                       Expanded(
                         child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
                           child: Text(
                             _currentAIMessage,
                             style: const TextStyle(

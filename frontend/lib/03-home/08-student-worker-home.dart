@@ -111,6 +111,7 @@ Widget _buildTopPageTab(BuildContext context) {
       }
       final articles = snapshot.data ?? [];
       return SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

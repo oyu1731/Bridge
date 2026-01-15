@@ -358,6 +358,7 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

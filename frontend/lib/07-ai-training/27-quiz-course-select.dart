@@ -1,3 +1,4 @@
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/59-global-method.dart';
@@ -27,6 +28,7 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
     return ScreenWrapper(
       appBar: BridgeHeader(),
       child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -236,7 +238,7 @@ class _RankingScreenState extends State<RankingScreen> {
       final response = await http.get(
         Uri.parse(
           // 'http://localhost:8080/api/quiz/ranking',
-          '${GlobalActions.getApiBaseUrl()}/api/quiz/ranking',
+          '${ApiConfig.baseUrl}/api/quiz/ranking',
         ), // バックエンドAPIのエンドポイント
         headers: {'Content-Type': 'application/json'},
       );

@@ -47,20 +47,18 @@ class _AdminThreadListState extends State<AdminThreadList> {
     setState(() {
       officialThreads = [
         Thread(
-            id: 1,
-            title: '学生・社会人',
-            lastComment: '最近忙しいけど頑張ってる！',
-            timeAgo: '3分前'),
+          id: 1,
+          title: '学生・社会人',
+          lastComment: '最近忙しいけど頑張ってる！',
+          timeAgo: '3分前',
+        ),
         Thread(
-            id: 2,
-            title: '学生',
-            lastComment: 'テスト期間でやばいです…',
-            timeAgo: '15分前'),
-        Thread(
-            id: 3,
-            title: '社会人',
-            lastComment: '残業が多くてつらい…',
-            timeAgo: '42分前'),
+          id: 2,
+          title: '学生',
+          lastComment: 'テスト期間でやばいです…',
+          timeAgo: '15分前',
+        ),
+        Thread(id: 3, title: '社会人', lastComment: '残業が多くてつらい…', timeAgo: '42分前'),
       ];
 
       unofficialThreads = [
@@ -76,20 +74,21 @@ class _AdminThreadListState extends State<AdminThreadList> {
   void _deleteThread(List<Thread> threadList, int index) async {
     bool confirm = await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('削除確認'),
-        content: Text('このスレッドを削除しますか？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('キャンセル'),
+      builder:
+          (_) => AlertDialog(
+            title: Text('削除確認'),
+            content: Text('このスレッドを削除しますか？'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('キャンセル'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text('削除'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('削除'),
-          ),
-        ],
-      ),
     );
 
     if (confirm) {
@@ -99,16 +98,18 @@ class _AdminThreadListState extends State<AdminThreadList> {
     }
   }
 
-  Widget _buildThreadCard(Thread thread, List<Thread> threadList, int index,
-      {bool showLastComment = false}) {
+  Widget _buildThreadCard(
+    Thread thread,
+    List<Thread> threadList,
+    int index, {
+    bool showLastComment = false,
+  }) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => AdminThreadDetail(
-              threadId: thread.id,
-            ),
+            builder: (context) => AdminThreadDetail(threadId: thread.id),
           ),
         );
       },
@@ -116,30 +117,26 @@ class _AdminThreadListState extends State<AdminThreadList> {
         color: Colors.white, // 背景を白に
         margin: EdgeInsets.symmetric(vertical: 6),
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ListTile(
           contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           title: Text(
             thread.title,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          subtitle: showLastComment && thread.lastComment != null
-              ? Text(
-                  thread.lastComment!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.black87, fontSize: 14),
-                )
-              : null,
+          subtitle:
+              showLastComment && thread.lastComment != null
+                  ? Text(
+                    thread.lastComment!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.black87, fontSize: 14),
+                  )
+                  : null,
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                thread.timeAgo,
-                style: TextStyle(color: Colors.grey),
-              ),
+              Text(thread.timeAgo, style: TextStyle(color: Colors.grey)),
               SizedBox(width: 8),
               IconButton(
                 icon: Icon(Icons.delete, color: Colors.black),
@@ -157,6 +154,7 @@ class _AdminThreadListState extends State<AdminThreadList> {
     return Scaffold(
       appBar: BridgeHeader(),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,42 +166,50 @@ class _AdminThreadListState extends State<AdminThreadList> {
             ),
             SizedBox(height: 10),
             Column(
-              children: officialThreads.map((thread) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AdminThreadDetail(threadId: thread.id),
+              children:
+                  officialThreads.map((thread) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) =>
+                                    AdminThreadDetail(threadId: thread.id),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        margin: EdgeInsets.symmetric(vertical: 6),
+                        elevation: 2,
+                        child: ListTile(
+                          title: Text(
+                            thread.title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle:
+                              thread.lastComment != null
+                                  ? Text(
+                                    thread.lastComment!,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 14,
+                                    ),
+                                  )
+                                  : null,
+                          trailing: Text(
+                            thread.timeAgo,
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
                       ),
                     );
-                  },
-                  child: Card(
-                    margin: EdgeInsets.symmetric(vertical: 6),
-                    elevation: 2,
-                    child: ListTile(
-                      title: Text(
-                        thread.title,
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: thread.lastComment != null
-                          ? Text(
-                              thread.lastComment!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  color: Colors.black87, fontSize: 14),
-                            )
-                          : null,
-                      trailing: Text(
-                        thread.timeAgo,
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                  }).toList(),
             ),
             SizedBox(height: 30),
 
@@ -233,33 +239,38 @@ class _AdminThreadListState extends State<AdminThreadList> {
             ),
             SizedBox(height: 10),
             Column(
-              children: unofficialThreads.map((thread) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AdminThreadDetail(threadId: thread.id),
+              children:
+                  unofficialThreads.map((thread) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) =>
+                                    AdminThreadDetail(threadId: thread.id),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        margin: EdgeInsets.symmetric(vertical: 6),
+                        elevation: 2,
+                        child: ListTile(
+                          title: Text(
+                            thread.title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          trailing: Text(
+                            thread.timeAgo,
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
                       ),
                     );
-                  },
-                  child: Card(
-                    margin: EdgeInsets.symmetric(vertical: 6),
-                    elevation: 2,
-                    child: ListTile(
-                      title: Text(
-                        thread.title,
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      trailing: Text(
-                        thread.timeAgo,
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                  }).toList(),
             ),
           ],
         ),

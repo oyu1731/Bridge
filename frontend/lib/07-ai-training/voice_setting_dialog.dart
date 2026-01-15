@@ -142,6 +142,7 @@ class _VoiceSettingDialogState extends State<VoiceSettingDialog> {
     return AlertDialog(
       title: const Text('AI音声設定'),
       content: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -85,6 +85,7 @@ class _PhoneResultScreenState extends State<PhoneResultScreen> {
               : _errorMessage.isNotEmpty
               ? Center(child: Text(_errorMessage))
               : SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

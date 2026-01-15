@@ -662,6 +662,7 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
                 ),
                 child: SafeArea(
                   child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
