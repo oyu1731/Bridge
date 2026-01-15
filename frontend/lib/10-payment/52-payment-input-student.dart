@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:bridge/06-company/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:html' as html;
 
@@ -19,7 +20,8 @@ Future<void> startWebCheckout({
   try {
     print("--- DB先行更新リクエスト開始 ---");
     final dbResponse = await http.post(
-      Uri.parse("http://localhost:8080/api/subscriptions/subscribe"),
+      // Uri.parse("http://localhost:8080/api/subscriptions/subscribe"),
+      Uri.parse("${ApiConfig.baseUrl}/api/subscriptions/subscribe"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "userId": userId,
@@ -57,12 +59,13 @@ Future<void> startWebCheckout({
   payload['successUrl'] = effectiveSuccessUrl;
 
   print("===== Stripe Checkout リクエスト開始 =====");
-  print("送信先: http://localhost:8080/api/v1/payment/checkout-session");
+  // print("送信先: http://localhost:8080/api/v1/payment/checkout-session");
+  print("送信先: ${ApiConfig.baseUrl}/api/v1/payment/checkout-session");
   print("送信データ(JSON): ${jsonEncode(payload)}");
 
   try {
     final response = await http.post(
-      Uri.parse("http://localhost:8080/api/v1/payment/checkout-session"),
+      Uri.parse("${ApiConfig.baseUrl}/api/v1/payment/checkout-session"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(payload),
     );

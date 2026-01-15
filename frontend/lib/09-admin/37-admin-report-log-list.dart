@@ -21,10 +21,10 @@ id -id-
 // Notification モデル
 class NoticeData {
   final int id;
-  final int? fromUserId;  // nullable
-  final int? toUserId;    // nullable
-  final int? threadId;    // nullable
-  final int? chatId;      // nullable
+  final int? fromUserId; // nullable
+  final int? toUserId; // nullable
+  final int? threadId; // nullable
+  final int? chatId; // nullable
   final DateTime? createdAt;
 
   NoticeData({
@@ -43,20 +43,21 @@ class NoticeData {
       toUserId: json['toUserId'] != null ? json['toUserId'] as int : null,
       threadId: json['threadId'] != null ? json['threadId'] as int : null,
       chatId: json['chatId'] != null ? json['chatId'] as int : null,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
     );
   }
 }
 
 class _AdminReportLogListState extends State<AdminReportLogList> {
-
   List<NoticeData> _notices = [];
   bool _loading = true;
 
   Future<void> _fetchNotices() async {
     try {
       final response = await http.get(
-        Uri.parse("http://localhost:8080/api/notices"),
+        // Uri.parse("http://localhost:8080/api/notices"),
+        Uri.parse("https://api.bridge-tesg.com/api/notices"),
       );
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -112,129 +113,147 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
             const Divider(height: 1),
 
             Expanded(
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      itemCount: _notices.length,
-                      itemBuilder: (context, index) {
-                        final log = _notices[index];
+              child:
+                  _loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : ListView.builder(
+                        itemCount: _notices.length,
+                        itemBuilder: (context, index) {
+                          final log = _notices[index];
 
-                        return Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: Colors.grey.shade300),
+                          return Container(
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(color: Colors.grey.shade300),
+                              ),
                             ),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: Center(
-                                  child: Text(
-                                    log.createdAt?.toString().split('.')[0] ?? '',
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Center(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => AdminAccountDetail(userId: log.fromUserId!),
-                                        ),
-                                      );
-                                    },
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: Center(
                                     child: Text(
-                                      log.fromUserId.toString(),
-                                      style: const TextStyle(
-                                        color: Colors.blue,
-                                        decoration: TextDecoration.underline,
-                                      ),
+                                      log.createdAt?.toString().split('.')[0] ??
+                                          '',
                                     ),
                                   ),
                                 ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Center(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => AdminAccountDetail(userId: log.toUserId!),
-                                        ),
-                                      );
-                                    },
-                                    child: Text(
-                                      log.toUserId.toString(),
-                                      style: const TextStyle(
-                                        color: Colors.blue,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 3,
-                                child: Center(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => AdminThreadDetail(threadId: log.threadId!),
-                                        ),
-                                      );
-                                    },
-                                    child: Text(
-                                      log.threadId.toString(),
-                                      style: const TextStyle(
-                                        color: Colors.blue,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 4,
-                                child: Center(
-                                  child: log.chatId != 0
-                                      ? GestureDetector(
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => AdminThreadDetail(threadId: log.threadId!),
-                                              ),
-                                            );
-                                          },
-                                          child: Text(
-                                            log.chatId.toString(),
-                                            style: const TextStyle(
-                                              color: Colors.blue,
-                                              decoration: TextDecoration.underline,
-                                            ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Center(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => AdminAccountDetail(
+                                                  userId: log.fromUserId!,
+                                                ),
                                           ),
-                                        )
-                                      : Text('—'),
+                                        );
+                                      },
+                                      child: Text(
+                                        log.fromUserId.toString(),
+                                        style: const TextStyle(
+                                          color: Colors.blue,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              Expanded(
-                                flex: 1,
-                                child: Center(child: Text(log.id.toString())),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Center(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => AdminAccountDetail(
+                                                  userId: log.toUserId!,
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                      child: Text(
+                                        log.toUserId.toString(),
+                                        style: const TextStyle(
+                                          color: Colors.blue,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 3,
+                                  child: Center(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => AdminThreadDetail(
+                                                  threadId: log.threadId!,
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                      child: Text(
+                                        log.threadId.toString(),
+                                        style: const TextStyle(
+                                          color: Colors.blue,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 4,
+                                  child: Center(
+                                    child:
+                                        log.chatId != 0
+                                            ? GestureDetector(
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (context) =>
+                                                            AdminThreadDetail(
+                                                              threadId:
+                                                                  log.threadId!,
+                                                            ),
+                                                  ),
+                                                );
+                                              },
+                                              child: Text(
+                                                log.chatId.toString(),
+                                                style: const TextStyle(
+                                                  color: Colors.blue,
+                                                  decoration:
+                                                      TextDecoration.underline,
+                                                ),
+                                              ),
+                                            )
+                                            : Text('—'),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: Center(child: Text(log.id.toString())),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
             ),
           ],
         ),

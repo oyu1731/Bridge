@@ -1,3 +1,4 @@
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -13,7 +14,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ThreadOfficialDetail extends StatefulWidget {
   final Map<String, dynamic> thread;
-  const ThreadOfficialDetail({required this.thread, Key? key}) : super(key: key);
+  const ThreadOfficialDetail({required this.thread, Key? key})
+    : super(key: key);
 
   @override
   _ThreadOfficialDetailState createState() => _ThreadOfficialDetailState();
@@ -24,7 +26,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   //initでユーザのIDを入れる
-  String currentUserId="";
+  String currentUserId = "";
   //ユーザ情報取得
   Future<void> _loadCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
@@ -35,14 +37,17 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
       currentUserId = userData['id'].toString();
     });
   }
+
   Map<String, String> _userNicknames = {};
   List<Map<String, dynamic>> _messages = [];
   String searchText = '';
   bool _isSending = false;
 
-  late final StreamController<List<Map<String, dynamic>>> _messageStreamController;
+  late final StreamController<List<Map<String, dynamic>>>
+  _messageStreamController;
   late final WebSocketChannel _channel;
-  final String baseUrl = 'http://localhost:8080/api';
+  // final String baseUrl = 'http://localhost:8080/api';
+  final String baseUrl = ApiConfig.baseUrl;
 
   File? _selectedImage;
   Uint8List? _webImageBytes;
@@ -52,7 +57,8 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   @override
   void initState() {
     super.initState();
-    _messageStreamController = StreamController<List<Map<String, dynamic>>>.broadcast();
+    _messageStreamController =
+        StreamController<List<Map<String, dynamic>>>.broadcast();
     _loadCurrentUser();
     _fetchMessages();
 
@@ -71,8 +77,11 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
             'created_at': msg['createdAt'],
             'photoId': msg['photoId'],
           });
-          _messages.sort((a, b) =>
-              DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+          _messages.sort(
+            (a, b) => DateTime.parse(
+              a['created_at'],
+            ).compareTo(DateTime.parse(b['created_at'])),
+          );
           _messageStreamController.add(List.from(_messages));
 
           //ページを開いたときに下まで移動する（移動しないだめコメントアウト）
@@ -122,18 +131,22 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     final request = http.MultipartRequest('POST', uri);
     request.fields['userId'] = currentUserId;
     if (kIsWeb) {
-      request.files.add(http.MultipartFile.fromBytes(
-        'file',
-        _webImageBytes!,
-        filename: _webImageName ?? "upload.jpg",
-        contentType: MediaType('image', 'jpeg'),
-      ));
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          _webImageBytes!,
+          filename: _webImageName ?? "upload.jpg",
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      );
     } else {
-      request.files.add(await http.MultipartFile.fromPath(
-        'file',
-        _selectedImage!.path,
-        // contentType: MediaType('image', 'jpeg'),
-      ));
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          _selectedImage!.path,
+          // contentType: MediaType('image', 'jpeg'),
+        ),
+      );
     }
 
     try {
@@ -160,25 +173,29 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     final response = await http.get(Uri.parse('$baseUrl/photos/$photoId'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      return "http://localhost:8080${data['photoPath']}";
+      // return "http://localhost:8080${data['photoPath']}";
+      return "${ApiConfig.baseUrl}${data['photoPath']}";
     }
     return null;
   }
 
   Future<void> _fetchMessages() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/chat/${widget.thread['id']}'));
+      final response = await http.get(
+        Uri.parse('$baseUrl/chat/${widget.thread['id']}'),
+      );
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        final fetched = data.map((msg) {
-          return {
-            'id': msg['id'],
-            'user_id': msg['userId'].toString(),
-            'text': msg['content'],
-            'created_at': msg['createdAt'],
-            'photoId': msg['photoId'],
-          };
-        }).toList();
+        final fetched =
+            data.map((msg) {
+              return {
+                'id': msg['id'],
+                'user_id': msg['userId'].toString(),
+                'text': msg['content'],
+                'created_at': msg['createdAt'],
+                'photoId': msg['photoId'],
+              };
+            }).toList();
         bool updated = false;
         for (var msg in fetched) {
           if (!_messages.any((m) => m['id'] == msg['id'])) {
@@ -189,8 +206,11 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
 
         //メッセージを投稿時間順にする
         if (updated) {
-          _messages.sort((a, b) =>
-              DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+          _messages.sort(
+            (a, b) => DateTime.parse(
+              a['created_at'],
+            ).compareTo(DateTime.parse(b['created_at'])),
+          );
           _messageStreamController.add(List.from(_messages));
         }
       }
@@ -216,63 +236,67 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   }
 
   Future<void> _sendMessage() async {
-  if (_isSending) return;
-  final text = _messageController.text.trim();
-  if (text.isEmpty && _selectedImage == null && _webImageBytes == null) return;
-  setState(() => _isSending = true);
+    if (_isSending) return;
+    final text = _messageController.text.trim();
+    if (text.isEmpty && _selectedImage == null && _webImageBytes == null)
+      return;
+    setState(() => _isSending = true);
 
-  int? photoId;
-  if (_selectedImage != null || _webImageBytes != null) {
-    photoId = await uploadImage();
-  }
-
-  final payload = {
-    'userId': int.parse(currentUserId),
-    'content': text,
-    'threadId': widget.thread['id'],
-    'photoId': photoId,
-  };
-
-  try {
-    final response = await http.post(
-      Uri.parse('$baseUrl/chat/${widget.thread['id']}'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(payload),
-    );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final msg = json.decode(response.body);
-      _messages.add({
-        'id': msg['id'],
-        'user_id': msg['userId'].toString(),
-        'text': msg['content'],
-        'created_at': msg['createdAt'],
-        'photoId': msg['photoId'],
-      });
-      _messages.sort((a, b) =>
-          DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
-      _messageStreamController.add(List.from(_messages));
-
-      _messageController.clear();
-      setState(() {
-        _selectedImage = null;
-        _webImageBytes = null;
-        _webImageName = null;
-      });
-
-      _channel.sink.add(json.encode(msg));
-
-      //自動スクロール
-      _scrollToBottom(); 
-    } else {
-      print("Send failed: ${response.statusCode}");
+    int? photoId;
+    if (_selectedImage != null || _webImageBytes != null) {
+      photoId = await uploadImage();
     }
-  } catch (e) {
-    print("Send error: $e");
-  } finally {
-    setState(() => _isSending = false);
+
+    final payload = {
+      'userId': int.parse(currentUserId),
+      'content': text,
+      'threadId': widget.thread['id'],
+      'photoId': photoId,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/chat/${widget.thread['id']}'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(payload),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final msg = json.decode(response.body);
+        _messages.add({
+          'id': msg['id'],
+          'user_id': msg['userId'].toString(),
+          'text': msg['content'],
+          'created_at': msg['createdAt'],
+          'photoId': msg['photoId'],
+        });
+        _messages.sort(
+          (a, b) => DateTime.parse(
+            a['created_at'],
+          ).compareTo(DateTime.parse(b['created_at'])),
+        );
+        _messageStreamController.add(List.from(_messages));
+
+        _messageController.clear();
+        setState(() {
+          _selectedImage = null;
+          _webImageBytes = null;
+          _webImageName = null;
+        });
+
+        _channel.sink.add(json.encode(msg));
+
+        //自動スクロール
+        _scrollToBottom();
+      } else {
+        print("Send failed: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Send error: $e");
+    } finally {
+      setState(() => _isSending = false);
+    }
   }
-}
 
   Future<void> _reportMessage(Map<String, dynamic> msg) async {
     try {
@@ -290,22 +314,22 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("通報しました")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("通報しました")));
       } else if (response.statusCode == 400) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("このチャットはすでに通報済みです")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("このチャットはすでに通報済みです")));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("通報に失敗しました")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("通報に失敗しました")));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("通信エラーが発生しました")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("通信エラーが発生しました")));
     }
   }
 
@@ -313,9 +337,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     if (_userNicknames.containsKey(userId)) return _userNicknames[userId]!;
 
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/chat/user/$userId'),
-      );
+      final response = await http.get(Uri.parse('$baseUrl/chat/user/$userId'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final nickname = data['nickname'] ?? 'Unknown';
@@ -339,8 +361,10 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(widget.thread['title'] ?? 'スレッド',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    widget.thread['title'] ?? 'スレッド',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                 ),
                 IconButton(
                   icon: Icon(Icons.arrow_downward),
@@ -367,9 +391,14 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
               initialData: _messages,
               builder: (context, snapshot) {
                 final items = snapshot.data!;
-                final filtered = items
-                    .where((m) => searchText.isEmpty || m['text'].contains(searchText))
-                    .toList();
+                final filtered =
+                    items
+                        .where(
+                          (m) =>
+                              searchText.isEmpty ||
+                              m['text'].contains(searchText),
+                        )
+                        .toList();
                 return ListView.builder(
                   controller: _scrollController,
                   itemCount: filtered.length,
@@ -381,14 +410,17 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                         '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
 
                     return Align(
-                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment:
+                          isMe ? Alignment.centerRight : Alignment.centerLeft,
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
                           maxWidth: MediaQuery.of(context).size.width * 0.7,
                         ),
                         child: Column(
                           crossAxisAlignment:
-                              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                              isMe
+                                  ? CrossAxisAlignment.end
+                                  : CrossAxisAlignment.start,
                           children: [
                             FutureBuilder<String>(
                               future: _getNickname(msg['user_id']),
@@ -408,9 +440,13 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                             ),
                             Container(
                               margin: EdgeInsets.symmetric(vertical: 4),
-                              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                              padding: EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 12,
+                              ),
                               decoration: BoxDecoration(
-                                color: isMe ? Colors.green[300] : Colors.grey[200],
+                                color:
+                                    isMe ? Colors.green[300] : Colors.grey[200],
                                 borderRadius: BorderRadius.only(
                                   topLeft: Radius.circular(12),
                                   topRight: Radius.circular(12),
@@ -421,7 +457,9 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                               //コメントのコンテナ
                               child: Column(
                                 crossAxisAlignment:
-                                    isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                    isMe
+                                        ? CrossAxisAlignment.end
+                                        : CrossAxisAlignment.start,
                                 children: [
                                   if (msg['photoId'] != null) ...[
                                     FutureBuilder(
@@ -431,7 +469,10 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
 
                                         if (snapshot.hasData) {
                                           // 画像が読み込まれたらスクロール
-                                          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+                                          WidgetsBinding.instance
+                                              .addPostFrameCallback(
+                                                (_) => _scrollToBottom(),
+                                              );
 
                                           imageWidget = Image.network(
                                             snapshot.data!,
@@ -440,13 +481,20 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                                             fit: BoxFit.cover,
                                           );
                                         } else {
-                                          imageWidget = SizedBox(width: 200, height: 200); // プレースホルダー
+                                          imageWidget = SizedBox(
+                                            width: 200,
+                                            height: 200,
+                                          ); // プレースホルダー
                                         }
 
                                         return Padding(
-                                          padding: const EdgeInsets.only(bottom: 8.0),
+                                          padding: const EdgeInsets.only(
+                                            bottom: 8.0,
+                                          ),
                                           child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                             child: imageWidget,
                                           ),
                                         );
@@ -460,22 +508,21 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                                       if (!isMe)
                                         PopupMenuButton<String>(
                                           onSelected: (value) {
-                                            if (value == 'report') _reportMessage(msg);
+                                            if (value == 'report')
+                                              _reportMessage(msg);
                                           },
-                                          itemBuilder: (context) => [
-                                            PopupMenuItem(
-                                              value: 'report',
-                                              child: Text('通報する'),
-                                            ),
-                                          ],
+                                          itemBuilder:
+                                              (context) => [
+                                                PopupMenuItem(
+                                                  value: 'report',
+                                                  child: Text('通報する'),
+                                                ),
+                                              ],
                                         ),
                                     ],
                                   ),
                                   SizedBox(height: 4),
-                                  Text(
-                                    timeStr,
-                                    style: TextStyle(fontSize: 10),
-                                  ),
+                                  Text(timeStr, style: TextStyle(fontSize: 10)),
                                 ],
                               ),
                             ),
@@ -497,9 +544,20 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: kIsWeb
-                          ? Image.memory(_webImageBytes!, width: 120, height: 120, fit: BoxFit.cover)
-                          : Image.file(_selectedImage!, width: 120, height: 120, fit: BoxFit.cover),
+                      child:
+                          kIsWeb
+                              ? Image.memory(
+                                _webImageBytes!,
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.cover,
+                              )
+                              : Image.file(
+                                _selectedImage!,
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.cover,
+                              ),
                     ),
                     Positioned(
                       right: 0,
@@ -515,10 +573,14 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                         child: CircleAvatar(
                           radius: 12,
                           backgroundColor: Colors.black54,
-                          child: Icon(Icons.close, size: 16, color: Colors.white),
+                          child: Icon(
+                            Icons.close,
+                            size: 16,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -545,9 +607,14 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                   ),
                 ),
                 IconButton(
-                  icon: _isSending
-                      ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                      : Icon(Icons.send, color: Colors.blue),
+                  icon:
+                      _isSending
+                          ? SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : Icon(Icons.send, color: Colors.blue),
                   onPressed: _isSending ? null : _sendMessage,
                 ),
               ],

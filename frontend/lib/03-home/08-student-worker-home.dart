@@ -22,7 +22,6 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome> {
   final GlobalActions _globalActions = GlobalActions(); // グローバルアクション利用
   Map<String, dynamic>? _user;
 
-
   /// サーバーから最新のプラン状態を取得し、セッションを更新する
   Future<void> _refreshUserStatus() async {
     // 1. 現在のローカルセッションを読み込む
@@ -36,7 +35,8 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome> {
         final response = await http
             .get(
               Uri.parse(
-                "http://localhost:8080/api/subscriptions/status/$userId",
+                // "http://localhost:8080/api/subscriptions/status/$userId",
+                "https://api.bridge-tesg.com/api/subscriptions/status/$userId",
               ),
             )
             .timeout(const Duration(seconds: 5));
@@ -88,9 +88,7 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome> {
                 ),
               ),
             ),
-          Expanded(
-            child: _buildTopPageTab(context)
-          ),
+          Expanded(child: _buildTopPageTab(context)),
         ],
       ),
     );
@@ -124,17 +122,9 @@ Widget _buildTopPageTab(BuildContext context) {
                 children: [
                   const Text(
                     '最新スレッド',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      '>スレッド一覧',
-                    ),
-                  ),
+                  TextButton(onPressed: () {}, child: const Text('>スレッド一覧')),
                 ],
               ),
             ),
@@ -160,10 +150,7 @@ Widget _buildTopPageTab(BuildContext context) {
                 children: [
                   const Text(
                     '注目記事',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   TextButton(
                     onPressed: () {
@@ -172,9 +159,7 @@ Widget _buildTopPageTab(BuildContext context) {
                         MaterialPageRoute(builder: (_) => ArticleListPage()),
                       );
                     },
-                    child: const Text(
-                      '>記事一覧',
-                    ),
+                    child: const Text('>記事一覧'),
                   ),
                 ],
               ),

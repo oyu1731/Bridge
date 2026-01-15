@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:bridge/11-common/58-header.dart';
@@ -13,7 +14,7 @@ class Thread {
   final String title;
   final int type; // 1=公式, 2=非公式
   final String description;
-  final int entryCriteria;//1=全員, 2=学生のみ, 3=社会人のみ
+  final int entryCriteria; //1=全員, 2=学生のみ, 3=社会人のみ
   final DateTime? lastCommentDate;
   final String timeAgo;
 
@@ -44,7 +45,7 @@ class Thread {
       type: json['type'] != null ? int.parse(json['type'].toString()) : 2,
       description: json['description']?.toString() ?? '',
       entryCriteria: json['entryCriteria'],
-      lastCommentDate: lastUpdateDate,  // ← ここ重要！
+      lastCommentDate: lastUpdateDate, // ← ここ重要！
       timeAgo: timeAgoText,
     );
   }
@@ -62,9 +63,10 @@ class Thread {
 
 // API呼び出し関数
 Future<List<Thread>> fetchThreads() async {
-  final url = Uri.parse('http://localhost:8080/api/threads');
+  // final url = Uri.parse('http://localhost:8080/api/threads');
+  final url = Uri.parse('${ApiConfig.baseUrl}/api/threads');
   final response = await http.get(url);
-  print(response.body); 
+  print(response.body);
 
   if (response.statusCode == 200) {
     final List<dynamic> data = json.decode(response.body);
@@ -92,9 +94,10 @@ class _ThreadListState extends State<ThreadList> {
     final userData = jsonDecode(jsonString);
 
     setState(() {
-      userType = userData['type']+1;
+      userType = userData['type'] + 1;
     });
   }
+
   @override
   void initState() {
     super.initState();
@@ -109,19 +112,25 @@ class _ThreadListState extends State<ThreadList> {
       print(userType);
       print("aaaa");
       final threads = await fetchThreads();
-      print(threads.map((t) => t.timeAgo).toList()); 
+      print(threads.map((t) => t.timeAgo).toList());
 
       setState(() {
         officialThreads = threads.where((t) => t.type == 1).toList();
         print(userType);
         //リスト（ソートされた）を作る
-        hotUnofficialThreads = threads.where((t) => t.type == 2 && (t.entryCriteria == userType || t.entryCriteria == 1))
-          .toList()
-          ..sort((a, b) {
-            final aDate = a.lastCommentDate ?? DateTime(2000);
-            final bDate = b.lastCommentDate ?? DateTime(2000);
-            return bDate.compareTo(aDate); // 新しい順
-          });
+        hotUnofficialThreads =
+            threads
+                .where(
+                  (t) =>
+                      t.type == 2 &&
+                      (t.entryCriteria == userType || t.entryCriteria == 1),
+                )
+                .toList()
+              ..sort((a, b) {
+                final aDate = a.lastCommentDate ?? DateTime(2000);
+                final bDate = b.lastCommentDate ?? DateTime(2000);
+                return bDate.compareTo(aDate); // 新しい順
+              });
         //作られたリストに対して上位５件を取得
         hotUnofficialThreads = hotUnofficialThreads.take(5).toList();
       });
@@ -146,45 +155,50 @@ class _ThreadListState extends State<ThreadList> {
             ),
             SizedBox(height: 10),
             Column(
-              children: officialThreads.map((thread) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ThreadOfficialDetail(
-                          thread: {'id': thread.id, 'title': thread.title},
+              children:
+                  officialThreads.map((thread) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => ThreadOfficialDetail(
+                                  thread: {
+                                    'id': thread.id,
+                                    'title': thread.title,
+                                  },
+                                ),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        color: Colors.white, // 背景を白に設定
+                        margin: EdgeInsets.symmetric(vertical: 6),
+                        elevation: 2,
+                        child: ListTile(
+                          title: Text(
+                            thread.title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          //スレッドの説明文
+                          subtitle: Text(
+                            thread.description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: Colors.grey[700]),
+                          ),
+                          trailing: Text(
+                            thread.timeAgo,
+                            style: TextStyle(color: Colors.grey),
+                          ),
                         ),
                       ),
                     );
-                  },
-                  child: Card(
-                    color: Colors.white, // 背景を白に設定
-                    margin: EdgeInsets.symmetric(vertical: 6),
-                    elevation: 2,
-                    child: ListTile(
-                      title: Text(
-                        thread.title,
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      //スレッドの説明文
-                      subtitle: Text(
-                        thread.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      trailing: Text(
-                        thread.timeAgo,
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                  }).toList(),
             ),
 
             SizedBox(height: 30),
@@ -215,48 +229,53 @@ class _ThreadListState extends State<ThreadList> {
             ),
             SizedBox(height: 10),
             Column(
-              children: hotUnofficialThreads.map((thread) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ThreadUnOfficialDetail(
-                          thread: {'id': thread.id, 'title': thread.title},
+              children:
+                  hotUnofficialThreads.map((thread) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => ThreadUnOfficialDetail(
+                                  thread: {
+                                    'id': thread.id,
+                                    'title': thread.title,
+                                  },
+                                ),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        color: Colors.white, // 背景を白に設定
+                        margin: EdgeInsets.symmetric(vertical: 6),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: ListTile(
+                          title: Text(
+                            thread.title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          //スレッドの説明文
+                          subtitle: Text(
+                            thread.description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: Colors.grey[700]),
+                          ),
+                          trailing: Text(
+                            thread.timeAgo,
+                            style: TextStyle(color: Colors.grey),
+                          ),
                         ),
                       ),
                     );
-                  },
-                  child: Card(
-                    color: Colors.white, // 背景を白に設定
-                    margin: EdgeInsets.symmetric(vertical: 6),
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: ListTile(
-                      title: Text(
-                        thread.title,
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      //スレッドの説明文
-                      subtitle: Text(
-                        thread.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      trailing: Text(
-                        thread.timeAgo,
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                  }).toList(),
             ),
           ],
         ),
