@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:bridge/11-common/58-header.dart';
@@ -11,7 +12,7 @@ class Thread {
   final String id;
   final String title;
   final int type; // 1=公式, 2=非公式
-  final int entryCriteria;// 1=全員,2=学生のみ,3=社会人のみ
+  final int entryCriteria; // 1=全員,2=学生のみ,3=社会人のみ
   final String timeAgo;
 
   Thread({
@@ -53,7 +54,8 @@ class Thread {
 
 // API からスレッド一覧取得
 Future<List<Thread>> fetchThreads() async {
-  final url = Uri.parse('http://localhost:8080/api/threads');
+  // final url = Uri.parse('http://localhost:8080/api/threads');
+  final url = Uri.parse('${ApiConfig.baseUrl}/api/threads');
   final response = await http.get(url);
 
   if (response.statusCode == 200) {
@@ -82,7 +84,7 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
     final userData = jsonDecode(jsonString);
 
     setState(() {
-      userType = userData['type']+1;
+      userType = userData['type'] + 1;
     });
   }
 
@@ -100,7 +102,13 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
       final allThreads = await fetchThreads();
       setState(() {
         unofficialThreads =
-            allThreads.where((t) => t.type == 2 && (t.entryCriteria == userType || t.entryCriteria == 1)).toList(); // 非公式だけ取る
+            allThreads
+                .where(
+                  (t) =>
+                      t.type == 2 &&
+                      (t.entryCriteria == userType || t.entryCriteria == 1),
+                )
+                .toList(); // 非公式だけ取る
         filteredThreads = List.from(unofficialThreads);
       });
     } catch (e) {
@@ -167,7 +175,10 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 12,
+                ),
                 suffixIcon: IconButton(
                   icon: Icon(Icons.search, color: Colors.grey[700]),
                   onPressed: _searchThreads,
@@ -189,9 +200,13 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ThreadUnOfficialDetail(
-                            thread: {'id': thread.id, 'title': thread.title},
-                          ),
+                          builder:
+                              (context) => ThreadUnOfficialDetail(
+                                thread: {
+                                  'id': thread.id,
+                                  'title': thread.title,
+                                },
+                              ),
                         ),
                       );
                     },
