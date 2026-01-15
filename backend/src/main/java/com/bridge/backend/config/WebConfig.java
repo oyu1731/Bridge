@@ -8,11 +8,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
 
     @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**") // API全体（または /api/**）を対象
-                .allowedOrigins("http://localhost:5000") // フロントエンドのURLを明示的に許可
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*") // 必要なヘッダ（Content-Type, Authorizationなど）をすべて許可
-                .allowCredentials(true);
+        public void addCorsMappings(CorsRegistry registry) {
+            registry.addMapping("/**")
+                    .allowedOriginPatterns(
+                        "https://bridge-tesg.com",           // あなたのドメイン
+                        "https://*.bridge-tesg.com",         // サブドメイン(apiなど)
+                        "https://bridge-915bd.web.app",     // Firebaseの本番URL
+                        "http://localhost:*"                 // ローカルテスト用も残してOK
+                    )
+                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                    .allowedHeaders("*")
+                    .allowCredentials(true);
+        }   
     }
-}

@@ -1,3 +1,4 @@
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:bridge/03-home/09-company-home.dart';
@@ -88,7 +89,8 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
         try {
           final res = await http.get(
             Uri.parse(
-              'http://localhost:8080/api/v1/payment/session/$sessionId',
+              // 'http://localhost:8080/api/v1/payment/session/$sessionId',
+              '${ApiConfig.baseUrl}/api/v1/payment/session/$sessionId',
             ),
           );
           if (res.statusCode == 200) {

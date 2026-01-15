@@ -20,8 +20,9 @@ class Industry {
 
   Industry({required this.id, required this.name, this.isSelected = false});
 }
-  int? _companyPhotoId;
-  String? _companyPhotoUrl;
+
+int? _companyPhotoId;
+String? _companyPhotoUrl;
 
 class CompanyProfileEditPage extends StatefulWidget {
   const CompanyProfileEditPage({super.key});
@@ -69,7 +70,8 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
       final userData = jsonDecode(userJson);
       final userId = userData['id'];
 
-      final url = 'http://localhost:8080/api/users/$userId';
+      // final url = 'http://localhost:8080/api/users/$userId';
+      final url = 'https://api.bridge-tesg.com/api/users/$userId';
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
@@ -82,15 +84,19 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
           _emailController.text = userData['email'] ?? '';
           _phoneNumberController.text = userData['phoneNumber'] ?? '';
           _companyAddressController.text = userData['companyAddress'] ?? '';
-          _companyDescriptionController.text = userData['companyDescription'] ?? '';
+          _companyDescriptionController.text =
+              userData['companyDescription'] ?? '';
           _iconPhotoId = userData['icon'];
 
           // 企業写真情報をセット
           if (userData['companyPhotoId'] != null) {
             _companyPhotoId = userData['companyPhotoId'];
           }
-          if (userData['companyPhotoId'] != null && userData['companyPhotoId'] is int) {
-            PhotoApiClient.getPhotoById(userData['companyPhotoId']).then((photo) {
+          if (userData['companyPhotoId'] != null &&
+              userData['companyPhotoId'] is int) {
+            PhotoApiClient.getPhotoById(userData['companyPhotoId']).then((
+              photo,
+            ) {
               if (photo?.photoPath != null) {
                 setState(() {
                   _companyPhotoUrl = photo!.photoPath;
@@ -118,7 +124,10 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
   }
 
   Future<void> fetchData() async {
-    final industriesResponse = await http.get(Uri.parse('http://localhost:8080/api/industries'));
+    // final industriesResponse = await http.get(Uri.parse('http://localhost:8080/api/industries'));
+    final industriesResponse = await http.get(
+      Uri.parse('https://api.bridge-tesg.com/api/industries'),
+    );
     if (industriesResponse.statusCode == 200) {
       final List<dynamic> industriesData = jsonDecode(industriesResponse.body);
       if (!mounted) return;
@@ -128,10 +137,17 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
       if (userJson != null) {
         final userData = jsonDecode(userJson);
         final dynamic idValue = userData['id'];
-        final int userId = idValue is int ? idValue : int.parse(idValue.toString());
+        final int userId =
+            idValue is int ? idValue : int.parse(idValue.toString());
 
         setState(() {
-          industries = industriesData.map((e) => Industry(id: e['id'], name: e['industry'].toString())).toList();
+          industries =
+              industriesData
+                  .map(
+                    (e) =>
+                        Industry(id: e['id'], name: e['industry'].toString()),
+                  )
+                  .toList();
         });
 
         await fetchIndustryRelations(userId);
@@ -142,15 +158,17 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
   }
 
   Future<void> fetchIndustryRelations(int userId) async {
-    final url = 'http://localhost:8080/api/industries/user/$userId';
+    // final url = 'http://localhost:8080/api/industries/user/$userId';
+    final url = 'https://api.bridge-tesg.com/api/industries/user/$userId';
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
       final List<dynamic> selectedIndustriesData = jsonDecode(response.body);
 
-      final List<String> selectedIndustryNames = selectedIndustriesData.map((e) {
-        return e['industry'].toString();
-      }).toList();
+      final List<String> selectedIndustryNames =
+          selectedIndustriesData.map((e) {
+            return e['industry'].toString();
+          }).toList();
 
       if (!mounted) return;
       setState(() {
@@ -177,10 +195,11 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
             Center(
               child: Column(
                 children: [
-                  Text("プロフィールアイコン",
+                  Text(
+                    "プロフィールアイコン",
                     style: TextStyle(
                       fontSize: 16,
-                      color: AppTheme.textCyanDark
+                      color: AppTheme.textCyanDark,
                     ),
                   ),
                   Stack(
@@ -188,12 +207,17 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
                       CircleAvatar(
                         radius: 55,
                         backgroundColor: Colors.grey.shade200,
-                        child: _iconUrl != null
-                            ? CircleAvatar(
-                                radius: 52,
-                                backgroundImage: NetworkImage(_iconUrl!),
-                              )
-                            : Icon(Icons.person, size: 60, color: Colors.grey[600]),
+                        child:
+                            _iconUrl != null
+                                ? CircleAvatar(
+                                  radius: 52,
+                                  backgroundImage: NetworkImage(_iconUrl!),
+                                )
+                                : Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: Colors.grey[600],
+                                ),
                       ),
                       Positioned(
                         bottom: 0,
@@ -203,13 +227,21 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
                           child: CircleAvatar(
                             radius: 20,
                             backgroundColor: Colors.blueAccent,
-                            child: _uploadingIcon
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                  )
-                                : const Icon(Icons.camera_alt, size: 20, color: Colors.white),
+                            child:
+                                _uploadingIcon
+                                    ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                    : const Icon(
+                                      Icons.camera_alt,
+                                      size: 20,
+                                      color: Colors.white,
+                                    ),
                           ),
                         ),
                       ),
@@ -228,27 +260,36 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
                 onPressed: () {
                   showDialog(
                     context: context,
-                    builder: (context) => CompanyPhotoModal(
-                      onPhotoUploaded: (photoId, photoUrl) {
-                        setState(() {
-                          _companyPhotoId = photoId;
-                          _companyPhotoUrl = photoUrl;
-                        });
-                      },
-                    ),
+                    builder:
+                        (context) => CompanyPhotoModal(
+                          onPhotoUploaded: (photoId, photoUrl) {
+                            setState(() {
+                              _companyPhotoId = photoId;
+                              _companyPhotoUrl = photoUrl;
+                            });
+                          },
+                        ),
                   );
                 },
               ),
             ),
-                        if (_companyPhotoUrl != null)
-                          Column(
-                            children: [
-                              const SizedBox(height: 16),
-                              Text('選択中の企業写真', style: TextStyle(fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 8),
-                              Image.network(_companyPhotoUrl!, width: 120, height: 120, fit: BoxFit.cover),
-                            ],
-                          ),
+            if (_companyPhotoUrl != null)
+              Column(
+                children: [
+                  const SizedBox(height: 16),
+                  Text(
+                    '選択中の企業写真',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Image.network(
+                    _companyPhotoUrl!,
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.cover,
+                  ),
+                ],
+              ),
             const SizedBox(height: 30),
             _buildLabel("企業名"),
             _buildTextField(_nicknameController),
@@ -267,17 +308,18 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
             const SizedBox(height: 30),
             _buildLabel("所属業界"),
             Column(
-              children: industries.map((industry) {
-                return CheckboxListTile(
-                  title: Text(industry.name),
-                  value: industry.isSelected,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      industry.isSelected = value ?? false;
-                    });
-                  },
-                );
-              }).toList(),
+              children:
+                  industries.map((industry) {
+                    return CheckboxListTile(
+                      title: Text(industry.name),
+                      value: industry.isSelected,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          industry.isSelected = value ?? false;
+                        });
+                      },
+                    );
+                  }).toList(),
             ),
             const SizedBox(height: 30),
             Center(
@@ -286,19 +328,18 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
                   backgroundColor: Colors.orangeAccent[400],
                   foregroundColor: Colors.white,
                 ),
-                onPressed: _isSaving
-                    ? null
-                    : () async {
-                        setState(() => _isSaving = true);
-                        await _updateUserProfile();
-                        setState(() => _isSaving = false);
-                      },
-                child: _isSaving
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('編集',
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),),
+                onPressed:
+                    _isSaving
+                        ? null
+                        : () async {
+                          setState(() => _isSaving = true);
+                          await _updateUserProfile();
+                          setState(() => _isSaving = false);
+                        },
+                child:
+                    _isSaving
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('編集', style: TextStyle(fontSize: 16)),
               ),
             ),
           ],
@@ -352,7 +393,9 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
       'icon': _iconPhotoId,
     };
 
-    final userUpdateUrl = 'http://localhost:8080/api/users/$userId/profile';
+    // final userUpdateUrl = 'http://localhost:8080/api/users/$userId/profile';
+    final userUpdateUrl =
+        'https://api.bridge-tesg.com/api/users/$userId/profile';
     final userUpdateResponse = await http.put(
       Uri.parse(userUpdateUrl),
       headers: {'Content-Type': 'application/json'},
@@ -361,25 +404,32 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
 
     // 企業写真のphoto_idを保存
     if (companyId != null && _companyPhotoId != null) {
-      final companyPhotoUrl = 'http://localhost:8080/api/companies/$companyId/photo';
+      final companyPhotoUrl =
+          // 'http://localhost:8080/api/companies/$companyId/photo';
+          'https://api.bridge-tesg.com/api/companies/$companyId/photo';
       final companyPhotoRes = await http.put(
         Uri.parse(companyPhotoUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'photo_id': _companyPhotoId}),
       );
-      print('企業写真APIレスポンス: status=${companyPhotoRes.statusCode}, body=${companyPhotoRes.body}');
+      print(
+        '企業写真APIレスポンス: status=${companyPhotoRes.statusCode}, body=${companyPhotoRes.body}',
+      );
       if (companyPhotoRes.statusCode != 200) {
         print('企業写真の保存に失敗: ${companyPhotoRes.statusCode}');
       }
     }
 
     // 修正ポイント: name ではなく id を送信
-    final selectedIndustries = industries
-        .where((industry) => industry.isSelected)
-        .map((industry) => industry.id) // ← id を送る
-        .toList();
+    final selectedIndustries =
+        industries
+            .where((industry) => industry.isSelected)
+            .map((industry) => industry.id) // ← id を送る
+            .toList();
 
-    final industriesUpdateUrl = 'http://localhost:8080/api/users/$userId/industries';
+    final industriesUpdateUrl =
+        // 'http://localhost:8080/api/users/$userId/industries';
+        'https://api.bridge-tesg.com/api/users/$userId/industries';
     final industriesUpdateResponse = await http.put(
       Uri.parse(industriesUpdateUrl),
       headers: {'Content-Type': 'application/json'},
@@ -419,16 +469,21 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
         companyUpdateData['photoId'] = _companyPhotoId;
       }
       print('企業プロフィール更新: $companyUpdateData');
-      final companyUpdateUrl = 'http://localhost:8080/api/companies/$companyId';
+      // final companyUpdateUrl = 'http://localhost:8080/api/companies/$companyId';
+      final companyUpdateUrl =
+          'https://api.bridge-tesg.com/api/companies/$companyId';
       final companyUpdateRes = await http.put(
         Uri.parse(companyUpdateUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(companyUpdateData),
       );
-      print('企業プロフィールAPIレスポンス: status=${companyUpdateRes.statusCode}, body=${companyUpdateRes.body}');
+      print(
+        '企業プロフィールAPIレスポンス: status=${companyUpdateRes.statusCode}, body=${companyUpdateRes.body}',
+      );
     }
 
-    if (userUpdateResponse.statusCode == 200 && industriesUpdateResponse.statusCode == 200) {
+    if (userUpdateResponse.statusCode == 200 &&
+        industriesUpdateResponse.statusCode == 200) {
       // 現在のセッション情報を取得して、変更点のみ更新する
       final String? currentUserJson = prefs.getString('current_user');
       if (currentUserJson != null) {
@@ -479,7 +534,7 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
     }
   }
 
-  Future<void> _pickAndUploadIcon() async{
+  Future<void> _pickAndUploadIcon() async {
     final prefs = await SharedPreferences.getInstance();
     final userJson = prefs.getString('current_user');
     if (userJson == null) return;
@@ -487,24 +542,34 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
     final userId = sessionUser['id'];
 
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 90,
+    );
     if (picked == null) return;
 
     final bytes = await picked.readAsBytes();
     if (!mounted) return;
-    
+
     final croppedBytes = await showDialog<Uint8List>(
       context: context,
       builder: (context) => ImageCropDialog(imageBytes: bytes),
     );
-    
+
     if (croppedBytes == null) return;
-    
+
     setState(() => _uploadingIcon = true);
     try {
       final tempPath = picked.name;
-      final pseudoFile = XFile.fromData(croppedBytes, name: tempPath, mimeType: 'image/jpeg');
-      final uploaded = await PhotoApiClient.uploadPhoto(pseudoFile, userId: userId);
+      final pseudoFile = XFile.fromData(
+        croppedBytes,
+        name: tempPath,
+        mimeType: 'image/jpeg',
+      );
+      final uploaded = await PhotoApiClient.uploadPhoto(
+        pseudoFile,
+        userId: userId,
+      );
       final photoId = uploaded.id;
       if (photoId != null) {
         await UserApiClient.updateIcon(userId, photoId);
@@ -514,9 +579,9 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('アイコンアップロード失敗: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('アイコンアップロード失敗: $e')));
     } finally {
       setState(() => _uploadingIcon = false);
     }

@@ -25,15 +25,22 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   Future<void> _handleSubmit() async {
     final email = _emailController.text.trim();
-    setState(() { _errorMessage = null; });
+    setState(() {
+      _errorMessage = null;
+    });
     if (email.isEmpty) {
-      setState(() { _errorMessage = 'メールアドレスを入力してください'; });
+      setState(() {
+        _errorMessage = 'メールアドレスを入力してください';
+      });
       return;
     }
-    setState(() { _loading = true; });
+    setState(() {
+      _loading = true;
+    });
     try {
       // TODO: BASE_URL を環境に合わせて修正
-      const baseUrl = 'http://localhost:8080/api/password/forgot';
+      // const baseUrl = 'http://localhost:8080/api/password/forgot';
+      const baseUrl = 'https://api.bridge-tesg.com/api/password/forgot';
       final resp = await http.post(
         Uri.parse(baseUrl),
         headers: {'Content-Type': 'application/json'},
@@ -44,18 +51,22 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         if (!mounted) return;
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => OtpInputPage(email: email),
-          ),
+          MaterialPageRoute(builder: (context) => OtpInputPage(email: email)),
         );
       } else {
-        setState(() { _errorMessage = '送信に失敗しました (${resp.statusCode})'; });
+        setState(() {
+          _errorMessage = '送信に失敗しました (${resp.statusCode})';
+        });
       }
     } catch (e) {
-      setState(() { _errorMessage = '通信エラーが発生しました'; });
+      setState(() {
+        _errorMessage = '通信エラーが発生しました';
+      });
     } finally {
       if (mounted) {
-        setState(() { _loading = false; });
+        setState(() {
+          _loading = false;
+        });
       }
     }
   }
@@ -84,19 +95,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               SizedBox(height: 48),
               Text(
                 'パスワードの再設定を行います。',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF424242),
-                ),
+                style: TextStyle(fontSize: 14, color: Color(0xFF424242)),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 8),
               Text(
                 'アカウント登録に使用している、有効なメールアドレスを入力してください。',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF424242),
-                ),
+                style: TextStyle(fontSize: 14, color: Color(0xFF424242)),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 48),
@@ -107,10 +112,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     width: 140,
                     child: Text(
                       'メールアドレス',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF424242),
-                      ),
+                      style: TextStyle(fontSize: 14, color: Color(0xFF424242)),
                     ),
                   ),
                   SizedBox(width: 16),
@@ -160,19 +162,22 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-                      child: _loading
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(
-                              '戻る',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                      child:
+                          _loading
+                              ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : Text(
+                                '戻る',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
                     ),
                   ),
                   SizedBox(
@@ -187,19 +192,23 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-                      child: _loading
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                            )
-                          : Text(
-                              '送信',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                      child:
+                          _loading
+                              ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : Text(
+                                '送信',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
                     ),
                   ),
                 ],

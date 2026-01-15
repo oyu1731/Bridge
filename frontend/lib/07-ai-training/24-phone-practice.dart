@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/60-ScreenWrapper.dart';
@@ -346,7 +347,8 @@ class _PhonePracticeState extends State<PhonePractice> {
                           print("送信する内容: $_companyInfo");
 
                           final url = Uri.parse(
-                            'http://localhost:8080/api/phone/practice',
+                            // 'http://localhost:8080/api/phone/practice',
+                            '${ApiConfig.baseUrl}/api/phone/practice',
                           );
                           final headers = {
                             'Content-Type': 'application/json; charset=UTF-8',
@@ -706,7 +708,8 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
       return;
     }
 
-    final url = Uri.parse('http://localhost:8080/api/phone/continue');
+    // final url = Uri.parse('http://localhost:8080/api/phone/continue');
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/phone/continue');
     final headers = {'Content-Type': 'application/json; charset=UTF-8'};
     final payload = {"sessionId": widget.sessionId, "message": answer};
 
@@ -764,7 +767,8 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
   }
 
   void _endCallAndNavigateToResult() async {
-    final url = Uri.parse('http://localhost:8080/api/phone/end');
+    // final url = Uri.parse('http://localhost:8080/api/phone/end');
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/phone/end');
     final headers = {'Content-Type': 'application/json; charset=UTF-8'};
     final payload = {"sessionId": widget.sessionId};
 

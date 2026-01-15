@@ -34,7 +34,7 @@ services:
     env_file:
       - .env
     ports:
-      - "8080:8080"
+      - "80:8080" # EC2の80番をコンテナの8080番に転送
     depends_on:
       mysql:
         condition: service_healthy
@@ -48,20 +48,19 @@ services:
       - bridge-network
     restart: unless-stopped
     healthcheck:
+      # 修正点：内部のlocalhost:8080を指定。外部ドメイン(https)経由だとコンテナ内から届かない場合があるため。
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 20s
+      start_period: 60s # Springの起動完了まで1分ほど猶予を持たせる
 
-  # 【追加】Stripe CLI サービス
-  # 決済成功イベントをJavaバックエンドに自動転送します
+  # Stripe CLI サービス
   stripe-cli:
     image: stripe/stripe-cli
     container_name: stripe-cli
     env_file:
       - .env
-    # docker-compose内のサービス名 'backend' を指定して直接転送します
     command: >
       listen --forward-to backend:8080/api/v1/payment/webhook 
       --api-key ${STRIPE_API_KEY}

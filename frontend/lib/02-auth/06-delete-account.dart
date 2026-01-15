@@ -35,18 +35,14 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
             _userId = userData['id'] as int?;
           });
         }
-      } catch (_) {
-      }
+      } catch (_) {}
     }
   }
 
   Future<void> _showSnack(String message) async {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppTheme.accentOrange,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppTheme.accentOrange),
     );
   }
 
@@ -58,24 +54,25 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
 
     final bool? ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('退会確認'),
-        content: const Text('会員登録を解除します。よろしいですか？この操作は元に戻せません。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('キャンセル'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('退会確認'),
+            content: const Text('会員登録を解除します。よろしいですか？この操作は元に戻せません。'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('キャンセル'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orangeAccent[400],
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('退会する'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orangeAccent[400],
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('退会する'),
-          ),
-        ],
-      ),
     );
 
     if (ok != true) return;
@@ -83,7 +80,8 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     setState(() => _isProcessing = true);
 
     try {
-      final url = Uri.parse('http://localhost:8080/api/users/$_userId');
+      // final url = Uri.parse('http://localhost:8080/api/users/$_userId');
+      final url = Uri.parse('https://api.bridge-tesg.com/api/users/$_userId');
       final resp = await http.delete(url);
 
       if (resp.statusCode == 200) {
@@ -130,7 +128,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
 
                   const Text(
                     '退会手続き',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold,),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 12),
@@ -152,12 +150,16 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                   // 退会ボタン
                   Row(
                     children: [
-
                       TextButton(
-                        onPressed: _isProcessing ? null : () => Navigator.of(context).pop(),
+                        onPressed:
+                            _isProcessing
+                                ? null
+                                : () => Navigator.of(context).pop(),
                         style: TextButton.styleFrom(
                           foregroundColor: AppTheme.textCyanDark,
-                          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                          textStyle: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         child: const Text('戻る'),
                       ),
@@ -166,19 +168,29 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
 
                       ElevatedButton.icon(
                         onPressed: _isProcessing ? null : _confirmAndDelete,
-                        icon: _isProcessing
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                              )
-                            : const Icon(Icons.exit_to_app),
+                        icon:
+                            _isProcessing
+                                ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : const Icon(Icons.exit_to_app),
                         label: Text(_isProcessing ? '処理中...' : '退会する'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orangeAccent[400],
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 12,
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],

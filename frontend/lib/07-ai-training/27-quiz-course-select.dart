@@ -235,7 +235,8 @@ class _RankingScreenState extends State<RankingScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-          'http://localhost:8080/api/quiz/ranking',
+          // 'http://localhost:8080/api/quiz/ranking',
+          '${GlobalActions.getApiBaseUrl()}/api/quiz/ranking',
         ), // バックエンドAPIのエンドポイント
         headers: {'Content-Type': 'application/json'},
       );
