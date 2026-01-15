@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:bridge/03-home/08-student-worker-home.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+
+import 'package:bridge/03-home/08-student-worker-home.dart';
+import 'package:bridge/style.dart'; 
 
 class StudentInputPage extends StatefulWidget {
   const StudentInputPage({super.key});
@@ -70,12 +72,6 @@ class _StudentInputPageState extends State<StudentInputPage> {
   bool _isLoading = true;
   String _errorMessage = '';
 
-  // 統一カラー
-  static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
-  static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
-  static const Color errorOrange = Color.fromARGB(255, 239, 108, 0);
-  static const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
-
   @override
   void initState() {
     super.initState();
@@ -122,26 +118,12 @@ class _StudentInputPageState extends State<StudentInputPage> {
 
   @override
   Widget build(BuildContext context) {
-    final base = Theme.of(context);
-    final pageTheme = base.copyWith(
-      colorScheme: base.colorScheme.copyWith(error: errorOrange),
-      inputDecorationTheme: base.inputDecorationTheme.copyWith(
-        errorStyle: const TextStyle(color: errorOrange),
-        errorBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: errorOrange),
-        ),
-        focusedErrorBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: errorOrange, width: 2),
-        ),
-      ),
-    );
-
     return Theme(
-      data: pageTheme,
+      data: AppTheme.theme,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('学生サインアップ'),
-          backgroundColor: cyanMedium,
+          backgroundColor: AppTheme.cyanMedium,
           foregroundColor: Colors.white,
         ),
         body: SingleChildScrollView(
@@ -158,19 +140,12 @@ class _StudentInputPageState extends State<StudentInputPage> {
                   children: [
                     Text(
                       '学生向けのアカウント作成ページです。',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: textCyanDark,
-                      ),
+                      style: AppTheme.mainTextStyle,
                     ),
                     const SizedBox(height: 10),
                     Text(
                       '※企業または社会人の方は、このページでは登録できません。',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: textCyanDark,
-                      ),
+                      style: AppTheme.subTextStyle,
                     ),
                     const SizedBox(height: 20),
                     Row(
@@ -179,7 +154,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
                         Padding(padding: EdgeInsetsGeometry.only(top: 14),
                           child: Icon(
                             Icons.person_outline,
-                            color: cyanDark,
+                            color: AppTheme.cyanDark,
                           )
                         ),
                         const SizedBox(width: 10),
@@ -189,15 +164,6 @@ class _StudentInputPageState extends State<StudentInputPage> {
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                               labelText: 'ニックネーム',
-                              labelStyle: const TextStyle(
-                                color: textCyanDark,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: cyanDark,
-                                  width: 1.0,
-                                ),
-                              ),
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -216,7 +182,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
                         Padding(padding: EdgeInsetsGeometry.only(top: 14),
                           child: Icon(
                             Icons.email_outlined,
-                            color: cyanDark,
+                            color: AppTheme.cyanDark,
                           )
                         ),
                         const SizedBox(width: 10),
@@ -226,15 +192,6 @@ class _StudentInputPageState extends State<StudentInputPage> {
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                               labelText: 'メールアドレス',
-                              labelStyle: const TextStyle(
-                                color: textCyanDark,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: cyanDark,
-                                  width: 1.0,
-                                ),
-                              ),
                             ),
                             keyboardType: TextInputType.emailAddress,
                             validator: (v) {
@@ -253,7 +210,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
                         Padding(padding: EdgeInsetsGeometry.only(top: 14),
                           child: Icon(
                             Icons.lock_outline,
-                            color: cyanDark,
+                            color: AppTheme.cyanDark,
                           )
                         ),
                         const SizedBox(width: 10),
@@ -263,20 +220,11 @@ class _StudentInputPageState extends State<StudentInputPage> {
                             decoration: InputDecoration(
                               border: const OutlineInputBorder(),
                               labelText: 'パスワード',
-                              labelStyle: const TextStyle(
-                                color: textCyanDark,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: cyanDark,
-                                  width: 1.0,
-                                ),
-                              ),
                               hintText: '英数字８文字以上で入力してください',
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                  color: cyanDark,
+                                  color: AppTheme.cyanDark,
                                 ),
                                 onPressed: () {
                                   setState(() {
@@ -306,7 +254,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
                         Padding(padding: EdgeInsetsGeometry.only(top: 14),
                           child: Icon(
                             Icons.phone_outlined,
-                            color: cyanDark,
+                            color: AppTheme.cyanDark,
                           )
                         ),
                         const SizedBox(width: 10),
@@ -316,19 +264,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                               labelText: '電話番号',
-                              labelStyle: const TextStyle(
-                                color: textCyanDark,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: cyanDark,
-                                  width: 1.0,
-                                ),
-                              ),
                               hintText: 'ハイフンは自動入力されます',
-                              hintStyle: const TextStyle(
-                                color: textCyanDark,
-                              ),
                             ),
                             keyboardType: TextInputType.phone,
                             inputFormatters: [
@@ -355,7 +291,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
                         Padding(padding:  EdgeInsetsGeometry.only(top: 4),
                           child: Icon(
                             Icons.business_outlined,
-                            color: cyanDark,
+                            color: AppTheme.cyanDark,
                           )
                         ),
                         const SizedBox(width: 10),
@@ -363,14 +299,12 @@ class _StudentInputPageState extends State<StudentInputPage> {
                           '希望業界',
                           style: TextStyle(
                             fontSize: 17,
-                            color: textCyanDark,
                           ),
                         ),
                         const Text(
                           '　※複数選択可',
                           style: TextStyle(
                             fontSize: 13,
-                            color: textCyanDark,
                           ),
                         ),
                       ],
@@ -381,7 +315,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
                       : Container(
                           decoration: BoxDecoration(
                             border: Border.all(
-                              color: cyanDark,
+                              color: AppTheme.cyanDark,
                               width: 1.0,
                             ),
                             borderRadius: BorderRadius.circular(8),
@@ -393,7 +327,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
                                 title: Text(
                                   industry["name"],
                                   style: const TextStyle(
-                                    color: textCyanDark,
+                                    color: AppTheme.textCyanDark,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -414,14 +348,6 @@ class _StudentInputPageState extends State<StudentInputPage> {
                     const SizedBox(height: 20),
 
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orangeAccent[400],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
                       onPressed: () async {
                         if (_formKey.currentState!.validate()) {
                           final nickname = _nicknameController.text;

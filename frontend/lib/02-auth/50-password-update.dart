@@ -7,6 +7,7 @@ import 'package:bridge/main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bridge/style.dart';
 
 class PasswordUpdatePage extends StatefulWidget {
   const PasswordUpdatePage({Key? key}) : super(key: key);
@@ -24,12 +25,6 @@ class _PasswordUpdatePageState extends State<PasswordUpdatePage> {
   bool _obscureCurrent = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
-
-  // 統一カラー
-  static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
-  static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
-  static const Color errorOrange = Color.fromARGB(255, 239, 108, 0);
-  static const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
 
   @override
   void dispose() {
@@ -136,12 +131,8 @@ Future<void> _onSubmit() async {
                   const SizedBox(height: 28),
 
                   // --- タイトル ---
-                  const Text('パスワード変更',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: textCyanDark,
-                      fontWeight: FontWeight.bold
-                    )
+                  Text('パスワード変更',
+                    style: AppTheme.mainTextStyle,
                   ),
                   const SizedBox(height: 12),
                   const Text('現在のパスワードと、新しいパスワードを入力してください。',
@@ -243,7 +234,7 @@ Future<void> _onSubmit() async {
         backgroundColor: Colors.white,
         side: const BorderSide(color: Colors.black26),
       ),
-      child: Text(text, style: const TextStyle(color: textCyanDark)),
+      child: Text(text),
     );
   }
 
@@ -257,7 +248,7 @@ Future<void> _onSubmit() async {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14, color: textCyanDark)),
+        Text(label),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,

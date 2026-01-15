@@ -12,6 +12,7 @@ import 'package:bridge/main.dart';
 import 'package:bridge/11-common/image_crop_dialog.dart';
 import '../06-company/photo_api_client.dart';
 import 'user_api_client.dart';
+import 'package:bridge/style.dart';
 
 class Industry {
   final int id;
@@ -39,13 +40,6 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
   bool _uploadingIcon = false;
 
   bool _isSaving = false; // 保存中フラグ
-
-
-  // 統一カラー
-  // static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
-  // static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
-  // static const Color errorOrange = Color.fromARGB(255, 239, 108, 0);
-  static const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
 
   @override
   void initState() {
@@ -160,17 +154,17 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text("プロフィールアイコン",
+              style: TextStyle(
+                fontSize: 16,
+                color: AppTheme.textCyanDark
+              ),
+            ),
             Center(
               child: Column(
                 children: [
                   Stack(
                     children: [
-                      Text("プロフィールアイコン",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: textCyanDark
-                        ),
-                      ),
                       CircleAvatar(
                         radius: 55,
                         backgroundColor: Colors.grey.shade200,
@@ -264,7 +258,7 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
       style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.bold,
-        color: textCyanDark,
+        color: AppTheme.textCyanDark,
       ),
     );
   }

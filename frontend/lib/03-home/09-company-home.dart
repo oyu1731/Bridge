@@ -4,6 +4,7 @@ import 'package:bridge/11-common/58-header.dart';
 import '../06-company/article_api_client.dart';
 import '../06-company/16-article-list.dart';
 import '../06-company/18-article-detail.dart';
+import 'package:bridge/style.dart';
 
 class CompanyHome extends StatefulWidget {
   final String? initialMessage;
@@ -28,12 +29,6 @@ class _CompanyHomeState extends State<CompanyHome>
     _tabController.dispose();
     super.dispose();
   }
-
-  // 統一カラー
-  static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
-  static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
-  static const Color errororange = Color.fromARGB(255, 239, 108, 0);
-  static const Color textCyanDark = Color.fromARGB(255, 6, 62, 85);
 
   @override
   Widget build(BuildContext context) {
@@ -111,14 +106,12 @@ Widget _buildTopPageTab(BuildContext context) {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: textCyanDark,
                     ),
                   ),
                   TextButton(
                     onPressed: () {},
                     child: const Text(
                       '>スレッド一覧',
-                      style: TextStyle(color: textCyanDark),
                     ),
                   ),
                 ],
@@ -149,7 +142,6 @@ Widget _buildTopPageTab(BuildContext context) {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: textCyanDark,
                     ),
                   ),
                   TextButton(
@@ -161,7 +153,6 @@ Widget _buildTopPageTab(BuildContext context) {
                     },
                     child: const Text(
                       '>記事一覧',
-                      style: TextStyle(color: textCyanDark),
                     ),
                   ),
                 ],

@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bridge/main.dart';
 import 'package:bridge/03-home/09-company-home.dart';
 import '../10-payment/53-payment-input-company.dart';
+import 'package:bridge/style.dart'; 
 
 class CompanyInputPage extends StatefulWidget {
   const CompanyInputPage({super.key});
@@ -134,22 +135,9 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
 
   @override
   Widget build(BuildContext context) {
-    final base = Theme.of(context);
-    final pageTheme = base.copyWith(
-      colorScheme: base.colorScheme.copyWith(error: errorOrange),
-      inputDecorationTheme: base.inputDecorationTheme.copyWith(
-        errorStyle: const TextStyle(color: errorOrange),
-        errorBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: errorOrange),
-        ),
-        focusedErrorBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: errorOrange, width: 2),
-        ),
-      ),
-    );
 
     return Theme(
-      data: pageTheme,
+      data: AppTheme.theme,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('企業サインアップ'),
@@ -170,11 +158,7 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                   children: [
                     Text(
                       '企業向けのアカウント作成ページです。',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: textCyanDark,
-                      ),
+                      style: AppTheme.mainTextStyle,
                     ),
                     const SizedBox(height: 10),
                     Text(
@@ -187,10 +171,7 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                     const SizedBox(height: 5),
                     Text(
                       '※学生・社会人の方は、このページでは登録できません。',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: textCyanDark,
-                      ),
+                      style: AppTheme.subTextStyle,
                     ),
                     const SizedBox(height: 20),
                     Row(
@@ -209,15 +190,6 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                               labelText: '企業名',
-                              labelStyle: const TextStyle(
-                                color: textCyanDark,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: cyanDark,
-                                  width: 1.0,
-                                ),
-                              ),
                             ),
                             validator: (v) =>
                                 v == null || v.isEmpty ? '企業名を入力してください' : null,
@@ -242,15 +214,6 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                               labelText: 'メールアドレス',
-                              labelStyle: const TextStyle(
-                                color: textCyanDark,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: cyanDark,
-                                  width: 1.0,
-                                ),
-                              ),
                             ),
                             validator: (v) {
                               if (v == null || v.isEmpty) {
@@ -283,15 +246,6 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                             decoration: InputDecoration(
                               border: const OutlineInputBorder(),
                               labelText: 'パスワード',
-                              labelStyle: const TextStyle(
-                                color: textCyanDark,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: cyanDark,
-                                  width: 1.0,
-                                ),
-                              ),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword
@@ -329,15 +283,6 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                               labelText: '電話番号',
-                              labelStyle: const TextStyle(
-                                color: textCyanDark,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: cyanDark,
-                                  width: 1.0,
-                                ),
-                              ),
                             ),
                             keyboardType: TextInputType.phone,
                             inputFormatters: [
@@ -374,15 +319,6 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                               labelText: '所在地',
-                              labelStyle: const TextStyle(
-                                color: textCyanDark,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: cyanDark,
-                                  width: 1.0,
-                                ),
-                              ),
                             ),
                             validator: (v) {
                               if (v == null || v.isEmpty) {
@@ -467,14 +403,6 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                   const SizedBox(height: 20),
 
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orangeAccent[400],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
                       onPressed: () async {
                         if (!_formKey.currentState!.validate()) return;
 
