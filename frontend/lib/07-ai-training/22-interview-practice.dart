@@ -802,12 +802,12 @@ class _InterviewScreenState extends State<InterviewScreen> {
 
   // 面接官の画像リスト
   final List<String> _interviewerImages = [
-    '../lib/01-images/mensetukan1.png',
-    '../lib/01-images/mensetukan2.png',
-    '../lib/01-images/mensetukan3.png',
-    '../lib/01-images/mensetukan4.png',
-    '../lib/01-images/mensetukan5.png',
-    '../lib/01-images/mensetukan6.png',
+    'lib/01-images/mensetukan1.png',
+    'lib/01-images/mensetukan2.png',
+    'lib/01-images/mensetukan3.png',
+    'lib/01-images/mensetukan4.png',
+    'lib/01-images/mensetukan5.png',
+    'lib/01-images/mensetukan6.png',
   ];
 
   void _loadUserSession() async {
@@ -895,8 +895,7 @@ class _InterviewScreenState extends State<InterviewScreen> {
       setState(() {
         _currentQuestionIndex++;
         _textEditingController.clear();
-        // 次の質問で新しい面接官画像を選択
-        _selectRandomInterviewerImage();
+        // _selectRandomInterviewerImage();
         print("[Dart] InterviewPractice: テキストフィールドをクリア (次の質問へ)");
       });
       _speakCurrentQuestion();
