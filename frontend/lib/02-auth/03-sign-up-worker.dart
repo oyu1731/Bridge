@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import 'package:bridge/main.dart';
 import 'package:bridge/03-home/08-student-worker-home.dart';
+import 'package:bridge/style.dart';
 
 class ProfessionalInputPage extends StatefulWidget {
   const ProfessionalInputPage({super.key});
@@ -134,22 +135,8 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
 
   @override
   Widget build(BuildContext context) {
-    final base = Theme.of(context);
-    final pageTheme = base.copyWith(
-      colorScheme: base.colorScheme.copyWith(error: errorOrange),
-      inputDecorationTheme: base.inputDecorationTheme.copyWith(
-        errorStyle: const TextStyle(color: errorOrange),
-        errorBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: errorOrange),
-        ),
-        focusedErrorBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: errorOrange, width: 2),
-        ),
-      ),
-    );
-
     return Theme(
-      data: pageTheme,
+      data: AppTheme.theme,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('社会人サインアップ'),
@@ -201,15 +188,6 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                               labelText: 'ニックネーム',
-                              labelStyle: const TextStyle(
-                                color: textCyanDark,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: cyanDark,
-                                  width: 1.0,
-                                ),
-                              ),
                             ),
                             validator: (v) =>
                                 v == null || v.isEmpty ? '入力してください' : null,
@@ -234,15 +212,6 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                               labelText: 'メールアドレス',
-                              labelStyle: const TextStyle(
-                                color: textCyanDark,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: cyanDark,
-                                  width: 1.0,
-                                ),
-                              ),
                             ),
                             keyboardType: TextInputType.emailAddress,
                             validator: (v) {
@@ -271,15 +240,6 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                             decoration: InputDecoration(
                               border: const OutlineInputBorder(),
                               labelText: 'パスワード',
-                              labelStyle: const TextStyle(
-                                color: textCyanDark,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: cyanDark,
-                                  width: 1.0,
-                                ),
-                              ),
                               hintText: '英数字８文字以上で入力してください',
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -324,15 +284,6 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                               labelText: '電話番号',
-                              labelStyle: const TextStyle(
-                                color: textCyanDark,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: cyanDark,
-                                  width: 1.0,
-                                ),
-                              ),
                             ),
                             keyboardType: TextInputType.phone,
                             inputFormatters: [
@@ -369,15 +320,6 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                               labelText: '社会人歴（年）',
-                              labelStyle: const TextStyle(
-                                color: textCyanDark,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: cyanDark,
-                                  width: 1.0,
-                                ),
-                              ),
                             ),
                             keyboardType: TextInputType.number,
                             inputFormatters: [
@@ -460,14 +402,6 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                     const SizedBox(height: 20),
 
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orangeAccent[400],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
                       onPressed: () async {
                         if (!_formKey.currentState!.validate()) return;
 

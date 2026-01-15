@@ -8,6 +8,7 @@ import 'dart:convert';
 import '../06-company/article_api_client.dart';
 import '../06-company/16-article-list.dart';
 import '../06-company/18-article-detail.dart';
+import 'package:bridge/style.dart';
 
 class StudentWorkerHome extends StatefulWidget {
   final String? initialMessage;
@@ -17,19 +18,10 @@ class StudentWorkerHome extends StatefulWidget {
   State<StudentWorkerHome> createState() => _StudentWorkerHomeState();
 }
 
-class _StudentWorkerHomeState extends State<StudentWorkerHome>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _StudentWorkerHomeState extends State<StudentWorkerHome> {
   final GlobalActions _globalActions = GlobalActions(); // グローバルアクション利用
   Map<String, dynamic>? _user;
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 5, vsync: this);
-    // ホーム表示時にリアルタイムで状態を更新する
-    _refreshUserStatus();
-  }
 
   /// サーバーから最新のプラン状態を取得し、セッションを更新する
   Future<void> _refreshUserStatus() async {
@@ -69,18 +61,6 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
   }
 
   @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  // 統一カラー
-  static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
-  static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
-  static const Color errororange = Color.fromARGB(255, 239, 108, 0);
-  static const Color textCyanDark = Color.fromARGB(255, 6, 62, 85);
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: BridgeHeader(),
@@ -109,16 +89,7 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
               ),
             ),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildTopPageTab(context),
-                Center(child: Text('タブ2の内容')),
-                Center(child: Text('タブ3の内容')),
-                Center(child: Text('タブ4の内容')),
-                Center(child: Text('タブ5の内容')),
-              ],
-            ),
+            child: _buildTopPageTab(context)
           ),
         ],
       ),
@@ -156,14 +127,12 @@ Widget _buildTopPageTab(BuildContext context) {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: textCyanDark,
                     ),
                   ),
                   TextButton(
                     onPressed: () {},
                     child: const Text(
                       '>スレッド一覧',
-                      style: TextStyle(color: textCyanDark),
                     ),
                   ),
                 ],
@@ -194,7 +163,6 @@ Widget _buildTopPageTab(BuildContext context) {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: textCyanDark,
                     ),
                   ),
                   TextButton(
@@ -206,7 +174,6 @@ Widget _buildTopPageTab(BuildContext context) {
                     },
                     child: const Text(
                       '>記事一覧',
-                      style: TextStyle(color: textCyanDark),
                     ),
                   ),
                 ],

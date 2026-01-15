@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import '../02-auth/07-delete-complete.dart';
-import '../11-common/58-header.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import '../02-auth/07-delete-complete.dart';
+import '../11-common/58-header.dart';
+import 'package:bridge/style.dart';
 
 class DeleteAccountPage extends StatefulWidget {
   const DeleteAccountPage({Key? key}) : super(key: key);
@@ -11,12 +13,6 @@ class DeleteAccountPage extends StatefulWidget {
   @override
   State<DeleteAccountPage> createState() => _DeleteAccountPageState();
 }
-
-// ページ共通カラー（このファイル内で使う）
-const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
-const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
-const Color orangeAccent = Color(0xFFFF9800);
-const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
 
 class _DeleteAccountPageState extends State<DeleteAccountPage> {
   bool _isProcessing = false;
@@ -49,7 +45,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: orangeAccent,
+        backgroundColor: AppTheme.accentOrange,
       ),
     );
   }
@@ -134,7 +130,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
 
                   const Text(
                     '退会手続き',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textCyanDark),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold,),
                   ),
 
                   const SizedBox(height: 12),
@@ -145,11 +141,11 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: cyanDark),
+                      border: Border.all(color: AppTheme.cyanDark),
                     ),
                     child: const Text(
                       '会員登録を解除します。\n退会すると、あなたのアカウント情報は削除され元に戻せません。本当に退会しますか？',
-                      style: TextStyle(fontSize: 16, color: textCyanDark),
+                      style: TextStyle(fontSize: 16),
                     ),
                   ),
                   const SizedBox(height: 30),
@@ -160,7 +156,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                       TextButton(
                         onPressed: _isProcessing ? null : () => Navigator.of(context).pop(),
                         style: TextButton.styleFrom(
-                          foregroundColor: textCyanDark,
+                          foregroundColor: AppTheme.textCyanDark,
                           textStyle: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                         child: const Text('戻る'),
@@ -185,10 +181,6 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         ),
                       ),
-
-                      const SizedBox(width: 12),
-
-                      
                     ],
                   ),
                 ],

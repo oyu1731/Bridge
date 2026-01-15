@@ -11,6 +11,7 @@ import '../06-company/photo_api_client.dart';
 import 'user_api_client.dart';
 import 'company_photo_modal.dart';
 import '../../06-company/company_api_client.dart';
+import 'package:bridge/style.dart';
 
 class Industry {
   final int id;
@@ -42,12 +43,6 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
   bool _uploadingIcon = false;
 
   bool _isSaving = false;
-
-  // 統一カラー
-  // static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
-  // static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
-  // static const Color errorOrange = Color.fromARGB(255, 239, 108, 0);
-  static const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
 
   @override
   void initState() {
@@ -185,7 +180,7 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
                   Text("プロフィールアイコン",
                     style: TextStyle(
                       fontSize: 16,
-                      color: textCyanDark
+                      color: AppTheme.textCyanDark
                     ),
                   ),
                   Stack(
@@ -318,7 +313,7 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
       style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.bold,
-        color: textCyanDark,
+        color: AppTheme.textCyanDark,
       ),
     );
   }

@@ -3,16 +3,18 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:bridge/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:bridge/03-home/08-student-worker-home.dart';
-import 'package:bridge/09-admin/36-admin-home.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import '46-forgot-password.dart';
-import 'package:bridge/03-home/09-company-home.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+
+import 'package:bridge/03-home/08-student-worker-home.dart';
+import 'package:bridge/03-home/09-company-home.dart';
+import 'package:bridge/09-admin/36-admin-home.dart';
+import 'package:bridge/style.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -30,13 +32,8 @@ class _SignInPageState extends State<SignInPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  bool _obscurePassword = true;
   String _errorMessage = '';
-
-  // 統一カラー
-  static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
-  static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
-  static const Color errorOrange = Color.fromARGB(255, 239, 108, 0);
-  static const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
 
   InputDecoration _inputStyle(String label, {String? hint}) {
     return InputDecoration(
@@ -45,38 +42,19 @@ class _SignInPageState extends State<SignInPage> {
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: cyanMedium, width: 2),
+        borderSide: const BorderSide(color: AppTheme.cyanMedium, width: 2),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final base = Theme.of(context);
-    final pageTheme = base.copyWith(
-      colorScheme: base.colorScheme.copyWith(error: Colors.orange[800]),
-      inputDecorationTheme: base.inputDecorationTheme.copyWith(
-        errorStyle: const TextStyle(color: errorOrange),
-        errorBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: errorOrange),
-        ),
-        focusedErrorBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: errorOrange, width: 2),
-        ),
-      ),
-      checkboxTheme: CheckboxThemeData(
-        fillColor: MaterialStateProperty.all<Color>(cyanDark),
-        checkColor: MaterialStateProperty.all<Color>(Colors.white),
-      ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(color: cyanDark),
-    );
-
     return Theme(
-      data: pageTheme,
+    data: AppTheme.theme,
     child: Scaffold(
       appBar: AppBar(
         title: const Text('サインイン'),
-        backgroundColor: cyanMedium,
+        backgroundColor: AppTheme.cyanMedium,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -93,19 +71,12 @@ class _SignInPageState extends State<SignInPage> {
                 children: [
                   Text(
                     'サインインページです。',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: textCyanDark,
-                    ),
+                    style: AppTheme.mainTextStyle
                   ),
                   const SizedBox(height: 10),
                   Text(
                     'アカウント未登録の方は、サインアップを行ってください。',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: textCyanDark,
-                    ),
+                    style: AppTheme.subTextStyle
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -114,7 +85,7 @@ class _SignInPageState extends State<SignInPage> {
                         Padding(padding: EdgeInsetsGeometry.only(top: 14),
                           child: Icon(
                             Icons.email_outlined,
-                            color: cyanDark,
+                            color: AppTheme.cyanDark,
                           )
                         ),
                         const SizedBox(width: 10),
@@ -138,46 +109,50 @@ class _SignInPageState extends State<SignInPage> {
                     ),
                   const SizedBox(height: 20),
                   Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
-                          child: Icon(
-                            Icons.email_outlined,
-                            color: cyanDark,
-                          )
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(padding: EdgeInsetsGeometry.only(top: 14),
+                        child: Icon(
+                          Icons.lock_outlined,
+                          color: AppTheme.cyanDark,
+                        )
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _passwordController,
+                          decoration: _inputStyle(
+                            'パスワード',
+                            hint: '英数字8文字以上で入力してください',
+                          ).copyWith(
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                color: AppTheme.cyanDark,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+                          ),
+                          keyboardType: TextInputType.visiblePassword,
+                          obscureText: _obscurePassword,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'パスワードを入力してください';
+                            }
+                            return null;
+                          },
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextFormField(
-                    controller: _passwordController,
-                    decoration: _inputStyle(
-                      'パスワード',
-                      hint: '英数字8文字以上で入力してください',
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'パスワードを入力してください';
-                      }
-                      return null;
-                    },
+                      ),
+                    ],
                   ),
-                        ),
-                      ],
-                    ),
                   const SizedBox(height: 25),
 
                   SizedBox(
-                    width: double.infinity,
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orangeAccent[400],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
                       onPressed: () async {
                         if (!_formKey.currentState!.validate()) return;
 
@@ -251,7 +226,7 @@ class _SignInPageState extends State<SignInPage> {
                     Text(
                       _errorMessage,
                       style: TextStyle(
-                        color: errorOrange,
+                        color: AppTheme.errorOrange,
                         fontWeight: FontWeight.bold,
                       ),
                     )
