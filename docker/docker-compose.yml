@@ -71,6 +71,19 @@ services:
       - bridge-network
     restart: unless-stopped
 
+# Cloudflare Tunnel 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: bridge-cloudflared
+    # --token の後に Cloudflare から取得したトークンを貼り付けます
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - bridge-network
+    restart: always
+
 volumes:
   mysql_data:
   uploaded_photos:
