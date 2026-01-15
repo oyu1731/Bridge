@@ -4,10 +4,12 @@ import 'package:bridge/11-common/58-header.dart';
 class AdminCompanyArticleDetail extends StatefulWidget {
   final String articleId; // 遷移元から受け取るID
 
-  const AdminCompanyArticleDetail({Key? key, required this.articleId}) : super(key: key);
+  const AdminCompanyArticleDetail({Key? key, required this.articleId})
+    : super(key: key);
 
   @override
-  _AdminCompanyArticleDetailState createState() => _AdminCompanyArticleDetailState();
+  _AdminCompanyArticleDetailState createState() =>
+      _AdminCompanyArticleDetailState();
 }
 
 class _AdminCompanyArticleDetailState extends State<AdminCompanyArticleDetail> {
@@ -41,15 +43,15 @@ class _AdminCompanyArticleDetailState extends State<AdminCompanyArticleDetail> {
             '弊社の交流スレッドを作成いたしました！質問においても気になることや、弊社に対する質問など気軽に投稿してくださいね♪\n\nスレッドタイトルは【株式会社AAA～フリースレッド】です！',
         'tag': '#スレッド開設',
         'company': '株式会社AAA',
-        'images': [
-          'https://via.placeholder.com/150',
-        ],
+        'images': ['https://via.placeholder.com/150'],
       },
     ];
 
     setState(() {
-      _articleData =
-          dummyArticles.firstWhere((a) => a['id'] == widget.articleId, orElse: () => {});
+      _articleData = dummyArticles.firstWhere(
+        (a) => a['id'] == widget.articleId,
+        orElse: () => {},
+      );
     });
   }
 
@@ -57,20 +59,21 @@ class _AdminCompanyArticleDetailState extends State<AdminCompanyArticleDetail> {
   void _deleteArticle() async {
     bool confirm = await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('削除確認'),
-        content: Text('この記事を削除しますか？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('キャンセル'),
+      builder:
+          (_) => AlertDialog(
+            title: Text('削除確認'),
+            content: Text('この記事を削除しますか？'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('キャンセル'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text('削除'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('削除'),
-          ),
-        ],
-      ),
     );
 
     if (confirm) {
@@ -91,6 +94,7 @@ class _AdminCompanyArticleDetailState extends State<AdminCompanyArticleDetail> {
     return Scaffold(
       appBar: BridgeHeader(),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -111,10 +115,11 @@ class _AdminCompanyArticleDetailState extends State<AdminCompanyArticleDetail> {
                 Expanded(
                   child: Wrap(
                     spacing: 8,
-                    children: (_articleData!['tag'] as String)
-                        .split(',')
-                        .map((t) => Chip(label: Text(t)))
-                        .toList(),
+                    children:
+                        (_articleData!['tag'] as String)
+                            .split(',')
+                            .map((t) => Chip(label: Text(t)))
+                            .toList(),
                   ),
                 ),
                 // 右：会社名 + 削除
@@ -144,18 +149,22 @@ class _AdminCompanyArticleDetailState extends State<AdminCompanyArticleDetail> {
             const SizedBox(height: 16),
 
             // 画像表示（最大3枚まで横スクロール）
-            if (_articleData!['images'] != null && (_articleData!['images'] as List).isNotEmpty)
+            if (_articleData!['images'] != null &&
+                (_articleData!['images'] as List).isNotEmpty)
               SizedBox(
                 height: 150,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  children: (_articleData!['images'] as List)
-                      .take(3)
-                      .map((url) => Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Image.network(url),
-                          ))
-                      .toList(),
+                  children:
+                      (_articleData!['images'] as List)
+                          .take(3)
+                          .map(
+                            (url) => Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Image.network(url),
+                            ),
+                          )
+                          .toList(),
                 ),
               ),
             const SizedBox(height: 16),

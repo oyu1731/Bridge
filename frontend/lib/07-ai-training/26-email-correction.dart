@@ -326,6 +326,7 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
                         : Scrollbar(
                           thumbVisibility: true,
                           child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
                             child: SelectableText(
                               _correctedEmail,
                               style: const TextStyle(fontSize: 16, height: 1.5),
@@ -378,6 +379,7 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
                         : Scrollbar(
                           thumbVisibility: true,
                           child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
                             child: SelectableText(
                               _correctionDetails,
                               style: const TextStyle(fontSize: 16, height: 1.5),

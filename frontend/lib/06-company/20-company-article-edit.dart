@@ -50,7 +50,7 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
     _titleController.text = widget.initialTitle;
     _contentController.text = widget.initialContent;
     _selectedTags = List.from(widget.initialTags);
-    
+
     _loadAvailableTags();
     _loadArticleIfNeeded();
   }
@@ -99,50 +99,59 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: BridgeHeader(),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Color(0xFFF5F5F5),
-                        border: Border.all(color: Color(0xFFE0E0E0)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, color: Color(0xFF424242), size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            '記事編集',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+      body:
+          _isLoading
+              ? Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFF5F5F5),
+                          border: Border.all(color: Color(0xFFE0E0E0)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.edit,
                               color: Color(0xFF424242),
+                              size: 20,
                             ),
-                          ),
-                        ],
+                            SizedBox(width: 8),
+                            Text(
+                              '記事編集',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF424242),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTitleSection(),
-                    const SizedBox(height: 16),
-                    _buildTagSection(),
-                    const SizedBox(height: 16),
-                    _buildImageSection(),
-                    const SizedBox(height: 16),
-                    _buildContentSection(),
-                    const SizedBox(height: 24),
-                    _buildActionButtonsSection(),
-                  ],
+                      const SizedBox(height: 16),
+                      _buildTitleSection(),
+                      const SizedBox(height: 16),
+                      _buildTagSection(),
+                      const SizedBox(height: 16),
+                      _buildImageSection(),
+                      const SizedBox(height: 16),
+                      _buildContentSection(),
+                      const SizedBox(height: 24),
+                      _buildActionButtonsSection(),
+                    ],
+                  ),
                 ),
               ),
-            ),
     );
   }
 
@@ -302,8 +311,11 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              ..._selectedImages.asMap().entries.map((entry) => _buildImageChip(entry.key)),
-              if (_selectedImages.length < _remainingNewSlots()) _buildAddImageButton(),
+              ..._selectedImages.asMap().entries.map(
+                (entry) => _buildImageChip(entry.key),
+              ),
+              if (_selectedImages.length < _remainingNewSlots())
+                _buildAddImageButton(),
             ],
           ),
         ),
@@ -357,7 +369,12 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
     final hasAny = _photo1Id != null || _photo2Id != null || _photo3Id != null;
     if (!hasAny) return SizedBox.shrink();
 
-    Widget row({required String label, required int? id, required bool flag, required ValueChanged<bool?> onChanged}) {
+    Widget row({
+      required String label,
+      required int? id,
+      required bool flag,
+      required ValueChanged<bool?> onChanged,
+    }) {
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
@@ -366,7 +383,10 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
         ),
         child: Row(
           children: [
-            Text(label, style: TextStyle(fontSize: 13, color: Color(0xFF424242))),
+            Text(
+              label,
+              style: TextStyle(fontSize: 13, color: Color(0xFF424242)),
+            ),
             SizedBox(width: 8),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -386,7 +406,10 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
             if (id != null)
               Row(
                 children: [
-                  Text('削除', style: TextStyle(fontSize: 13, color: Color(0xFF424242))),
+                  Text(
+                    '削除',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF424242)),
+                  ),
                   SizedBox(width: 4),
                   Checkbox(value: flag, onChanged: onChanged),
                 ],
@@ -408,7 +431,11 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
           ),
           child: Text(
             '既存画像の削除',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF424242)),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF424242),
+            ),
           ),
         ),
         row(
@@ -582,7 +609,7 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
 
   void _showTagSelectionModal() {
     Set<String> tempSelectedTags = Set.from(_selectedTags);
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -616,8 +643,12 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
                     Expanded(
                       child: GridView.builder(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: MediaQuery.of(context).size.width > 800 ? 3 : 2,
-                          childAspectRatio: MediaQuery.of(context).size.width > 800 ? 2.2 : 2.5,
+                          crossAxisCount:
+                              MediaQuery.of(context).size.width > 800 ? 3 : 2,
+                          childAspectRatio:
+                              MediaQuery.of(context).size.width > 800
+                                  ? 2.2
+                                  : 2.5,
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
                         ),
@@ -625,7 +656,7 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
                         itemBuilder: (context, index) {
                           final tag = _availableTags[index].tag;
                           final isSelected = tempSelectedTags.contains(tag);
-                          
+
                           return InkWell(
                             onTap: () {
                               setModalState(() {
@@ -637,28 +668,57 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
                               });
                             },
                             child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: isSelected ? Color(0xFFE3F2FD) : Colors.white,
+                                color:
+                                    isSelected
+                                        ? Color(0xFFE3F2FD)
+                                        : Colors.white,
                                 border: Border.all(
-                                  color: isSelected ? Color(0xFF1976D2) : Color(0xFFE0E0E0),
+                                  color:
+                                      isSelected
+                                          ? Color(0xFF1976D2)
+                                          : Color(0xFFE0E0E0),
                                 ),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
-                                    isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                                    size: MediaQuery.of(context).size.width > 800 ? 20 : 16,
-                                    color: isSelected ? Color(0xFF1976D2) : Color(0xFF757575),
+                                    isSelected
+                                        ? Icons.check_box
+                                        : Icons.check_box_outline_blank,
+                                    size:
+                                        MediaQuery.of(context).size.width > 800
+                                            ? 20
+                                            : 16,
+                                    color:
+                                        isSelected
+                                            ? Color(0xFF1976D2)
+                                            : Color(0xFF757575),
                                   ),
-                                  SizedBox(width: MediaQuery.of(context).size.width > 800 ? 8 : 4),
+                                  SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width > 800
+                                            ? 8
+                                            : 4,
+                                  ),
                                   Expanded(
                                     child: Text(
                                       tag,
                                       style: TextStyle(
-                                        fontSize: MediaQuery.of(context).size.width > 800 ? 14 : 10,
-                                        color: isSelected ? Color(0xFF1976D2) : Color(0xFF424242),
+                                        fontSize:
+                                            MediaQuery.of(context).size.width >
+                                                    800
+                                                ? 14
+                                                : 10,
+                                        color:
+                                            isSelected
+                                                ? Color(0xFF1976D2)
+                                                : Color(0xFF424242),
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -725,7 +785,7 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
         maxHeight: 1080,
         imageQuality: 85,
       );
-      
+
       if (image != null) {
         setState(() {
           _selectedImages.add(image);
@@ -751,10 +811,7 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
             '確認',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          content: Text(
-            '本当にこの記事を削除しますか?',
-            style: TextStyle(fontSize: 16),
-          ),
+          content: Text('本当にこの記事を削除しますか?', style: TextStyle(fontSize: 16)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -787,15 +844,17 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
       }
 
       await ArticleApiClient.deleteArticle(articleId);
-      
+
       if (!mounted) return;
-      
+
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -828,7 +887,10 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
                     ),
                     child: Text(
                       '記事一覧へ',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -839,9 +901,9 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
       );
     } catch (e) {
       setState(() => _isLoading = false);
-      
+
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('記事の削除に失敗しました: ${e.toString()}'),
@@ -854,20 +916,14 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
   Future<void> _updateArticle() async {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('タイトルを入力してください'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('タイトルを入力してください'), backgroundColor: Colors.red),
       );
       return;
     }
 
     if (_contentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('本文を入力してください'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('本文を入力してください'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -947,9 +1003,7 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
         if (mounted) {
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(
-              builder: (context) => CompanyArticleListPage(),
-            ),
+            MaterialPageRoute(builder: (context) => CompanyArticleListPage()),
             (route) => route.isFirst,
           );
         }

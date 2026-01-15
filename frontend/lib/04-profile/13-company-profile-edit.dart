@@ -188,6 +188,7 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
     return Scaffold(
       appBar: BridgeHeader(),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

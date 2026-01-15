@@ -45,13 +45,18 @@ class _AdminCompanyColumnListState extends State<AdminCompanyColumnList> {
       if (query.isEmpty) {
         _filteredArticles = List.from(_articles);
       } else {
-        _filteredArticles = _articles
-            .where((article) =>
-                article['title'].toLowerCase().contains(query.toLowerCase()) ||
-                article['description']
-                    .toLowerCase()
-                    .contains(query.toLowerCase()))
-            .toList();
+        _filteredArticles =
+            _articles
+                .where(
+                  (article) =>
+                      article['title'].toLowerCase().contains(
+                        query.toLowerCase(),
+                      ) ||
+                      article['description'].toLowerCase().contains(
+                        query.toLowerCase(),
+                      ),
+                )
+                .toList();
       }
     });
   }
@@ -60,20 +65,21 @@ class _AdminCompanyColumnListState extends State<AdminCompanyColumnList> {
   void _deleteArticle(int index) async {
     bool confirm = await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('削除確認'),
-        content: Text('この記事を削除しますか？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('キャンセル'),
+      builder:
+          (_) => AlertDialog(
+            title: Text('削除確認'),
+            content: Text('この記事を削除しますか？'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('キャンセル'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text('削除'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('削除'),
-          ),
-        ],
-      ),
     );
 
     if (confirm) {
@@ -88,6 +94,7 @@ class _AdminCompanyColumnListState extends State<AdminCompanyColumnList> {
     return Scaffold(
       appBar: BridgeHeader(),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: EdgeInsets.all(16),
         child: Column(
           children: [
@@ -117,8 +124,7 @@ class _AdminCompanyColumnListState extends State<AdminCompanyColumnList> {
             borderSide: BorderSide(color: Colors.grey.shade400),
           ),
           isDense: true,
-          contentPadding:
-              EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
           suffixIcon: IconButton(
             icon: Icon(Icons.search, color: Colors.grey[700]),
             onPressed: _onSearchPressed,
@@ -128,7 +134,7 @@ class _AdminCompanyColumnListState extends State<AdminCompanyColumnList> {
       ),
     );
   }
-  
+
   // 記事カード
   Widget _buildArticleCard(Map<String, dynamic> article, int index) {
     return Container(
@@ -210,9 +216,12 @@ class _AdminCompanyColumnListState extends State<AdminCompanyColumnList> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => AdminCompanyArticleDetail(
-                              articleId: article['id'],
-                            )),
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => AdminCompanyArticleDetail(
+                                    articleId: article['id'],
+                                  ),
+                            ),
                           );
                         },
                         style: TextButton.styleFrom(
@@ -220,7 +229,9 @@ class _AdminCompanyColumnListState extends State<AdminCompanyColumnList> {
                           foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(6),
-                            side: BorderSide(color: Color(0xFFFFB74D)), // 少し濃い枠線
+                            side: BorderSide(
+                              color: Color(0xFFFFB74D),
+                            ), // 少し濃い枠線
                           ),
                         ),
                         child: Text('プレビュー'),
@@ -234,7 +245,9 @@ class _AdminCompanyColumnListState extends State<AdminCompanyColumnList> {
                           foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(6),
-                            side: BorderSide(color: Color(0xFF64B5F6)), // 少し濃い枠線
+                            side: BorderSide(
+                              color: Color(0xFF64B5F6),
+                            ), // 少し濃い枠線
                           ),
                         ),
                         child: Text('削除'),

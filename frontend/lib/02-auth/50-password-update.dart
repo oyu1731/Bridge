@@ -123,6 +123,7 @@ class _PasswordUpdatePageState extends State<PasswordUpdatePage> {
       appBar: BridgeHeader(),
       body: SafeArea(
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           child: Center(
             child: ConstrainedBox(

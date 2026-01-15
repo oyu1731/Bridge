@@ -116,6 +116,7 @@ class _InterviewPracticeState extends State<InterviewPractice> {
                 ),
               ),
               child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1146,6 +1147,7 @@ class _InterviewScreenState extends State<InterviewScreen> {
                             const SizedBox(height: 16),
                             Expanded(
                               child: SingleChildScrollView(
+                                physics: const BouncingScrollPhysics(),
                                 child: Text(
                                   currentQuestion,
                                   style: const TextStyle(

@@ -214,6 +214,7 @@ class _AdminMailListState extends State<AdminMailList> {
     return Scaffold(
       appBar: BridgeHeader(),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [

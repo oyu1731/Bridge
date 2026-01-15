@@ -169,6 +169,7 @@ class _ResultScreenState extends State<ResultScreen> {
       appBar: BridgeHeader(),
       backgroundColor: const Color(0xFFF8FAFC),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

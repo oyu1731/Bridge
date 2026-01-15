@@ -202,6 +202,7 @@ class _AdminMailSendState extends State<AdminMailSend> {
     return Scaffold(
       appBar: BridgeHeader(),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

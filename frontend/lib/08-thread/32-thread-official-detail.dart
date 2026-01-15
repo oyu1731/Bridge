@@ -47,7 +47,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   _messageStreamController;
   late final WebSocketChannel _channel;
   // final String baseUrl = 'http://localhost:8080/api';
-  final String baseUrl = ApiConfig.baseUrl;
+  final String baseUrl = "${ApiConfig.baseUrl}/api";
 
   File? _selectedImage;
   Uint8List? _webImageBytes;
@@ -63,7 +63,10 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     _fetchMessages();
 
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://localhost:8080/ws/chat/${widget.thread['id']}'),
+      // Uri.parse('ws://localhost:8080/ws/chat/${widget.thread['id']}'),
+      Uri.parse(
+        '${ApiConfig.baseUrl.replaceFirst('http', 'ws')}/ws/chat/${widget.thread['id']}',
+      ),
     );
 
     _channel.stream.listen((data) {

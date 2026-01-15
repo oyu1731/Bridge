@@ -233,6 +233,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                     );
 
                     return SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
                       scrollDirection: Axis.horizontal,
                       child: Row(children: buttons),
                     );

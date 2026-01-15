@@ -128,6 +128,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
           foregroundColor: Colors.white,
         ),
         body: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.all(16.0),
           child: Center(
             child: ConstrainedBox(
