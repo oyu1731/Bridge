@@ -11,9 +11,17 @@ Future<void> startWebCheckout({
   required String planType,
   required String userType,
   required int userId,
-  String successUrl = "http://localhost:5000/#/payment-success",
-  String cancelUrl = "http://localhost:5000/#/payment-cancel",
+  String? successUrl,
+  String? cancelUrl,
 }) async {
+  // フロントエンドのベースURL（バックエンドではなくフロントエンド）
+  final String frontendBaseUrl =
+      ApiConfig.baseUrl.contains('localhost')
+          ? 'http://localhost:5000' // 開発環境
+          : 'https://bridge-915bd.web.app'; // 本番環境（Firebase Hosting）
+
+  successUrl ??= "$frontendBaseUrl/#/payment-success";
+  cancelUrl ??= "$frontendBaseUrl/#/payment-cancel";
   // ---------------------------------------------------------
   // 【追加】決済画面に遷移する前にDBを先行して更新する（学生と同様の挙動）
   // ---------------------------------------------------------

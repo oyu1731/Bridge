@@ -11,14 +11,24 @@ Future<void> startWebCheckout({
   required String companyEmail,
   int? tempId,
   String userType = 'company',
-  String successUrl = "http://localhost:5000/#/payment-success",
-  String cancelUrl = "http://localhost:5000/#/payment-cancel",
+  String? successUrl,
+  String? cancelUrl,
 }) async {
   try {
+    // フロントエンドのベースURL（バックエンドではなくフロントエンド）
+    final String frontendBaseUrl =
+        ApiConfig.baseUrl.contains('localhost')
+            ? 'http://localhost:5000' // 開発環境
+            : 'https://bridge-915bd.web.app'; // 本番環境（Firebase Hosting）
+
+    final String resolvedSuccessUrl =
+        successUrl ?? "$frontendBaseUrl/#/payment-success";
+    final String resolvedCancelUrl =
+        cancelUrl ?? "$frontendBaseUrl/#/payment-cancel";
     final String successUrlWithParam =
-        successUrl.contains('?')
-            ? '$successUrl&userType=${Uri.encodeComponent(userType)}&session_id={CHECKOUT_SESSION_ID}'
-            : '$successUrl?userType=${Uri.encodeComponent(userType)}&session_id={CHECKOUT_SESSION_ID}';
+        resolvedSuccessUrl.contains('?')
+            ? '$resolvedSuccessUrl&userType=${Uri.encodeComponent(userType)}&session_id={CHECKOUT_SESSION_ID}'
+            : '$resolvedSuccessUrl?userType=${Uri.encodeComponent(userType)}&session_id={CHECKOUT_SESSION_ID}';
 
     final Map<String, dynamic> payload = {
       "amount": amount,
@@ -28,7 +38,7 @@ Future<void> startWebCheckout({
       "companyName": companyName,
       "companyEmail": companyEmail,
       "successUrl": successUrlWithParam,
-      "cancelUrl": cancelUrl,
+      "cancelUrl": resolvedCancelUrl,
     };
     if (tempId != null) payload["tempId"] = tempId;
 

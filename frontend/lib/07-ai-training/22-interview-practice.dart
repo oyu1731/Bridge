@@ -30,7 +30,7 @@ class InterviewPractice extends StatefulWidget {
 }
 
 class _InterviewPracticeState extends State<InterviewPractice> {
-  // --- Controllers ---
+  final GlobalActions _globalActions = GlobalActions(); // --- Controllers ---
   final TextEditingController nameController = TextEditingController();
   final TextEditingController careerController = TextEditingController();
 
@@ -116,8 +116,9 @@ class _InterviewPracticeState extends State<InterviewPractice> {
                 ),
               ),
               child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
+                physics: const AlwaysScrollableScrollPhysics(),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ヘッダー
@@ -397,6 +398,19 @@ class _InterviewPracticeState extends State<InterviewPractice> {
                                 ),
                               );
 
+                              // トークンを消費
+                              if (user != null && user!['id'] != null) {
+                                final userId = user!['id'] as int;
+                                final tokensToDeduct = 20;
+                                final bool deducted = await _globalActions
+                                    .deductUserTokens(userId, tokensToDeduct);
+                                if (deducted) {
+                                  print('$tokensToDeduct トークンを消費しました。');
+                                } else {
+                                  print('トークン消費に失敗しました。');
+                                }
+                              }
+
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -461,6 +475,8 @@ class _InterviewPracticeState extends State<InterviewPractice> {
                       ),
                     ),
                     const SizedBox(height: 20),
+                    // キーボード表示時のスペース確保
+                    SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
                   ],
                 ),
               ),
@@ -1016,62 +1032,63 @@ class _InterviewScreenState extends State<InterviewScreen> {
         color: const Color(0xFFF8FAFC),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              // 進捗表示
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "質問 ${_currentQuestionIndex + 1}/${widget.questions.length}",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                        Text(
-                          "${(progress * 100).round()}%",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: Colors.grey.shade200,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Color(0xFF6366F1),
+          child:SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                // 進捗表示
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                      borderRadius: BorderRadius.circular(4),
-                      minHeight: 6,
-                    ),
-                  ],
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "質問 ${_currentQuestionIndex + 1}/${widget.questions.length}",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          Text(
+                            "${(progress * 100).round()}%",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      LinearProgressIndicator(
+                        value: progress,
+                        backgroundColor: Colors.grey.shade200,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF6366F1),
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                        minHeight: 6,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              Expanded(
-                child: Row(
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 面接官の画像
@@ -1163,7 +1180,6 @@ class _InterviewScreenState extends State<InterviewScreen> {
                     ),
                   ],
                 ),
-              ),
               const SizedBox(height: 24),
 
               // マイクボタン
@@ -1339,6 +1355,7 @@ class _InterviewScreenState extends State<InterviewScreen> {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),
