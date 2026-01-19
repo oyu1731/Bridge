@@ -4,7 +4,11 @@ import 'package:bridge/11-common/58-header.dart';
 import '../06-company/article_api_client.dart';
 import '../06-company/16-article-list.dart';
 import '../06-company/18-article-detail.dart';
-import 'package:bridge/style.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart'; // セッション保存用
+import '../08-thread/thread_api_client.dart';
+import 'package:bridge/08-thread/33-thread-unofficial-detail.dart';
+import 'package:bridge/08-thread/thread_model.dart';
 
 class CompanyHome extends StatefulWidget {
   final String? initialMessage;
@@ -15,13 +19,45 @@ class CompanyHome extends StatefulWidget {
 }
 
 class _CompanyHomeState extends State<CompanyHome>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  with SingleTickerProviderStateMixin {
+    List<Thread> officialThreads = [];
+    List<Thread> hotUnofficialThreads = [];
+    static const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
+    // API呼び出し　並び替え　上位３件に絞り込み
+    Future<List<Thread>> fetchTop3UnofficialThreads() async {
+      final threads = await ThreadApiClient.getAllThreads();
+      final unofficial = threads.where((t) => t.type == 2 && (t.entryCriteria == userType || t.entryCriteria == 1)).toList();
+      unofficial.sort((a, b) {
+        final aTime = a.lastCommentDate ?? DateTime(2000);
+        final bTime = b.lastCommentDate ?? DateTime(2000);
+        return bTime.compareTo(aTime); // 新しい順
+      });
+      return unofficial.take(3).toList();
+    }
+     //ユーザ情報取得
+    int? userType;
+    Future<void> _loadUserData() async {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString('current_user');
+      if (jsonString == null) return;
+      final userData = jsonDecode(jsonString);
+      setState(() {
+        userType = userData['type']+1;
+      });
+    }
 
+    Future<void> _init() async {
+      await _loadUserData();   //ユーザ取得
+      print("iiiiiiiiii");
+      print(userType);
+    }
+
+  late TabController _tabController;
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this); // タブ5個
+    _init();
   }
 
   @override
@@ -74,162 +110,220 @@ class _CompanyHomeState extends State<CompanyHome>
       ),
     );
   }
-}
-
-// =====================
-// トップページタブ
-// =====================
-Widget _buildTopPageTab(BuildContext context) {
-  final isMobile = MediaQuery.of(context).size.width < 600;
-  return FutureBuilder<List<ArticleDTO>>(
-    future: ArticleApiClient.getAllArticles(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      if (snapshot.hasError) {
-        return Center(child: Text('記事の取得に失敗しました'));
-      }
-      final articles = snapshot.data ?? [];
-      return SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 最新スレッド
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    '最新スレッド',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      '>スレッド一覧',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                children: [
-                  _buildThreadCard(title: 'これは、企業トップです。', time: '1分前'),
-                  const SizedBox(height: 12),
-                  _buildThreadCard(title: '株式会社AAAーフリースレッド', time: '2分前'),
-                  const SizedBox(height: 12),
-                  _buildThreadCard(title: '学生×社会人スレッド', time: '7分前'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // 注目記事
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    '注目記事',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => ArticleListPage()),
-                      );
-                    },
-                    child: const Text(
-                      '>記事一覧',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // スマホ: 横スクロール / PC: PageView＋ボタン（3枚ずつ）
-            SizedBox(
-              height: 260,
-              child:
-                  isMobile
-                      ? ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        itemCount: articles.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 16),
-                        itemBuilder: (context, i) {
-                          final a = articles[i];
-                          return _buildArticleCard(
-                            title: a.title,
-                            companyName: a.companyName ?? '',
-                            totalLikes: a.totalLikes ?? 0,
-                            link: '',
-                            onTitleTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (_) => ArticleDetailPage(
-                                        articleTitle: a.title,
-                                        articleId: a.id?.toString() ?? '',
-                                        companyName: a.companyName,
-                                        description: a.description,
-                                      ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      )
-                      : _ArticlePager(
-                        articles:
-                            articles
-                                .map(
-                                  (a) => {
-                                    "title": a.title,
-                                    "companyName": a.companyName ?? '',
-                                    "totalLikes": a.totalLikes ?? 0,
-                                    "link": '',
-                                    "onTitleTap": () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (_) => ArticleDetailPage(
-                                                articleTitle: a.title,
-                                                articleId:
-                                                    a.id?.toString() ?? '',
-                                                companyName: a.companyName,
-                                                description: a.description,
-                                              ),
-                                        ),
-                                      );
-                                    },
-                                  },
-                                )
-                                .toList(),
+  // =====================
+  // トップページタブ
+  // =====================
+  Widget _buildTopPageTab(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    return FutureBuilder<List<ArticleDTO>>(
+      future: ArticleApiClient.getAllArticles(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('記事の取得に失敗しました'));
+        }
+        final articles = snapshot.data ?? [];
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 最新スレッド
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '最新スレッド',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: textCyanDark,
                       ),
-            ),
+                    ),
+                    TextButton(
+                      onPressed: () {},
+                      child: const Text(
+                        '>スレッド一覧',
+                        style: TextStyle(color: textCyanDark),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  children: [
+                    FutureBuilder<List<Thread>>(
+                      future: fetchTop3UnofficialThreads(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (snapshot.hasError) {
+                          return Text('スレッド取得エラー');
+                        }
+                        final threads = snapshot.data ?? [];
+                        if (threads.isEmpty) {
+                          return Text('表示できるスレッドがありません');
+                        }
+                        return Column(
+                          children: threads.map((t) {
+                            return Column(
+                               children: [
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ThreadUnOfficialDetail(
+                                        thread: {'id': t.id, 'title': t.title},
+                                      ),
+                                    ),
+                                  );
+                                },
+                                //説明文の表示
+                                child: Card(
+                                  child: ListTile(
+                                    title: Text(
+                                      t.title,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      t.description,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(color: Colors.grey[700]),
+                                    ),
+                                    trailing: Text(
+                                      t.timeAgo,
+                                      style: const TextStyle(color: Colors.grey),
+                                    ),
+                                  ),
+                                ),
+                              ),
 
-            const SizedBox(height: 24),
-          ],
-        ),
-      );
-    },
-  );
+                            ],
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // 注目記事
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '注目記事',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: textCyanDark,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => ArticleListPage()),
+                        );
+                      },
+                      child: const Text(
+                        '>記事一覧',
+                        style: TextStyle(color: textCyanDark),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // スマホ: 横スクロール / PC: PageView＋ボタン（3枚ずつ）
+              SizedBox(
+                height: 260,
+                child:
+                    isMobile
+                        ? ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          itemCount: articles.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 16),
+                          itemBuilder: (context, i) {
+                            final a = articles[i];
+                            return _buildArticleCard(
+                              title: a.title,
+                              companyName: a.companyName ?? '',
+                              totalLikes: a.totalLikes ?? 0,
+                              link: '',
+                              onTitleTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => ArticleDetailPage(
+                                          articleTitle: a.title,
+                                          articleId: a.id?.toString() ?? '',
+                                          companyName: a.companyName,
+                                          description: a.description,
+                                        ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        )
+                        : _ArticlePager(
+                          articles:
+                              articles
+                                  .map(
+                                    (a) => {
+                                      "title": a.title,
+                                      "companyName": a.companyName ?? '',
+                                      "totalLikes": a.totalLikes ?? 0,
+                                      "link": '',
+                                      "onTitleTap": () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (_) => ArticleDetailPage(
+                                                  articleTitle: a.title,
+                                                  articleId:
+                                                      a.id?.toString() ?? '',
+                                                  companyName: a.companyName,
+                                                  description: a.description,
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                    },
+                                  )
+                                  .toList(),
+                        ),
+              ),
+
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
 }
+
 
 // =====================
 // スレッドカード

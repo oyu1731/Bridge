@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:bridge/11-common/58-header.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../08-thread/31-thread-list.dart';
 
 class ThreadCreate extends StatefulWidget {
   @override
@@ -11,17 +13,50 @@ class ThreadCreate extends StatefulWidget {
 class _ThreadCreateState extends State<ThreadCreate> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  
 
   String _selectedCondition = '全員';
 
   // APIから取得した業界リスト
   List<Map<String, dynamic>> _industries = [];
   Map<int, bool> _selectedIndustries = {};
+  //ユーザ情報取得
+  int? userId;
+  int? userType;
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('current_user');
+    if (jsonString == null) return;
+    final userData = jsonDecode(jsonString);
+    setState(() {
+      userId = userData['id']; //ユーザのid取得
+      userType = userData['type'];
+    });
+    print("aaaaaaaaaaaaaaaaa");
+    print(userData);
+    print('これはユーザタイプ$userType');
+    print('これはユーザID$userId');
+    _selectedCondition = '全員';//念のために全員に合わせておく
+  }
+
+  List<String> _availableConditions() {
+  if (userType == 1) {
+    // 学生
+    return ['全員', '学生'];
+  } else if (userType == 2) {
+    // 社会人
+    return ['全員', '社会人'];
+  } else {
+    // まだ userType が取れていない場合
+    return ['全員'];
+  }
+}
 
   @override
   void initState() {
     super.initState();
     _fetchIndustries();
+    _loadUserData();
   }
 
   // APIから業界データ取得
@@ -91,7 +126,7 @@ class _ThreadCreateState extends State<ThreadCreate> {
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
-              children: ['全員', '学生', '社会人'].map((label) {
+              children: _availableConditions().map((label) {
                 return Expanded(
                   child: RadioListTile<String>(
                     title: Text(label),
@@ -177,7 +212,7 @@ class _ThreadCreateState extends State<ThreadCreate> {
       'description': description.isNotEmpty ? description : null,
       'condition': condition,
       'industryIds': selectedIndustryIds,
-      'userId': 1, // ここに作成者IDを入れる
+      'userId': userId, // ここに作成者IDを入れる
     };
 
     try {
@@ -188,8 +223,33 @@ class _ThreadCreateState extends State<ThreadCreate> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('スレッドの作成が完了しました')),
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('スレッドの作成が完了しました')),
+        // );
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            return AlertDialog(
+              title: Text('完了'),
+              content: Text('スレッドの作成が完了しました'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // ダイアログを閉じる
+
+                    // スレッドトップページへ遷移
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (_) => ThreadList(),
+                      ),
+                    );
+                  },
+                  child: Text('確認'),
+                ),
+              ],
+            );
+          },
         );
         // 必要なら画面遷移やリスト更新もここで
       } else {
