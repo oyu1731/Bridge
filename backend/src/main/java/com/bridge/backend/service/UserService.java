@@ -180,6 +180,7 @@ public class UserService {
             userDto.setEmail(existingUser.getEmail());
             userDto.setPhoneNumber(existingUser.getPhoneNumber());
             userDto.setType(existingUser.getType());
+            userDto.setIcon(existingUser.getIcon());
             userDto.setSocietyHistory(existingUser.getSocietyHistory());
             
             // 【重要修正】token, planStatus, isWithdrawn のマッピングを追加
@@ -196,6 +197,7 @@ public class UserService {
 
 
             if (existingUser.getType() == 3 && existingUser.getCompanyId() != null) {
+                userDto.setCompanyId(existingUser.getCompanyId());
                 Optional<Company> company = companyRepository.findById(existingUser.getCompanyId());
                 if (company.isPresent()) {
                     Company existingCompany = company.get();
@@ -203,6 +205,7 @@ public class UserService {
                     userDto.setCompanyAddress(existingCompany.getAddress());
                     userDto.setCompanyPhoneNumber(existingCompany.getPhoneNumber());
                     userDto.setCompanyDescription(existingCompany.getDescription());
+                    userDto.setCompanyPhotoId(existingCompany.getPhotoId());
                 }
             }
             return userDto;
@@ -265,6 +268,16 @@ public class UserService {
         
         // 再度DBから最新の情報を取得して返す
         return getUserById(user.getId());
+    }
+
+    // アイコン更新
+    @Transactional
+    public UserDto updateUserIcon(Integer userId, Integer photoId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setIcon(photoId);
+        userRepository.save(user);
+        return getUserById(userId);
     }
 
     // 希望業界の更新

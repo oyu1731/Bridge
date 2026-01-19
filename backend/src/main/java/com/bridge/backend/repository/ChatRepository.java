@@ -13,4 +13,5 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
     @Modifying
     @Query("UPDATE Chat c SET c.isDeleted = true WHERE c.id = :id")
     void softDelete(Integer id);
+    List<Chat> findByThreadIdAndIsDeletedFalseOrderByCreatedAtAsc(Integer threadId);
 }

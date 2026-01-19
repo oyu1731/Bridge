@@ -19,17 +19,19 @@ public class ArticleDTO {
     private Integer photo2Id;
     private Integer photo3Id;
     private List<String> tags; // タグ名のリスト
-    private String industry; // 会社の業界名
+    private String industry; // 旧：会社の業界名（後方互換）
+    private List<String> industries; // 新：業界リスト
+    private Boolean isLikedByUser; // 現在のユーザーがいいねしているか
 
     // デフォルトコンストラクタ
     public ArticleDTO() {
     }
 
     // 全フィールドのコンストラクタ
-    public ArticleDTO(Integer id, Integer companyId, String companyName, String title, 
-                     String description, Integer totalLikes, Boolean isDeleted, 
+    public ArticleDTO(Integer id, Integer companyId, String companyName, String title,
+                     String description, Integer totalLikes, Boolean isDeleted,
                      String createdAt, Integer photo1Id, Integer photo2Id, Integer photo3Id,
-                     List<String> tags, String industry) {
+                     List<String> tags, String industry, List<String> industries) {
         this.id = id;
         this.companyId = companyId;
         this.companyName = companyName;
@@ -43,6 +45,7 @@ public class ArticleDTO {
         this.photo3Id = photo3Id;
         this.tags = tags;
         this.industry = industry;
+        this.industries = industries;
     }
 
     // Getters and Setters
@@ -150,6 +153,22 @@ public class ArticleDTO {
         this.industry = industry;
     }
 
+    public List<String> getIndustries() {
+        return industries;
+    }
+
+    public void setIndustries(List<String> industries) {
+        this.industries = industries;
+    }
+
+    public Boolean getIsLikedByUser() {
+        return isLikedByUser;
+    }
+
+    public void setIsLikedByUser(Boolean isLikedByUser) {
+        this.isLikedByUser = isLikedByUser;
+    }
+
     @Override
     public String toString() {
         return "ArticleDTO{" +
@@ -166,6 +185,7 @@ public class ArticleDTO {
                 ", photo3Id=" + photo3Id +
                 ", tags=" + tags +
                 ", industry='" + industry + '\'' +
+                ", industries=" + industries +
                 '}';
     }
 }

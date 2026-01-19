@@ -1,11 +1,18 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/03-home/08-student-worker-home.dart';
 import 'package:bridge/03-home/09-company-home.dart';
 import 'package:bridge/main.dart';
+import 'package:bridge/11-common/image_crop_dialog.dart';
+import '../06-company/photo_api_client.dart';
+import 'user_api_client.dart';
+import 'package:bridge/style.dart';
 
 class Industry {
   final int id;
@@ -29,8 +36,12 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
   final _emailController = TextEditingController();
   final _phoneNumberController = TextEditingController();
   final _societyHistoryController = TextEditingController();
+  int? _iconPhotoId;
+  String? _iconUrl;
+  bool _uploadingIcon = false;
 
   bool _isSaving = false; // 保存中フラグ
+
 
   @override
   void initState() {
@@ -69,7 +80,18 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
           _emailController.text = userData['email'] ?? '';
           _phoneNumberController.text = userData['phoneNumber'] ?? '';
           _societyHistoryController.text = userData['societyHistory'].toString() ?? '';
+          _iconPhotoId = userData['icon'];
         });
+
+        // 既存アイコン取得
+        if (_iconPhotoId != null) {
+          try {
+            final photo = await PhotoApiClient.getPhotoById(_iconPhotoId!);
+            setState(() {
+              _iconUrl = photo?.photoPath;
+            });
+          } catch (_) {}
+        }
       } else {
         print('Failed to load user data');
       }
@@ -109,7 +131,6 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
     if (response.statusCode == 200) {
       final List<dynamic> selectedIndustriesData = jsonDecode(response.body);
 
-      // 修正ポイント: industry は文字列で返るのでシンプルに取得
       final List<String> selectedIndustryNames = selectedIndustriesData.map((e) {
         return e['industry'].toString();
       }).toList();
@@ -136,16 +157,48 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text("プロフィールアイコン",
+              style: TextStyle(
+                fontSize: 16,
+                color: AppTheme.textCyanDark
+              ),
+            ),
             Center(
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.grey.shade300,
-                    child: Icon(Icons.person, size: 60, color: Colors.grey[700]),
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 55,
+                        backgroundColor: Colors.grey.shade200,
+                        child: _iconUrl != null
+                            ? CircleAvatar(
+                                radius: 52,
+                                backgroundImage: NetworkImage(_iconUrl!),
+                              )
+                            : Icon(Icons.person, size: 60, color: Colors.grey[600]),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: InkWell(
+                          onTap: _uploadingIcon ? null : _pickAndUploadIcon,
+                          child: CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.blueAccent,
+                            child: _uploadingIcon
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Icon(Icons.camera_alt, size: 20, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
-                  const Text("プロフィール写真"),
                 ],
               ),
             ),
@@ -162,7 +215,7 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
             _buildLabel("社会人歴（年）"),
             _buildTextField(_societyHistoryController),
             const SizedBox(height: 20),
-            _buildLabel("業界"),
+            _buildLabel("現職業界"),
             Column(
               children: industries.map((industry) {
                 return CheckboxListTile(
@@ -170,7 +223,7 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
                   value: industry.isSelected,
                   onChanged: (bool? value) {
                     setState(() {
-                      industry.isSelected = value ?? true;
+                      industry.isSelected = value ?? false;
                     });
                   },
                 );
@@ -179,6 +232,10 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
             const SizedBox(height: 30),
             Center(
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orangeAccent[400],
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: _isSaving
                     ? null
                     : () async {
@@ -188,7 +245,10 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
                       },
                 child: _isSaving
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('編集'),
+                    : const Text('編集',
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),),
               ),
             ),
           ],
@@ -200,7 +260,11 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
   Widget _buildLabel(String text) {
     return Text(
       text,
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: AppTheme.textCyanDark,
+      ),
     );
   }
 
@@ -255,6 +319,7 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
       'phoneNumber': _phoneNumberController.text,
       'societyHistory': int.tryParse(_societyHistoryController.text),
       'desiredIndustries': selectedIndustryIds,
+      'icon': _iconPhotoId,
     };
 
     final url = 'http://localhost:8080/api/users/$userId/profile';
@@ -306,4 +371,46 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
     }
   }
 
+  Future<void> _pickAndUploadIcon() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('current_user');
+    if (userJson == null) return;
+    final sessionUser = jsonDecode(userJson);
+    final userId = sessionUser['id'];
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
+    if (picked == null) return;
+
+    final bytes = await picked.readAsBytes();
+    if (!mounted) return;
+    
+    final croppedBytes = await showDialog<Uint8List>(
+      context: context,
+      builder: (context) => ImageCropDialog(imageBytes: bytes),
+    );
+    
+    if (croppedBytes == null) return;
+    
+    setState(() => _uploadingIcon = true);
+    try {
+      final tempPath = picked.name;
+      final pseudoFile = XFile.fromData(croppedBytes, name: tempPath, mimeType: 'image/jpeg');
+      final uploaded = await PhotoApiClient.uploadPhoto(pseudoFile, userId: userId);
+      final photoId = uploaded.id;
+      if (photoId != null) {
+        await UserApiClient.updateIcon(userId, photoId);
+        setState(() {
+          _iconPhotoId = photoId;
+          _iconUrl = uploaded.photoPath;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('アイコンアップロード失敗: $e')),
+      );
+    } finally {
+      setState(() => _uploadingIcon = false);
+    }
+  }
 }

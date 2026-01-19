@@ -20,7 +20,10 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
+//@CrossOrigin(allowedOriginPatterns = "*", allowCredentials = "true") ←バージョンが古くて使えないワイルドカード
+//ここはデプロイした後に変わるかもしれないンゴ～
+@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
 public class UserController {
     
     @Autowired
@@ -156,5 +159,16 @@ public class UserController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
+    }
+    @PutMapping("/{id}/icon")
+    public ResponseEntity<UserDto> updateIcon(
+            @PathVariable Integer id,
+            @RequestBody Map<String, Integer> body) {
+        Integer photoId = body.get("photoId");
+        if (photoId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        UserDto updated = userService.updateUserIcon(id, photoId);
+        return ResponseEntity.ok(updated);
     }
 }

@@ -59,7 +59,7 @@ class _PhonePracticeState extends State<PhonePractice> {
   Future<void> _init() async {
     user = await GlobalActions().loadUserSession();
     _authToken = await GlobalActions().loadAuthToken();
-    print("userのプラン状態: ${user?['plan_status']}");
+    print("userのプラン状態: ${user?['planStatus']}");
 
     // 認証トークンの取得
     _authToken = await GlobalActions().loadAuthToken();
@@ -98,7 +98,7 @@ class _PhonePracticeState extends State<PhonePractice> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            bool isFree = (user?['plan_status'] ?? '無料') == '無料';
+            bool isFree = (user?['planStatus'] ?? '無料') == '無料';
 
             return Container(
               padding: const EdgeInsets.all(20),
@@ -327,7 +327,7 @@ class _PhonePracticeState extends State<PhonePractice> {
 
                           final payload = {
                             "userId": user!['id'],
-                            "planStatus": user!['plan_status'],
+                            "planStatus": user!['planStatus'],
                             "userName": nameController.text,
                             "companyName": companyNameController.text,
                             "genre": selectedGenre,

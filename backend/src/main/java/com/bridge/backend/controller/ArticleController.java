@@ -16,7 +16,8 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/articles")
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
 public class ArticleController {
 
     @Autowired
@@ -41,18 +42,26 @@ public class ArticleController {
 
     /**
      * 記事を検索
-     * GET /api/articles/search?keyword=キーワード&industryId=業界ID
+     * GET /api/articles/search?keyword=キーワード&industryIds=1,2,3
      * 
      * @param keyword 検索キーワード
-     * @param industryId 業界ID（オプション）
+     * @param industryIds 業界IDリスト（カンマ区切り）
      * @return 検索結果の記事一覧
      */
     @GetMapping("/search")
     public ResponseEntity<List<ArticleDTO>> searchArticles(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Integer industryId) {
+            @RequestParam(required = false) String industryIds) {
         try {
-            List<ArticleDTO> articles = articleService.searchArticles(keyword, industryId);
+            List<Integer> industryIdList = null;
+            if (industryIds != null && !industryIds.trim().isEmpty()) {
+                industryIdList = java.util.Arrays.stream(industryIds.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .map(Integer::parseInt)
+                        .collect(java.util.stream.Collectors.toList());
+            }
+            List<ArticleDTO> articles = articleService.searchArticles(keyword, industryIdList);
             return ResponseEntity.ok(articles);
         } catch (Exception e) {
             e.printStackTrace();
@@ -65,12 +74,13 @@ public class ArticleController {
      * GET /api/articles/{id}
      * 
      * @param id 記事ID
+     * @param userId ユーザーID（オプション、いいね状態確認用）
      * @return 記事データ
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ArticleDTO> getArticleById(@PathVariable Integer id) {
+    public ResponseEntity<ArticleDTO> getArticleById(@PathVariable Integer id, @RequestParam(required = false) Integer userId) {
         try {
-            ArticleDTO article = articleService.getArticleById(id);
+            ArticleDTO article = articleService.getArticleById(id, userId);
             if (article != null) {
                 return ResponseEntity.ok(article);
             } else {
@@ -112,6 +122,7 @@ public class ArticleController {
         try {
             System.out.println("Debug: ArticleController.createArticle received title=" + articleDTO.getTitle());
             System.out.println("Debug: ArticleController.createArticle received tags=" + articleDTO.getTags());
+            System.out.println("Debug: ArticleController.createArticle received industries=" + articleDTO.getIndustries());
             ArticleDTO createdArticle = articleService.createArticle(articleDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdArticle);
         } catch (Exception e) {
@@ -132,6 +143,7 @@ public class ArticleController {
     public ResponseEntity<ArticleDTO> updateArticle(@PathVariable Integer id, @RequestBody ArticleDTO articleDTO) {
         try {
             System.out.println("Debug: ArticleController.updateArticle received id=" + id + ", tags=" + articleDTO.getTags());
+            System.out.println("Debug: ArticleController.updateArticle received industries=" + articleDTO.getIndustries());
             ArticleDTO updatedArticle = articleService.updateArticle(id, articleDTO);
             if (updatedArticle != null) {
                 return ResponseEntity.ok(updatedArticle);
@@ -177,10 +189,13 @@ public class ArticleController {
     @PostMapping("/{id}/like")
     public ResponseEntity<ArticleDTO> toggleLike(@PathVariable Integer id, @RequestBody LikeRequestDTO likeRequest) {
         try {
-            System.out.println("Debug: toggleLike called with articleId=" + id + ", isLiking=" + likeRequest.isLiking());
+            System.out.println("Debug: toggleLike called with articleId=" + id + ", userId=" + likeRequest.getUserId() + ", isLiking=" + likeRequest.isLiking());
             
-            // ユーザーIDは固定値1を使用（将来的にはJWTトークンから取得）
-            Integer userId = 1;
+            // リクエストからユーザーIDを取得
+            Integer userId = likeRequest.getUserId();
+            if (userId == null) {
+                return ResponseEntity.badRequest().build();
+            }
             ArticleDTO article = articleService.toggleLike(id, userId, likeRequest.isLiking());
             
             System.out.println("Debug: Updated article total_likes=" + (article != null ? article.getTotalLikes() : "null"));

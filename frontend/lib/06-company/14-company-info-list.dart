@@ -19,13 +19,13 @@ class CompanySearchPage extends StatefulWidget {
 
 class _CompanySearchPageState extends State<CompanySearchPage> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedIndustry = '業種';
+  String _selectedIndustry = '業界';
   String _selectedArea = 'エリア';
 
   // API連携のための状態管理
   List<CompanyDTO> _filteredCompanies = [];
   List<ArticleDTO> _articles = [];
-  List<String> _availableIndustries = ['業種']; // 動的業界リスト
+  List<String> _availableIndustries = ['業界']; // 動的業界リスト
   bool _isLoading = false;
   bool _isLoadingArticles = false;
   String? _errorMessage;
@@ -74,13 +74,13 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     try {
       final industries = await FilterApiClient.getAllIndustries();
       setState(() {
-        _availableIndustries = ['業種'] + industries.map((industry) => industry.industry).toList();
+        _availableIndustries = ['業界'] + industries.map((industry) => industry.industry).toList();
       });
     } catch (e) {
       print('業界データの読み込みエラー: $e');
       // エラーが発生した場合はデフォルト値を使用
       setState(() {
-        _availableIndustries = ['業種', 'IT', '製造業', 'サービス業'];
+        _availableIndustries = ['業界', 'IT', '製造業', 'サービス業'];
       });
     }
   }
@@ -175,7 +175,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
   void _clearSearch() {
     setState(() {
       _searchController.clear();
-      _selectedIndustry = '業種';
+      _selectedIndustry = '業界';
       _selectedArea = 'エリア';
       _hasSearched = false;
     });
@@ -186,14 +186,17 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
   List<CompanyDTO> _applyFilters(List<CompanyDTO> companies) {
     List<CompanyDTO> filtered = companies;
     
-    // 業種でフィルタリング
-    if (_selectedIndustry != '業種' && _selectedIndustry.isNotEmpty) {
+    // 業界でフィルタリング
+    if (_selectedIndustry != '業界' && _selectedIndustry.isNotEmpty) {
       filtered = filtered.where((company) {
-        // 実際の業界情報を使用してフィルタリング（正確な一致）
-        if (company.industry != null) {
+        // industriesリストでフィルタリング
+        if (company.industries != null && company.industries!.isNotEmpty) {
+          return company.industries!.contains(_selectedIndustry);
+        } else if (company.industry != null) {
+          // 後方互換: 旧industryフィールド
           return company.industry == _selectedIndustry;
         }
-        return false; // 業界情報がない場合は除外
+        return false;
       }).toList();
       print('業種フィルタリング後: ${filtered.length}件 (業種: $_selectedIndustry)');
     }
@@ -334,7 +337,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
           Row(
             children: [
               Expanded(
-                child: _buildDropdown('業種', _availableIndustries, _selectedIndustry, (
+                child: _buildDropdown('業界', _availableIndustries, _selectedIndustry, (
                   value,
                 ) {
                   setState(() => _selectedIndustry = value!);
@@ -595,8 +598,13 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     if (company is CompanyDTO) {
       companyName = company.name;
       companyLocation = company.address;
-      companyCategory = 'IT'; // デフォルト値、後で業種データがあれば使用
-      photoPath = company.photoPath; // 写真パスを取得
+      // industriesリストをカンマ区切りで表示、なければindustry
+      if (company.industries != null && company.industries!.isNotEmpty) {
+        companyCategory = company.industries!.join(', ');
+      } else {
+        companyCategory = company.industry ?? '情報なし';
+      }
+      photoPath = company.photoPath;
     } else if (company is Map<String, String>) {
       companyName = company['name'] ?? '';
       companyLocation = company['location'] ?? '';
@@ -979,8 +987,8 @@ class CompanySearchResultPage extends StatelessWidget {
           const SizedBox(height: 8),
           if (searchQuery.isNotEmpty)
             Text('検索キーワード: "$searchQuery"', style: TextStyle(fontSize: 14)),
-          if (industry != '業種')
-            Text('業種: $industry', style: TextStyle(fontSize: 14)),
+          if (industry != '業界')
+            Text('業界: $industry', style: TextStyle(fontSize: 14)),
           if (area != 'エリア') Text('エリア: $area', style: TextStyle(fontSize: 14)),
         ],
       ),
