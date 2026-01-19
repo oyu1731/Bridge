@@ -22,6 +22,7 @@ class _CompanyHomeState extends State<CompanyHome>
   with SingleTickerProviderStateMixin {
     List<Thread> officialThreads = [];
     List<Thread> hotUnofficialThreads = [];
+    static const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
     // API呼び出し　並び替え　上位３件に絞り込み
     Future<List<Thread>> fetchTop3UnofficialThreads() async {
       final threads = await ThreadApiClient.getAllThreads();
@@ -64,12 +65,6 @@ class _CompanyHomeState extends State<CompanyHome>
     _tabController.dispose();
     super.dispose();
   }
-
-  // 統一カラー
-  static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
-  static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
-  static const Color errororange = Color.fromARGB(255, 239, 108, 0);
-  static const Color textCyanDark = Color.fromARGB(255, 6, 62, 85);
 
   @override
   Widget build(BuildContext context) {

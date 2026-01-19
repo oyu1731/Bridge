@@ -11,6 +11,7 @@ import '../06-company/photo_api_client.dart';
 import 'user_api_client.dart';
 import 'company_photo_modal.dart';
 import '../../06-company/company_api_client.dart';
+import 'package:bridge/style.dart';
 
 class Industry {
   final int id;
@@ -41,7 +42,7 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
   String? _iconUrl;
   bool _uploadingIcon = false;
 
-  bool _isSaving = false; // 保存中フラグ
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -147,7 +148,6 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
     if (response.statusCode == 200) {
       final List<dynamic> selectedIndustriesData = jsonDecode(response.body);
 
-      // 修正ポイント: industry は文字列で返るのでシンプルに取得
       final List<String> selectedIndustryNames = selectedIndustriesData.map((e) {
         return e['industry'].toString();
       }).toList();
@@ -177,6 +177,12 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
             Center(
               child: Column(
                 children: [
+                  Text("プロフィールアイコン",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.textCyanDark
+                    ),
+                  ),
                   Stack(
                     children: [
                       CircleAvatar(
@@ -210,7 +216,6 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Text("プロフィールアイコン"),
                 ],
               ),
             ),
@@ -260,25 +265,16 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
             _buildLabel("詳細"),
             _buildTextField(_companyDescriptionController, maxLines: 5),
             const SizedBox(height: 30),
-            _buildLabel("業界"),
+            _buildLabel("所属業界"),
             Column(
               children: industries.map((industry) {
                 return CheckboxListTile(
                   title: Text(industry.name),
                   value: industry.isSelected,
                   onChanged: (bool? value) {
-                    if (value == true) {
-                      setState(() {
-                        for (var ind in industries) {
-                          ind.isSelected = false;
-                        }
-                        industry.isSelected = true;
-                      });
-                    } else {
-                      setState(() {
-                        industry.isSelected = false;
-                      });
-                    }
+                    setState(() {
+                      industry.isSelected = value ?? false;
+                    });
                   },
                 );
               }).toList(),
@@ -286,6 +282,10 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
             const SizedBox(height: 30),
             Center(
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orangeAccent[400],
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: _isSaving
                     ? null
                     : () async {
@@ -295,7 +295,10 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
                       },
                 child: _isSaving
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('編集'),
+                    : const Text('編集',
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),),
               ),
             ),
           ],
@@ -307,7 +310,11 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
   Widget _buildLabel(String text) {
     return Text(
       text,
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: AppTheme.textCyanDark,
+      ),
     );
   }
 
