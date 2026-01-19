@@ -24,7 +24,7 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
 
   Future<void> _loadUserData() async {
     final response = await http.get(
-      Uri.parse('http://localhost:8080/api/users/${widget.userId}'),
+      Uri.parse('http://localhost:8080/api/users/${widget.userId}/detail'),
     );
     final data = json.decode(utf8.decode(response.bodyBytes));
     setState(() {
@@ -55,7 +55,18 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
   }
 
   String _getAccountTypeLabel(int type) {
-    return type == 1 ? '学生アカウント' : type == 2 ? '社会人アカウント' : '企業アカウント';
+    switch (type) {
+      case 1:
+        return '学生アカウント';
+      case 2:
+        return '社会人アカウント';
+      case 3:
+        return '企業アカウント';
+      case 4:
+        return '管理者アカウント';
+      default:
+        return '不明なアカウント';
+    }
   }
 
   @override
@@ -96,7 +107,9 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
         ? '希望業界'
         : _userData!['type'] == 2
             ? '所属業界'
-            : '企業所属業界';
+        : _userData!['type'] == 3
+            ? '企業所属業界'
+            : '';
 
     return Column(
       children: [
@@ -184,7 +197,26 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
                 ],
                 rows: _commentHistory.map((c) => DataRow(cells: [
                       DataCell(Center(child: Text(c['threadTitle']))),
-                      DataCell(Center(child: Text(c['content']))),
+                      DataCell(
+                        Center(
+                          child: c['isDeleted'] == true
+                              ? Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(c['content'] ?? ''),
+                                    const SizedBox(height: 4),
+                                    const Text(
+                                      '削除済み',
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Text(c['content'] ?? ''),
+                        ),
+                      ),
                       DataCell(Center(child: Text(c['createdAt'].split('T')[0]))),
                     ])).toList(),
               ),

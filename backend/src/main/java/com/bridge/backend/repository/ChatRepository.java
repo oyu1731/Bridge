@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface ChatRepository extends JpaRepository<Chat, Integer> {
     List<Chat> findByThreadIdOrderByCreatedAtAsc(Integer threadId);
-    List<Chat> findByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(Integer userId);
+    List<Chat> findByUserIdOrderByCreatedAtDesc(Integer userId);
     @Modifying
     @Query("UPDATE Chat c SET c.isDeleted = true WHERE c.id = :id")
     void softDelete(Integer id);

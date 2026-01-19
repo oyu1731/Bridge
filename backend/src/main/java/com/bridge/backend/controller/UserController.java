@@ -93,6 +93,11 @@ public class UserController {
         }
     }
 
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<UserDetailDto> getUserDetail(@PathVariable Integer id) {
+        return ResponseEntity.ok(userService.getUserDetail(id));
+    }
+
     /**
      * ユーザーのトークン数を減らすエンドポイント
      * 例: PUT /api/users/{id}/deduct-tokens

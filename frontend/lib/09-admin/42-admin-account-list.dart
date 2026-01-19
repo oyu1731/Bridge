@@ -113,7 +113,7 @@ class _AdminAccountListState extends State<AdminAccountList> {
       case 3:
         return '企業';
       default:
-        return '不明';
+        return '管理者';
     }
   }
 

@@ -443,7 +443,7 @@ public class UserService {
     }
 
     public List<UserCommentHistoryDto> getUserCommentHistory(Integer userId) {
-        return chatRepository.findByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(userId)
+        return chatRepository.findByUserIdOrderByCreatedAtDesc(userId)
             .stream()
             .map(chat -> {
                 String title = threadRepository.findById(chat.getThreadId())
@@ -453,7 +453,8 @@ public class UserService {
                 return new UserCommentHistoryDto(
                         title,
                         chat.getContent(),
-                        chat.getCreatedAt().toLocalDate().toString()
+                        chat.getCreatedAt().toLocalDate().toString(),
+                        chat.getIsDeleted() != null && chat.getIsDeleted()
                 );
             }).collect(Collectors.toList());
     }

@@ -59,9 +59,22 @@ class NoticeData {
 }
 
 class _AdminReportLogListState extends State<AdminReportLogList> {
-
   List<NoticeData> _logs = [];
   bool _loading = true;
+
+  bool _canDelete(NoticeData n) {
+    if (n.type == 1) {
+      return n.threadDeleted != true;
+    }
+
+    if (n.type == 2) {
+      if (n.chatDeleted == true) return false;
+      if (n.chatDeleted == true && n.threadDeleted == true) return false;
+      return true;
+    }
+
+    return true;
+  }
 
   Future<void> _fetchLogs() async {
     final res = await http.get(Uri.parse("http://localhost:8080/api/notice/logs"));
@@ -100,7 +113,6 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
 
   Future<void> _delete(int id) async {
     final res = await http.put(Uri.parse("http://localhost:8080/api/notice/admin/delete/$id"));
-
     if (res.statusCode == 200) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("削除しました")));
       _fetchLogs();
@@ -172,10 +184,12 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
           Expanded(
             flex: 1,
             child: Center(
-              child: IconButton(
-                icon: const Icon(Icons.delete, color: Colors.black),
-                onPressed: () => _confirmDelete(n),
-              ),
+              child: _canDelete(n)
+                  ? IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.black),
+                      onPressed: () => _confirmDelete(n),
+                    )
+                  : _disabledDeleteIcon(),   // ← 完全無反応
             ),
           ),
         ],
@@ -192,25 +206,74 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
 
   Widget _threadLink(NoticeData n) => Column(
     children: [
-      n.threadId == null ? const Text('—') : GestureDetector(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AdminThreadDetail(threadId: n.threadId!))),
-        child: Text(n.threadTitle ?? '（削除済み）',
-            style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline)),
-      ),
-      if (n.threadDeleted == true)
-        const Text("削除済み", style: TextStyle(color: Colors.red, fontSize: 12))
+      n.threadId == null
+        ? const Text('—')
+        : GestureDetector(
+          onTap: () {
+            if (n.threadDeleted == true) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("このスレッドはすでに削除されています")),
+              );
+              return;
+            }
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AdminThreadDetail(threadId: n.threadId!),
+              ),
+            );
+          },
+          child: Text(
+            n.threadTitle ?? '（削除済み）',
+            style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+          ),
+        ),
+        if (n.threadDeleted == true)
+          const Text("削除済み", style: TextStyle(color: Colors.red, fontSize: 12))
     ],
   );
 
   Widget _chatLink(NoticeData n) => Column(
     children: [
-      n.chatId == null ? const Text('—') : GestureDetector(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AdminThreadDetail(threadId: n.threadId!))),
-        child: Text(n.chatContent ?? '（削除済み）',
-            style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline)),
-      ),
-      if (n.chatDeleted == true)
-        const Text("削除済み", style: TextStyle(color: Colors.red, fontSize: 12))
+      n.chatId == null
+        ? const Text('—')
+        : GestureDetector(
+          onTap: () {
+            if (n.chatDeleted == true || n.threadDeleted == true) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("このレスはすでに削除されています")),
+              );
+              return;
+            }
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AdminThreadDetail(threadId: n.threadId!),
+              ),
+            );
+          },
+          child: Text(
+            n.chatContent ?? '（削除済み）',
+            style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+          ),
+        ),
+        if (n.chatDeleted == true)
+          const Text("削除済み", style: TextStyle(color: Colors.red, fontSize: 12))
     ],
   );
+
+  Widget _disabledDeleteIcon() {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        const Icon(Icons.delete, color: Colors.grey),
+        Transform.rotate(
+          angle: -0.6,
+          child: Container(width: 26, height: 2, color: Colors.grey),
+        ),
+      ],
+    );
+  }
 }
