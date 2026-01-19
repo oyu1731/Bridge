@@ -27,6 +27,9 @@ class ArticleEditPage extends StatefulWidget {
 }
 
 class _ArticleEditPageState extends State<ArticleEditPage> {
+    // 文字数制限
+    static const int maxTitleLength = 40;
+    static const int maxContentLength = 2000;
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
 
@@ -173,11 +176,13 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
           ),
           child: TextField(
             controller: _titleController,
+            maxLength: maxTitleLength,
             decoration: InputDecoration(
-              hintText: 'タイトルを入力',
+              hintText: 'タイトルを入力（最大${maxTitleLength}文字）',
               hintStyle: TextStyle(color: Color(0xFF9E9E9E)),
               border: InputBorder.none,
               contentPadding: EdgeInsets.all(12),
+              counterText: '',
             ),
             style: TextStyle(fontSize: 14),
           ),
@@ -521,12 +526,14 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
           ),
           child: TextField(
             controller: _contentController,
+            maxLength: maxContentLength,
             maxLines: 10,
             decoration: InputDecoration(
-              hintText: '記事の本文を入力してください',
+              hintText: '記事の本文を入力してください（最大${maxContentLength}文字）',
               hintStyle: TextStyle(color: Color(0xFF9E9E9E)),
               border: InputBorder.none,
               contentPadding: EdgeInsets.all(12),
+              counterText: '',
             ),
             style: TextStyle(fontSize: 14),
           ),
@@ -852,7 +859,9 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
   }
 
   Future<void> _updateArticle() async {
-    if (_titleController.text.trim().isEmpty) {
+    final title = _titleController.text.trim();
+    final content = _contentController.text.trim();
+    if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('タイトルを入力してください'),
@@ -861,8 +870,16 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
       );
       return;
     }
-
-    if (_contentController.text.trim().isEmpty) {
+    if (title.length > maxTitleLength) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('タイトルは${maxTitleLength}文字以内で入力してください'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    if (content.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('本文を入力してください'),
@@ -871,7 +888,15 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
       );
       return;
     }
-
+    if (content.length > maxContentLength) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('本文は${maxContentLength}文字以内で入力してください'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
     setState(() => _isLoading = true);
 
     try {
