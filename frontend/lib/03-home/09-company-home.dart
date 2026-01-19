@@ -7,6 +7,7 @@ import '../06-company/18-article-detail.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart'; // セッション保存用
 import '../08-thread/thread_api_client.dart';
+import '../08-thread/31-thread-list.dart';
 import 'package:bridge/08-thread/33-thread-unofficial-detail.dart';
 import 'package:bridge/08-thread/thread_model.dart';
 
@@ -144,7 +145,12 @@ class _CompanyHomeState extends State<CompanyHome>
                       ),
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => ThreadList()),
+                        );
+                      },
                       child: const Text(
                         '>スレッド一覧',
                         style: TextStyle(color: textCyanDark),
