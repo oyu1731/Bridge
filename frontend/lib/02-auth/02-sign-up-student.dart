@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:bridge/03-home/08-student-worker-home.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+
+import 'package:bridge/03-home/08-student-worker-home.dart';
+import 'package:bridge/style.dart'; 
 
 class StudentInputPage extends StatefulWidget {
   const StudentInputPage({super.key});
@@ -14,6 +16,46 @@ class StudentInputPage extends StatefulWidget {
 Future<void> saveSession(dynamic userData) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('current_user', jsonEncode(userData));
+}
+
+// 電話番号フォーマッター
+class PhoneNumberFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.length > 11) return oldValue;
+
+    String formatted;
+    if (digits.length >= 7) {
+      formatted =
+          '${digits.substring(0, 3)}-${digits.substring(3, 7)}-${digits.substring(7)}';
+    } else if (digits.length >= 4) {
+      formatted = '${digits.substring(0, 3)}-${digits.substring(3)}';
+    } else {
+      formatted = digits;
+    }
+
+    int selectionIndex = newValue.selection.baseOffset;
+
+    if (digits.length >= 4 && selectionIndex > 3) {
+      selectionIndex++;
+    }
+    if (digits.length >= 7 && selectionIndex > 8) {
+      selectionIndex++;
+    }
+
+    if (selectionIndex > formatted.length) {
+      selectionIndex = formatted.length;
+    }
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: selectionIndex),
+    );
+  }
 }
 
 class _StudentInputPageState extends State<StudentInputPage> {
@@ -29,12 +71,6 @@ class _StudentInputPageState extends State<StudentInputPage> {
 
   bool _isLoading = true;
   String _errorMessage = '';
-
-  // 統一カラー
-  static const Color cyanDark = Color.fromARGB(255, 0, 100, 120);
-  static const Color cyanMedium = Color.fromARGB(255, 24, 147, 178);
-  static const Color errorOrange = Color.fromARGB(255, 239, 108, 0);
-  static const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
 
   @override
   void initState() {
@@ -82,256 +118,302 @@ class _StudentInputPageState extends State<StudentInputPage> {
 
   @override
   Widget build(BuildContext context) {
-    final base = Theme.of(context);
-    final pageTheme = base.copyWith(
-      colorScheme: base.colorScheme.copyWith(error: errorOrange),
-      inputDecorationTheme: base.inputDecorationTheme.copyWith(
-        errorStyle: const TextStyle(color: errorOrange),
-        errorBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: errorOrange),
-        ),
-        focusedErrorBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: errorOrange, width: 2),
-        ),
-      ),
-      checkboxTheme: CheckboxThemeData(
-        fillColor: MaterialStateProperty.all<Color>(
-          cyanMedium,
-        ),
-        checkColor: MaterialStateProperty.all<Color>(Colors.white),
-
-        // ← 枠線はここに入れる
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: const BorderSide(
-            color: cyanDark,  // ← 枠線の色
-            width: 2,
-          ),
-        ),
-      ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(color: cyanDark),
-    );
-
     return Theme(
-      data: pageTheme,
+      data: AppTheme.theme,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('学生サインアップ'),
-          backgroundColor: cyanMedium,
+          backgroundColor: AppTheme.cyanMedium,
           foregroundColor: Colors.white,
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextFormField(
-                  controller: _nicknameController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'ニックネーム',
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'ニックネームを入力してください';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'メールアドレス',
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'メールアドレスを入力してください';
-                    }
-                    if (!value.contains('@')) {
-                      return '有効なメールアドレスを入力してください';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    labelText: 'パスワード',
-                    hintText: '英数字８文字以上で入力してください',
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                        color: textCyanDark,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 600, 
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      '学生向けのアカウント作成ページです。',
+                      style: AppTheme.mainTextStyle,
                     ),
-                  ),
-                  obscureText: _obscurePassword,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'パスワードを入力してください';
-                    }
-                    if (value.length < 8) {
-                      return 'パスワードは8文字以上で入力してください';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                TextFormField(
-                  controller: _phoneNumberController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: '電話番号',
-                    hintText: 'ハイフンまで正しく入力してください',
-                  ),
-                  keyboardType: TextInputType.phone,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9-]')),
-                  ],
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return '電話番号を入力してください';
-                    }
-                    if (!RegExp(r'^[0-9-]+$').hasMatch(value)) {
-                      return '有効な電話番号を入力してください';
-                    }
-                    if (value.split('-').length - 1 != 2) {
-                      return 'ハイフンを正しく入力してください';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                const Text(
-                  '希望業界:',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: textCyanDark,
-                  ),
-                ),
-
-                _isLoading
-                    ? const CircularProgressIndicator()
-                    : Column(
-                      children:
-                          _industries.map((industry) {
-                            return CheckboxListTile(
-                              title: Text(
-                                industry["name"],
-                                style: const TextStyle(
-                                  color: cyanDark,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              value: _selectedIndustryIds.contains(
-                                industry["id"],
-                              ),
-                              activeColor: cyanDark,
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  if (value == true) {
-                                    _selectedIndustryIds.add(industry["id"]);
-                                  } else {
-                                    _selectedIndustryIds.remove(industry["id"]);
-                                  }
-                                });
-                              },
-                            );
-                          }).toList(),
+                    const SizedBox(height: 10),
+                    Text(
+                      '※企業または社会人の方は、このページでは登録できません。',
+                      style: AppTheme.subTextStyle,
                     ),
-
-                const SizedBox(height: 20),
-
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orangeAccent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onPressed: () async {
-                    if (_formKey.currentState!.validate()) {
-                      final nickname = _nicknameController.text;
-                      final email = _emailController.text;
-                      final password = _passwordController.text;
-                      final phoneNumber = _phoneNumberController.text;
-
-                      final desiredIndustries = _selectedIndustryIds;
-
-                      final url = Uri.parse('http://localhost:8080/api/users');
-                      final headers = {
-                        'Content-Type': 'application/json; charset=UTF-8',
-                      };
-
-                      final body = jsonEncode({
-                        'nickname': nickname,
-                        'email': email,
-                        'password': password,
-                        'phoneNumber': phoneNumber,
-                        'desiredIndustries': desiredIndustries,
-                        'type': 1,
-                      });
-
-                      try {
-                        final response = await http.post(
-                          url,
-                          headers: headers,
-                          body: body,
-                        );
-                        if (response.statusCode == 200) {
-                          final userData = jsonDecode(response.body);
-                          await saveSession(userData);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => StudentWorkerHome(),
+                    const SizedBox(height: 20),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
+                          child: Icon(
+                            Icons.person_outline,
+                            color: AppTheme.cyanDark,
+                          )
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _nicknameController,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'ニックネーム',
                             ),
-                          );
-                        } else {
-                          final errorMessage = jsonDecode(response.body);
-                          setState(() {
-                            _errorMessage =
-                                errorMessage['message'] ?? 'サインアップに失敗しました';
-                          });
-                        }
-                      } catch (e) {
-                        setState(() {
-                          _errorMessage = '通信エラーが発生しました: $e';
-                        });
-                      }
-                    }
-                  },
-                  child: const Text('作成'),
-                ),
-
-                if (_errorMessage.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16.0),
-                    child: Text(
-                      _errorMessage,
-                      style: TextStyle(color: Colors.orange[800]),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'ニックネームを入力してください';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-              ],
+                    const SizedBox(height: 20),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
+                          child: Icon(
+                            Icons.email_outlined,
+                            color: AppTheme.cyanDark,
+                          )
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _emailController,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'メールアドレス',
+                            ),
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return '入力してください';
+                              if (!v.contains('@')) return '形式が不正です';
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
+                          child: Icon(
+                            Icons.lock_outline,
+                            color: AppTheme.cyanDark,
+                          )
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _passwordController,
+                            decoration: InputDecoration(
+                              border: const OutlineInputBorder(),
+                              labelText: 'パスワード',
+                              hintText: '英数字８文字以上で入力してください',
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                  color: AppTheme.cyanDark,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                            ),
+                            obscureText: _obscurePassword,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'パスワードを入力してください';
+                              }
+                              if (value.length < 8) {
+                                return 'パスワードは8文字以上で入力してください';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
+                          child: Icon(
+                            Icons.phone_outlined,
+                            color: AppTheme.cyanDark,
+                          )
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _phoneNumberController,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: '電話番号',
+                              hintText: 'ハイフンは自動入力されます',
+                            ),
+                            keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              PhoneNumberFormatter(),
+                            ],
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return '電話番号を入力してください';
+                              }
+                              if (!RegExp(r'^\d{3}-\d{4}-\d{4}$').hasMatch(value)) {
+                                return '電話番号の形式が正しくありません';
+                              }
+                              return null;
+                            },
+
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    Row(
+                      children: [
+                        Padding(padding:  EdgeInsetsGeometry.only(top: 4),
+                          child: Icon(
+                            Icons.business_outlined,
+                            color: AppTheme.cyanDark,
+                          )
+                        ),
+                        const SizedBox(width: 10),
+                        const Text(
+                          '希望業界',
+                          style: TextStyle(
+                            fontSize: 17,
+                          ),
+                        ),
+                        const Text(
+                          '　※複数選択可',
+                          style: TextStyle(
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    _isLoading
+                      ? const CircularProgressIndicator()
+                      : Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: AppTheme.cyanDark,
+                              width: 1.0,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Column(
+                            children: _industries.map((industry) {
+                              return CheckboxListTile(
+                                title: Text(
+                                  industry["name"],
+                                  style: const TextStyle(
+                                    color: AppTheme.textCyanDark,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                value: _selectedIndustryIds.contains(industry["id"]),
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    if (value == true) {
+                                      _selectedIndustryIds.add(industry["id"]);
+                                    } else {
+                                      _selectedIndustryIds.remove(industry["id"]);
+                                    }
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                    const SizedBox(height: 20),
+
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (_formKey.currentState!.validate()) {
+                          final nickname = _nicknameController.text;
+                          final email = _emailController.text;
+                          final password = _passwordController.text;
+                          final phoneNumber = _phoneNumberController.text;
+
+                          final desiredIndustries = _selectedIndustryIds;
+
+                          final url = Uri.parse('http://localhost:8080/api/users');
+                          final headers = {
+                            'Content-Type': 'application/json; charset=UTF-8',
+                          };
+
+                          final body = jsonEncode({
+                            'nickname': nickname,
+                            'email': email,
+                            'password': password,
+                            'phoneNumber': phoneNumber,
+                            'desiredIndustries': desiredIndustries,
+                            'type': 1,
+                          });
+
+                          try {
+                            final response = await http.post(
+                              url,
+                              headers: headers,
+                              body: body,
+                            );
+                            if (response.statusCode == 200) {
+                              final userData = jsonDecode(response.body);
+                              await saveSession(userData);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => StudentWorkerHome(),
+                                ),
+                              );
+                            } else {
+                              final errorMessage = jsonDecode(response.body);
+                              setState(() {
+                                _errorMessage =
+                                    errorMessage['message'] ?? 'サインアップに失敗しました';
+                              });
+                            }
+                          } catch (e) {
+                            setState(() {
+                              _errorMessage = '通信エラーが発生しました: $e';
+                            });
+                          }
+                        }
+                      },
+                      child: const Text('作成'),
+                    ),
+
+                    if (_errorMessage.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: Text(
+                          _errorMessage,
+                          style: TextStyle(color: Colors.orange[800]),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

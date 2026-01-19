@@ -12,6 +12,7 @@ import 'package:bridge/main.dart';
 import 'package:bridge/11-common/image_crop_dialog.dart';
 import '../06-company/photo_api_client.dart';
 import 'user_api_client.dart';
+import 'package:bridge/style.dart';
 
 class Industry {
   final int id;
@@ -40,6 +41,7 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
   bool _uploadingIcon = false;
 
   bool _isSaving = false; // 保存中フラグ
+
 
   @override
   void initState() {
@@ -129,7 +131,6 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
     if (response.statusCode == 200) {
       final List<dynamic> selectedIndustriesData = jsonDecode(response.body);
 
-      // 修正ポイント: industry は文字列で返るのでシンプルに取得
       final List<String> selectedIndustryNames = selectedIndustriesData.map((e) {
         return e['industry'].toString();
       }).toList();
@@ -156,6 +157,12 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text("プロフィールアイコン",
+              style: TextStyle(
+                fontSize: 16,
+                color: AppTheme.textCyanDark
+              ),
+            ),
             Center(
               child: Column(
                 children: [
@@ -192,7 +199,6 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Text("プロフィールアイコン"),
                 ],
               ),
             ),
@@ -209,25 +215,16 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
             _buildLabel("社会人歴（年）"),
             _buildTextField(_societyHistoryController),
             const SizedBox(height: 20),
-            _buildLabel("業界"),
+            _buildLabel("現職業界"),
             Column(
               children: industries.map((industry) {
                 return CheckboxListTile(
                   title: Text(industry.name),
                   value: industry.isSelected,
                   onChanged: (bool? value) {
-                    if (value == true) {
-                      setState(() {
-                        for (var ind in industries) {
-                          ind.isSelected = false;
-                        }
-                        industry.isSelected = true;
-                      });
-                    } else {
-                      setState(() {
-                        industry.isSelected = false;
-                      });
-                    }
+                    setState(() {
+                      industry.isSelected = value ?? false;
+                    });
                   },
                 );
               }).toList(),
@@ -235,6 +232,10 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
             const SizedBox(height: 30),
             Center(
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orangeAccent[400],
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: _isSaving
                     ? null
                     : () async {
@@ -244,7 +245,10 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
                       },
                 child: _isSaving
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('編集'),
+                    : const Text('編集',
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),),
               ),
             ),
           ],
@@ -256,7 +260,11 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
   Widget _buildLabel(String text) {
     return Text(
       text,
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: AppTheme.textCyanDark,
+      ),
     );
   }
 

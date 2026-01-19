@@ -183,7 +183,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
 
                     buttons.add(SizedBox(width: space));
 
-                    if (accountType == '学生') {
+                    if (accountType == '学生' || accountType == '社会人') {
                       buttons.add(
                         _nav('AI練習', () {
                           Navigator.push(
