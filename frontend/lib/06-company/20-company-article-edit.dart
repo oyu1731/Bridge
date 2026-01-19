@@ -27,6 +27,7 @@ class ArticleEditPage extends StatefulWidget {
 }
 
 class _ArticleEditPageState extends State<ArticleEditPage> {
+      static const int maxTagCount = 4;
     // 文字数制限
     static const int maxTitleLength = 40;
     static const int maxContentLength = 2000;
@@ -607,7 +608,7 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'タグ追加',
+                          'タグ追加（最大${maxTagCount}個）',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -632,13 +633,21 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
                         itemBuilder: (context, index) {
                           final tag = _availableTags[index].tag;
                           final isSelected = tempSelectedTags.contains(tag);
-                          
                           return InkWell(
                             onTap: () {
                               setModalState(() {
                                 if (isSelected) {
                                   tempSelectedTags.remove(tag);
                                 } else {
+                                  if (tempSelectedTags.length >= maxTagCount) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('タグは最大${maxTagCount}個まで選択できます'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
                                   tempSelectedTags.add(tag);
                                 }
                               });

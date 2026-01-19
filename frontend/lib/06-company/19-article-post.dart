@@ -16,6 +16,7 @@ class ArticlePostPage extends StatefulWidget {
 }
 
 class _ArticlePostPageState extends State<ArticlePostPage> {
+      static const int maxTagCount = 4;
     // 文字数制限
     static const int maxTitleLength = 40;
     static const int maxContentLength = 2000;
@@ -528,12 +529,11 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
               builder: (context, setModalState) {
                 return Column(
                   children: [
-                    // モーダルヘッダー
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'タグ追加',
+                          'タグ追加（最大${maxTagCount}個）',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -546,7 +546,6 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // タグリスト
                     Expanded(
                       child: GridView.builder(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -560,13 +559,21 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
                           final tagDto = _availableTags[index];
                           final tag = tagDto.tag;
                           final isSelected = tempSelectedTags.contains(tag);
-                          
                           return InkWell(
                             onTap: () {
                               setModalState(() {
                                 if (isSelected) {
                                   tempSelectedTags.remove(tag);
                                 } else {
+                                  if (tempSelectedTags.length >= maxTagCount) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('タグは最大${maxTagCount}個まで選択できます'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
                                   tempSelectedTags.add(tag);
                                 }
                               });
@@ -606,13 +613,11 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // タグを追加ボタン
                     Container(
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton(
                         onPressed: () {
-                          // 実際にタグを追加
                           setState(() {
                             _selectedTags = tempSelectedTags.toList();
                           });

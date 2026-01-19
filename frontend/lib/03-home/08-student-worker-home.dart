@@ -9,6 +9,7 @@ import '../06-company/article_api_client.dart';
 import '../06-company/16-article-list.dart';
 import '../06-company/18-article-detail.dart';
 import '../08-thread/thread_api_client.dart';
+import '../08-thread/31-thread-list.dart';
 import 'package:bridge/08-thread/33-thread-unofficial-detail.dart';
 import 'package:bridge/08-thread/thread_model.dart';
 import 'package:bridge/style.dart';
@@ -171,7 +172,12 @@ Widget _buildTopPageTab(BuildContext context) {
                     ),
                   ),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => ThreadList()),
+                        );
+                    },
                     child: const Text(
                       '>スレッド一覧',
                     ),
