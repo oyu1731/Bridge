@@ -134,7 +134,12 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
     final c = _company;
     if (c == null) return Container();
     final info = [
-      {'label': '業界', 'value': c.industry ?? '情報がありません'},
+      {
+        'label': '業界',
+        'value': (c.industries != null && c.industries!.isNotEmpty)
+            ? c.industries!.join(', ')
+            : (c.industry ?? '情報がありません')
+      },
       {'label': 'プロフィール', 'value': c.description ?? '情報がありません'},
       {'label': '電話番号', 'value': (c.phoneNumber.isNotEmpty) ? c.phoneNumber : '情報がありません'},
       {'label': 'email', 'value': c.email ?? '情報がありません'},

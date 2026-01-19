@@ -20,6 +20,12 @@ import jakarta.persistence.PersistenceContext;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import com.bridge.backend.entity.User;
+import com.bridge.backend.entity.IndustryRelation;
+import com.bridge.backend.entity.Industry;
+import com.bridge.backend.repository.UserRepository;
+import com.bridge.backend.repository.IndustryRelationRepository;
 import java.util.stream.Collectors;
 
 /**
@@ -47,6 +53,12 @@ public class ArticleService {
     @Autowired
     private ArticleLikeRepository articleLikeRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private IndustryRelationRepository industryRelationRepository;
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -66,22 +78,22 @@ public class ArticleService {
 
     /**
      * キーワードや業界IDで記事を検索
-     * 
+    /**
      * @param keyword 検索キーワード
-     * @param industryId 業界ID
+     * @param industryIds 業界IDリスト（複数対応）
      * @return ArticleDTOのリスト
      */
-    public List<ArticleDTO> searchArticles(String keyword, Integer industryId) {
-        if (keyword == null && industryId == null) {
+    public List<ArticleDTO> searchArticles(String keyword, List<Integer> industryIds) {
+        if ((keyword == null || keyword.trim().isEmpty()) && (industryIds == null || industryIds.isEmpty())) {
             return getAllArticles();
         }
-        
+
         List<ArticleDTO> allArticles = getAllArticles();
         return allArticles.stream()
                 .filter(article -> {
                     boolean matchesKeyword = true;
                     boolean matchesIndustry = true;
-                    
+
                     // キーワードフィルタ
                     if (keyword != null && !keyword.trim().isEmpty()) {
                         String searchText = keyword.trim().toLowerCase();
@@ -89,22 +101,29 @@ public class ArticleService {
                                 (article.getCompanyName() != null && article.getCompanyName().toLowerCase().contains(searchText)) ||
                                 article.getDescription().toLowerCase().contains(searchText);
                     }
-                    
-                    // 業界フィルタ（業界IDを業界名に変換してマッチング）
-                    if (industryId != null) {
-                        // TODO: ここでindustryIdを業界名に変換する処理が必要
-                        // 今は簡易実装として、ID=1は"IT"、ID=2は"製造業"、ID=3は"サービス業"とする
-                        String targetIndustry = null;
-                        switch (industryId) {
-                            case 1: targetIndustry = "IT"; break;
-                            case 2: targetIndustry = "製造業"; break;
-                            case 3: targetIndustry = "サービス業"; break;
-                        }
-                        if (targetIndustry != null) {
-                            matchesIndustry = targetIndustry.equals(article.getIndustry());
+
+                    // 業界フィルタ（複数業界ID対応）
+                    if (industryIds != null && !industryIds.isEmpty()) {
+                        // ID→業界名変換
+                        List<String> targetIndustries = industryIds.stream().map(id -> {
+                            switch (id) {
+                                case 1: return "IT";
+                                case 2: return "製造業";
+                                case 3: return "サービス業";
+                                default: return null;
+                            }
+                        }).filter(s -> s != null).collect(Collectors.toList());
+
+                        // ArticleDTOのindustriesリストに含まれるか判定
+                        if (article.getIndustries() != null && !article.getIndustries().isEmpty()) {
+                            matchesIndustry = article.getIndustries().stream().anyMatch(targetIndustries::contains);
+                        } else if (article.getIndustry() != null) {
+                            matchesIndustry = targetIndustries.contains(article.getIndustry());
+                        } else {
+                            matchesIndustry = false;
                         }
                     }
-                    
+
                     return matchesKeyword && matchesIndustry;
                 })
                 .collect(Collectors.toList());
@@ -177,6 +196,10 @@ public class ArticleService {
         article.setPhoto2Id(articleDTO.getPhoto2Id());
         article.setPhoto3Id(articleDTO.getPhoto3Id());
 
+        // 業界リストを保存
+        if (articleDTO.getIndustries() != null) {
+            article.setIndustries(articleDTO.getIndustries());
+        }
         Article savedArticle = articleRepository.save(article);
 
         // タグを中間テーブルに保存（名称/ID両対応・trim対応）
@@ -245,6 +268,10 @@ public class ArticleService {
         existingArticle.setPhoto2Id(articleDTO.getPhoto2Id());
         existingArticle.setPhoto3Id(articleDTO.getPhoto3Id());
 
+        // 業界リストを更新
+        if (articleDTO.getIndustries() != null) {
+            existingArticle.setIndustries(articleDTO.getIndustries());
+        }
         Article updatedArticle = articleRepository.save(existingArticle);
 
         // 既存のタグ関連付けを削除
@@ -338,30 +365,52 @@ public class ArticleService {
         }
 
         String industryName = null;
+        List<String> industriesList = null;
         if (article.getCompanyId() != null) {
-            try {
-                industryName = companyService.getCompanyById(article.getCompanyId())
-                        .map(dto -> dto.getIndustry())
-                        .orElse(null);
-            } catch (Exception e) {
-                // Ignore and leave industryName as null
+            Company company = companyRepository.findById(article.getCompanyId()).orElse(null);
+            if (company != null) {
+                companyName = company.getName();
+                // company関連APIと同じ業界リスト取得ロジック
+                Optional<User> companyUser = userRepository.findByCompanyId(company.getId());
+                if (companyUser.isPresent()) {
+                    User user = companyUser.get();
+                    java.util.List<String> industries = new java.util.ArrayList<>();
+                    for (int type = 1; type <= 3; type++) {
+                        List<IndustryRelation> relations = industryRelationRepository.findAllByUserIdAndType(user.getId(), type);
+                        for (IndustryRelation rel : relations) {
+                            Industry industry = rel.getIndustry();
+                            if (industry != null && industry.getIndustry() != null && !industries.contains(industry.getIndustry())) {
+                                industries.add(industry.getIndustry());
+                            }
+                        }
+                    }
+                    industriesList = industries;
+                    // 代表業界名（最初の1件）
+                    if (!industries.isEmpty()) {
+                        industryName = industries.get(0);
+                    }
+                }
             }
         }
-
+        // 記事自身のindustriesがあれば優先
+        if (article.getIndustries() != null && !article.getIndustries().isEmpty()) {
+            industriesList = article.getIndustries();
+        }
         return new ArticleDTO(
-                article.getId(),
-                article.getCompanyId(),
-                companyName,
-                article.getTitle(),
-                article.getDescription(),
-                article.getTotalLikes(),
-                article.getIsDeleted(),
-                article.getCreatedAt() != null ? article.getCreatedAt().toString() : null,
-                article.getPhoto1Id(),
-                article.getPhoto2Id(),
-                article.getPhoto3Id(),
-                tagNames,
-                industryName
+            article.getId(),
+            article.getCompanyId(),
+            companyName,
+            article.getTitle(),
+            article.getDescription(),
+            article.getTotalLikes(),
+            article.getIsDeleted(),
+            article.getCreatedAt() != null ? article.getCreatedAt().toString() : null,
+            article.getPhoto1Id(),
+            article.getPhoto2Id(),
+            article.getPhoto3Id(),
+            tagNames,
+            industryName,
+            industriesList
         );
     }
 

@@ -11,6 +11,13 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "companies")
 public class Company {
+        @Column(name = "industry")
+        private String industry; // 旧：業界名（後方互換）
+
+        @ElementCollection
+        @CollectionTable(name = "company_industries", joinColumns = @JoinColumn(name = "company_id"))
+        @Column(name = "industry")
+        private java.util.List<String> industries; // 新：業界リスト
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id; // 企業ID (主キー、自動生成)
@@ -148,5 +155,21 @@ public class Company {
 
     public void setPhotoId(Integer photoId) {
         this.photoId = photoId;
+    }
+
+    public String getIndustry() {
+        return industry;
+    }
+
+    public void setIndustry(String industry) {
+        this.industry = industry;
+    }
+
+    public java.util.List<String> getIndustries() {
+        return industries;
+    }
+
+    public void setIndustries(java.util.List<String> industries) {
+        this.industries = industries;
     }
 }

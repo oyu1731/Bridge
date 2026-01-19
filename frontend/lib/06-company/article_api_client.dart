@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'api_config.dart';
 
+
 class ArticleDTO {
   final int? id;
   final int companyId;
@@ -16,7 +17,8 @@ class ArticleDTO {
   final int? photo2Id;
   final int? photo3Id;
   final List<String>? tags; // タグ情報を追加
-  final String? industry; // 会社の業界名
+  final String? industry; // 旧：業界名（後方互換）
+  final List<String>? industries; // 新：業界リスト
 
   ArticleDTO({
     this.id,
@@ -33,9 +35,18 @@ class ArticleDTO {
     this.photo3Id,
     this.tags,
     this.industry,
+    this.industries,
   });
 
   factory ArticleDTO.fromJson(Map<String, dynamic> json) {
+    List<String>? industries;
+    if (json['industries'] != null) {
+      if (json['industries'] is List) {
+        industries = (json['industries'] as List).map((e) => e.toString()).toList();
+      } else if (json['industries'] is String) {
+        industries = (json['industries'] as String).split(',');
+      }
+    }
     return ArticleDTO(
       id: json['id'],
       companyId: json['companyId'] ?? 0,
@@ -51,6 +62,7 @@ class ArticleDTO {
       photo3Id: json['photo3Id'],
       tags: json['tags'] != null ? List<String>.from(json['tags']) : null,
       industry: json['industry'],
+      industries: industries,
     );
   }
 
@@ -70,6 +82,7 @@ class ArticleDTO {
       'photo3Id': photo3Id,
       'tags': tags,
       'industry': industry,
+      'industries': industries,
     };
   }
 }
@@ -95,7 +108,7 @@ class ArticleApiClient {
   static Future<List<ArticleDTO>> searchArticles({
     int? companyId,
     String? keyword,
-    int? industryId,
+      List<int>? industryIds,
   }) async {
     try {
       final uri = Uri.parse('$baseUrl/search');
@@ -107,8 +120,9 @@ class ArticleApiClient {
       if (keyword != null && keyword.isNotEmpty) {
         queryParams['keyword'] = keyword;
       }
-      if (industryId != null) {
-        queryParams['industryId'] = industryId.toString();
+        if (industryIds != null && industryIds.isNotEmpty) {
+          // 複数業界IDをカンマ区切りで送信
+          queryParams['industryIds'] = industryIds.join(',');
       }
       
       final searchUri = uri.replace(queryParameters: queryParams);
