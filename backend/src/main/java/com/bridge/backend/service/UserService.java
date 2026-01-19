@@ -108,6 +108,8 @@ public class UserService {
         // 3. 企業ユーザーの場合のみ企業情報 + サブスクリプション保存
         if (userDto.getType() == 3) {
             logger.info("createUser called: email={} type={}", userDto.getEmail(), userDto.getType());
+            
+            user.setPlanStatus("プレミアム");
 
             Company company = new Company();
             company.setName(userDto.getCompanyName());
