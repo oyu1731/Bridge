@@ -19,7 +19,16 @@ public interface IndustryRelationRepository extends JpaRepository<IndustryRelati
      * @param type タイプ（3=企業の業界）
      * @return 業界関係
      */
+
     Optional<IndustryRelation> findByUserIdAndType(Integer userId, int type);
+
+    /**
+     * ユーザーIDとタイプに基づいて複数の業界関係を検索
+     * @param userId ユーザーID
+     * @param type タイプ
+     * @return 業界関係リスト
+     */
+    List<IndustryRelation> findAllByUserIdAndType(Integer userId, int type);
 
     List<IndustryRelation> findByUserId(Integer userid);
 
