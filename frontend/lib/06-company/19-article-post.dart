@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:convert';
 import '../11-common/58-header.dart';
 import '17-company-article-list.dart';
 import 'article_api_client.dart';
@@ -15,6 +16,10 @@ class ArticlePostPage extends StatefulWidget {
 }
 
 class _ArticlePostPageState extends State<ArticlePostPage> {
+      static const int maxTagCount = 4;
+    // 文字数制限
+    static const int maxTitleLength = 40;
+    static const int maxContentLength = 2000;
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
   
@@ -42,22 +47,25 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
 
   Future<void> _loadCompanyId() async {
     try {
-      // デモ用: 固定のユーザー情報を使用
-      // email: company@example.com, password: hashed_password_company
-      // このユーザーのcompanyIdを取得
-      
       final prefs = await SharedPreferences.getInstance();
       
-      // まずSharedPreferencesから取得を試みる
-      int? companyId = prefs.getInt('companyId');
+      // サインイン情報からcompanyIdを取得
+      final userDataString = prefs.getString('current_user');
+      if (userDataString == null) {
+        setState(() {
+          _errorMessage = 'ログインしていません。サインインしてください。';
+        });
+        return;
+      }
       
-      // SharedPreferencesに保存されていない場合は、デモユーザーのcompanyIdを設定
+      final userData = jsonDecode(userDataString);
+      final int? companyId = userData['companyId'];
+      
       if (companyId == null) {
-        // TODO: 実際のログイン機能実装時は、APIからユーザー情報を取得
-        // デモ用に固定値を設定（company@example.comのcompanyId）
-        companyId = 1; // デモ企業ID
-        await prefs.setInt('companyId', companyId);
-        await prefs.setString('userEmail', 'company@example.com');
+        setState(() {
+          _errorMessage = '企業アカウントでログインしてください。';
+        });
+        return;
       }
       
       setState(() {
@@ -199,19 +207,20 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
           ),
           child: TextField(
             controller: _titleController,
+            maxLength: maxTitleLength,
             decoration: InputDecoration(
-              hintText: 'タイトルを入力',
+              hintText: 'タイトルを入力（最大${maxTitleLength}文字）',
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 12,
                 vertical: 12,
               ),
+              counterText: '',
             ),
             style: TextStyle(fontSize: 14),
           ),
         ),
       ],
-      
     );
   }
 
@@ -439,12 +448,14 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
           ),
           child: TextField(
             controller: _contentController,
+            maxLength: maxContentLength,
             maxLines: 10,
             decoration: InputDecoration(
-              hintText: '記事の本文を入力してください',
+              hintText: '記事の本文を入力してください（最大${maxContentLength}文字）',
               hintStyle: TextStyle(color: Color(0xFF9E9E9E)),
               border: InputBorder.none,
               contentPadding: EdgeInsets.all(12),
+              counterText: '',
             ),
             style: TextStyle(fontSize: 14),
           ),
@@ -518,12 +529,11 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
               builder: (context, setModalState) {
                 return Column(
                   children: [
-                    // モーダルヘッダー
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'タグ追加',
+                          'タグ追加（最大${maxTagCount}個）',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -536,7 +546,6 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // タグリスト
                     Expanded(
                       child: GridView.builder(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -550,13 +559,21 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
                           final tagDto = _availableTags[index];
                           final tag = tagDto.tag;
                           final isSelected = tempSelectedTags.contains(tag);
-                          
                           return InkWell(
                             onTap: () {
                               setModalState(() {
                                 if (isSelected) {
                                   tempSelectedTags.remove(tag);
                                 } else {
+                                  if (tempSelectedTags.length >= maxTagCount) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('タグは最大${maxTagCount}個まで選択できます'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
                                   tempSelectedTags.add(tag);
                                 }
                               });
@@ -596,13 +613,11 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // タグを追加ボタン
                     Container(
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton(
                         onPressed: () {
-                          // 実際にタグを追加
                           setState(() {
                             _selectedTags = tempSelectedTags.toList();
                           });
@@ -710,7 +725,9 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
 
   void _submitArticle() async {
     // バリデーション
-    if (_titleController.text.isEmpty) {
+    final title = _titleController.text;
+    final content = _contentController.text;
+    if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('タイトルを入力してください'),
@@ -719,8 +736,16 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
       );
       return;
     }
-
-    if (_contentController.text.isEmpty) {
+    if (title.length > maxTitleLength) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('タイトルは${maxTitleLength}文字以内で入力してください'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    if (content.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('本文を入力してください'),
@@ -729,7 +754,15 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
       );
       return;
     }
-
+    if (content.length > maxContentLength) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('本文は${maxContentLength}文字以内で入力してください'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
     if (_currentCompanyId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -739,7 +772,6 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
       );
       return;
     }
-
     setState(() {
       _isLoading = true;
     });

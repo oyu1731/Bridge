@@ -7,9 +7,7 @@ import 'package:bridge/main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-
-// このファイルは「header以外」の画面部分のみを表現します。
-// 参考イメージ（ローカルファイル）: /mnt/data/c18f8270-40d6-4dc1-b381-54ae136fff4e.png
+import 'package:bridge/style.dart';
 
 class PasswordUpdatePage extends StatefulWidget {
   const PasswordUpdatePage({Key? key}) : super(key: key);
@@ -77,18 +75,18 @@ Future<void> _onSubmit() async {
     );
 
     if (response.statusCode == 200) {
-      // ✅ 成功時はポップアップ表示
+      // 成功時はポップアップ表示
       showDialog(
         context: context,
         builder: (ctx) {
           return AlertDialog(
-            title: const Text('完了'),
-            content: const Text('パスワードを更新しました'),
+            title: const Text('パスワード変更'),
+            content: const Text('パスワードの変更が完了しました'),
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.of(ctx).pop(); // ダイアログを閉じる
-                  // ✅ トップページへ遷移（例: HomePage）
+                  Navigator.of(ctx).pop();
+                  // トップページへ遷移
                   Widget homePage;
                   if (userType == 1 || userType == 2) {
                     homePage = const StudentWorkerHome();
@@ -133,7 +131,9 @@ Future<void> _onSubmit() async {
                   const SizedBox(height: 28),
 
                   // --- タイトル ---
-                  const Text('パスワード変更', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text('パスワード変更',
+                    style: AppTheme.mainTextStyle,
+                  ),
                   const SizedBox(height: 12),
                   const Text('現在のパスワードと、新しいパスワードを入力してください。',
                       style: TextStyle(color: Colors.black54)),
@@ -199,6 +199,8 @@ Future<void> _onSubmit() async {
                             ElevatedButton(
                               onPressed: _onSubmit,
                               style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orangeAccent[400],
+                                foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 elevation: 0,
@@ -232,7 +234,7 @@ Future<void> _onSubmit() async {
         backgroundColor: Colors.white,
         side: const BorderSide(color: Colors.black26),
       ),
-      child: Text(text, style: const TextStyle(color: Colors.black87)),
+      child: Text(text),
     );
   }
 
@@ -246,7 +248,7 @@ Future<void> _onSubmit() async {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14)),
+        Text(label),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,

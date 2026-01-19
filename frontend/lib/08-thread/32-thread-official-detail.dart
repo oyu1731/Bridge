@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:bridge/11-common/58-header.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ThreadOfficialDetail extends StatefulWidget {
   final Map<String, dynamic> thread;
@@ -22,7 +23,18 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   final TextEditingController _messageController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final String currentUserId = '1';
+  //initでユーザのIDを入れる
+  String currentUserId="";
+  //ユーザ情報取得
+  Future<void> _loadCurrentUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('current_user');
+    if (jsonString == null) return;
+    final userData = jsonDecode(jsonString);
+    setState(() {
+      currentUserId = userData['id'].toString();
+    });
+  }
   Map<String, String> _userNicknames = {};
   List<Map<String, dynamic>> _messages = [];
   String searchText = '';
@@ -41,6 +53,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   void initState() {
     super.initState();
     _messageStreamController = StreamController<List<Map<String, dynamic>>>.broadcast();
+    _loadCurrentUser();
     _fetchMessages();
 
     _channel = WebSocketChannel.connect(
@@ -85,7 +98,11 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
 
   Future<void> pickImage() async {
     final picker = ImagePicker();
-    final XFile? picked = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,      //これをいれなきゃたまに画像が送れない（0〜100）
+      //maxWidth: 1200,        // ← 大きすぎる画像を縮小
+    );
     if (picked == null) return;
     if (kIsWeb) {
       final bytes = await picked.readAsBytes();
@@ -113,13 +130,13 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
         'file',
         _webImageBytes!,
         filename: _webImageName ?? "upload.jpg",
-        contentType: MediaType('image', 'jpeg'),
+        //contentType: MediaType('image', 'jpeg'),
       ));
     } else {
       request.files.add(await http.MultipartFile.fromPath(
         'file',
         _selectedImage!.path,
-        contentType: MediaType('image', 'jpeg'),
+        //contentType: MediaType('image', 'jpeg'),
       ));
     }
 
@@ -127,11 +144,16 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
       final response = await request.send();
       final body = await response.stream.bytesToString();
       if (response.statusCode == 201) {
-        final int? photoId = int.tryParse(
-          RegExp(r'"id"\s*:\s*(\d+)').firstMatch(body)?.group(1) ?? '',
-        );
+        final jsonBody = jsonDecode(body);
+        final photoId = jsonBody['id'];
+        // final int? photoId = int.tryParse(
+        //   RegExp(r'"id"\s*:\s*(\d+)').firstMatch(body)?.group(1) ?? '',
+        // );
         return photoId;
       }
+      print("aaaaaaaaaaaaaaaaa");
+      print("=== Upload Response Status === ${response.statusCode}");
+      print("=== Upload Response Body === $body");
       return null;
     } catch (e) {
       print("Upload error: $e");
@@ -152,7 +174,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
 
   Future<void> _fetchMessages() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/chat/${widget.thread['id']}'));
+      final response = await http.get(Uri.parse('$baseUrl/chat/${widget.thread['id']}/active'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         final fetched = data.map((msg) {
@@ -247,7 +269,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
 
       _channel.sink.add(json.encode(msg));
 
-      // ★ここだけ自動スクロール
+      //自動スクロール
       _scrollToBottom(); 
     } else {
       print("Send failed: ${response.statusCode}");
@@ -412,27 +434,31 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                                     FutureBuilder(
                                       future: fetchPhotoUrl(msg['photoId']),
                                       builder: (context, snapshot) {
-                                        Widget imageWidget;
-
-                                        if (snapshot.hasData) {
-                                          // 画像が読み込まれたらスクロール
-                                          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-
-                                          imageWidget = Image.network(
-                                            snapshot.data!,
-                                            width: 200,
-                                            height: 200,
-                                            fit: BoxFit.cover,
-                                          );
-                                        } else {
-                                          imageWidget = SizedBox(width: 200, height: 200); // プレースホルダー
+                                        if (!snapshot.hasData) {
+                                          return SizedBox(width: 200, height: 200); // プレースホルダー
                                         }
-
                                         return Padding(
                                           padding: const EdgeInsets.only(bottom: 8.0),
                                           child: ClipRRect(
                                             borderRadius: BorderRadius.circular(12),
-                                            child: imageWidget,
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (_) => Dialog(
+                                                    child: InteractiveViewer(
+                                                      child: Image.network(snapshot.data!),
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              child: Image.network(
+                                                snapshot.data!,
+                                                width: 200,
+                                                height: 200,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
                                           ),
                                         );
                                       },

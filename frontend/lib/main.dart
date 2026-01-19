@@ -23,14 +23,29 @@ void main() async {
   // Webの場合、URLをチェックしてリダイレクト先を決定
   if (kIsWeb) {
     final uri = Uri.parse(html.window.location.href);
-    final fragment = uri.fragment; // "54-payment-complete" のように取得
+    final fragment = uri.fragment; // 例: '/payment-success?userType=company'
     print('【Debug】現在のURL: ${html.window.location.href}');
     print('【Debug】URL fragment: $fragment');
 
-    // fragment を正確に比較
-    if (fragment == '54-payment-complete') {
-      initialPage = const PaymentSuccessScreen();
-    } else if (fragment == '54-payment-cancel') {
+    // フラグメントが payment-success / payment-cancel を含む場合は専用ページに遷移
+    if (fragment.startsWith('/payment-success') ||
+        fragment.startsWith('payment-success')) {
+      // フラグメント内のクエリ (例: /payment-success?userType=company) を解析して userType を抽出
+      String? userType;
+      if (fragment.contains('?')) {
+        final parts = fragment.split('?');
+        if (parts.length > 1) {
+          try {
+            final qmap = Uri.splitQueryString(parts[1]);
+            userType = qmap['userType'];
+          } catch (_) {
+            userType = null;
+          }
+        }
+      }
+      initialPage = PaymentSuccessScreen(userType: userType);
+    } else if (fragment.startsWith('/payment-cancel') ||
+        fragment.startsWith('payment-cancel')) {
       initialPage = const PaymentCancelScreen();
     } else {
       // 通常のセッションチェック処理
@@ -216,14 +231,18 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, size: size * 0.3, color: const Color.fromARGB(255, 6, 62, 85)),
+                Icon(
+                  icon,
+                  size: size * 0.3,
+                  color: const Color.fromARGB(255, 6, 62, 85),
+                ),
                 Text(
                   label,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontSize: size * 0.13,
-                        color: const Color.fromARGB(255, 6, 62, 85),
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontSize: size * 0.13,
+                    color: const Color.fromARGB(255, 6, 62, 85),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -352,11 +371,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 errorBuilder: (context, error, stackTrace) {
                   return Row(
                     children: [
-                      Icon(
-                        Icons.home_outlined,
-                        color: Colors.blue,
-                        size: 44,
-                      ),
+                      Icon(Icons.home_outlined, color: Colors.blue, size: 44),
                       const SizedBox(width: 8),
                       Text(
                         'Bridge',

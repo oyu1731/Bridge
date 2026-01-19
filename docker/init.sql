@@ -17,6 +17,7 @@ USE bridgedb;
 
 -- 既存のテーブルがあれば削除 (開発用)
 DROP TABLE IF EXISTS articles_tag;
+DROP TABLE IF EXISTS article_likes;
 DROP TABLE IF EXISTS articles;
 DROP TABLE IF EXISTS notices;
 DROP TABLE IF EXISTS chats;
@@ -52,7 +53,9 @@ CREATE TABLE users (
     society_history INT(2),
     icon INT(10),
     announcement_deletion INT(1) NOT NULL DEFAULT 1 COMMENT '1=新規お知らせなし、2=新規お知らせあり',
-    token INT(10) NOT NULL DEFAULT 50 COMMENT '面接練習やメール添削で使用'
+    token INT(10) NOT NULL DEFAULT 50 COMMENT '面接練習やメール添削で使用',
+    otp VARCHAR(6) COMMENT 'パスワード再設定用ワンタイムパスワード',
+    otp_expires_at DATETIME COMMENT 'OTP有効期限'
 );
 
 
@@ -111,6 +114,17 @@ CREATE TABLE articles (
     photo2_id INT(10),
     photo3_id INT(10),
     FOREIGN KEY (company_id) REFERENCES companies(id)
+);
+
+-- テーブル定義書_記事いいね
+CREATE TABLE article_likes (
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    article_id INT(20) NOT NULL,
+    user_id INT(20) NOT NULL,
+    created_at DATETIME NOT NULL,
+    FOREIGN KEY (article_id) REFERENCES articles(id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    UNIQUE KEY unique_article_user (article_id, user_id)
 );
 
 -- テーブル定義書_スレッド

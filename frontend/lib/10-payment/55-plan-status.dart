@@ -71,12 +71,16 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
     }
 
     await Future.delayed(const Duration(milliseconds: 300));
-    setState(() {
-      _isLoading = false;
-    });
-    _animationController.forward();
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+      _animationController.forward();
+    }
   }
 
+  /// サブスクリプション情報を取得するメソッド
+  /// 期限切れやデータなしの場合は 404 を想定し、その場合は無料プランとして扱う
   Future<void> _fetchSubscription(int userId) async {
     try {
       final response = await http.get(
@@ -87,20 +91,31 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
         final Map<String, dynamic> data = jsonDecode(response.body);
         setState(() {
           _planStatus = 'プレミアム';
-          _startDate =
-              data['startDate'] != null
-                  ? data['startDate'].substring(0, 10)
-                  : null;
-          _endDate =
-              data['endDate'] != null ? data['endDate'].substring(0, 10) : null;
+          // APIから取得した日付を表示形式(yyyy-MM-dd)に整形
+          _startDate = data['startDate'] != null
+              ? data['startDate'].toString().substring(0, 10)
+              : null;
+          _endDate = data['endDate'] != null
+              ? data['endDate'].toString().substring(0, 10)
+              : null;
         });
       } else {
-        setState(() {
-          _planStatus = '無料';
-        });
+        // 404などのエラー時は、日付データを含めてリセットする
+        _resetToFreePlan();
       }
     } catch (e) {
       print('サブスクリプション取得エラー: $e');
+      _resetToFreePlan();
+    }
+  }
+
+  void _resetToFreePlan() {
+    if (mounted) {
+      setState(() {
+        _planStatus = '無料';
+        _startDate = null;
+        _endDate = null;
+      });
     }
   }
 
@@ -239,10 +254,9 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors:
-                  isPremium
-                      ? [Colors.green.shade50, Colors.teal.shade50]
-                      : [Colors.orange.shade50, Colors.yellow.shade50],
+              colors: isPremium
+                  ? [Colors.green.shade50, Colors.teal.shade50]
+                  : [Colors.orange.shade50, Colors.yellow.shade50],
             ),
             borderRadius: BorderRadius.circular(20),
           ),
@@ -272,16 +286,15 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
                             ),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors:
-                                    isPremium
-                                        ? [
-                                          Colors.green.shade400,
-                                          Colors.teal.shade400,
-                                        ]
-                                        : [
-                                          Colors.orange.shade400,
-                                          Colors.amber.shade400,
-                                        ],
+                                colors: isPremium
+                                    ? [
+                                        Colors.green.shade400,
+                                        Colors.teal.shade400,
+                                      ]
+                                    : [
+                                        Colors.orange.shade400,
+                                        Colors.amber.shade400,
+                                      ],
                               ),
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
@@ -334,12 +347,10 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
                 ],
               ),
               const SizedBox(height: 24),
-
               if (isPremium && _startDate != null && _endDate != null) ...[
                 _buildDateInfo(),
                 const SizedBox(height: 24),
               ],
-
               _buildPlanFeatures(),
             ],
           ),
@@ -350,7 +361,12 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
 
   Widget _buildDateInfo() {
     final now = DateTime.now();
-    final end = _endDate != null ? DateTime.parse(_endDate!) : null;
+    DateTime? end;
+    try {
+      end = _endDate != null ? DateTime.parse(_endDate!) : null;
+    } catch (e) {
+      end = null;
+    }
     final daysLeft = end != null ? end.difference(now).inDays : 0;
 
     return Container(
@@ -418,20 +434,15 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
             ],
           ),
           const SizedBox(height: 12),
-          if (daysLeft > 0)
+          if (daysLeft >= 0)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color:
-                    daysLeft <= 7
-                        ? Colors.orange.shade50
-                        : Colors.green.shade50,
+                color: daysLeft <= 7 ? Colors.orange.shade50 : Colors.green.shade50,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color:
-                      daysLeft <= 7
-                          ? Colors.orange.shade200
-                          : Colors.green.shade200,
+                      daysLeft <= 7 ? Colors.orange.shade200 : Colors.green.shade200,
                 ),
               ),
               child: Row(
@@ -494,14 +505,12 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color:
-                        available ? Colors.blue.shade50 : Colors.grey.shade100,
+                    color: available ? Colors.blue.shade50 : Colors.grey.shade100,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     feature['icon'],
-                    color:
-                        available ? Colors.blue.shade600 : Colors.grey.shade400,
+                    color: available ? Colors.blue.shade600 : Colors.grey.shade400,
                     size: 20,
                   ),
                 ),
@@ -511,7 +520,7 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
                     feature['text'],
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.bold,
                       color: available ? Colors.black87 : Colors.grey.shade500,
                       decoration: available ? null : TextDecoration.lineThrough,
                     ),
@@ -619,51 +628,51 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const BridgeHeader(),
-      body:
-          _isLoading
-              ? const Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+              ),
+            )
+          : Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.blue.shade50.withOpacity(0.1),
+                    Colors.purple.shade50.withOpacity(0.1),
+                  ],
                 ),
-              )
-              : Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.blue.shade50.withOpacity(0.1),
-                      Colors.purple.shade50.withOpacity(0.1),
+              ),
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 20),
+                      _buildUserInfoCard(),
+                      const SizedBox(height: 24),
+                      _buildPlanStatusCard(),
+                      const SizedBox(height: 24),
+                      _buildUpgradeButton(),
+                      const SizedBox(height: 30),
+                      if (_planStatus == 'プレミアム')
+                        Text(
+                          '🎉 プレミアムプランをご利用いただきありがとうございます！',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
                     ],
                   ),
                 ),
-                child: SafeArea(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 20),
-                        _buildUserInfoCard(),
-                        const SizedBox(height: 24),
-                        _buildPlanStatusCard(),
-                        const SizedBox(height: 24),
-                        _buildUpgradeButton(),
-                        const SizedBox(height: 30),
-                        if (_planStatus == 'プレミアム')
-                          Text(
-                            '🎉 プレミアムプランをご利用いただきありがとうございます！',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey.shade600,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
               ),
+            ),
     );
   }
 }

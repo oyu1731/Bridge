@@ -67,6 +67,12 @@ public class User {
     @Column(name = "token", nullable = false)
     private Integer token; // 面接練習やメール添削で使用
 
+    @Column(name = "otp", length = 6)
+    private String otp; // パスワード再設定用ワンタイムパスワード
+
+    @Column(name = "otp_expires_at")
+    private LocalDateTime otpExpiresAt; // OTP有効期限
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -93,7 +99,7 @@ public class User {
     public User() {
     }
 
-    public User(Integer id, String nickname, Integer type, String password, String phoneNumber, String email, Integer companyId, Integer reportCount, String planStatus, Boolean isWithdrawn, Boolean isDeleted, LocalDateTime createdAt, Integer societyHistory, Integer icon, Integer announcementDeletion, Integer token) {
+    public User(Integer id, String nickname, Integer type, String password, String phoneNumber, String email, Integer companyId, Integer reportCount, String planStatus, Boolean isWithdrawn, Boolean isDeleted, LocalDateTime createdAt, Integer societyHistory, Integer icon, Integer announcementDeletion, Integer token, String otp, LocalDateTime otpExpiresAt) {
         this.id = id;
         this.nickname = nickname;
         this.type = type;
@@ -110,6 +116,8 @@ public class User {
         this.icon = icon;
         this.announcementDeletion = announcementDeletion;
         this.token = token;
+        this.otp = otp;
+        this.otpExpiresAt = otpExpiresAt;
     }
 
     public Integer getId() {
@@ -238,5 +246,21 @@ public class User {
 
     public void setToken(Integer token) {
         this.token = token;
+    }
+
+    public String getOtp() {
+        return otp;
+    }
+
+    public void setOtp(String otp) {
+        this.otp = otp;
+    }
+
+    public LocalDateTime getOtpExpiresAt() {
+        return otpExpiresAt;
+    }
+
+    public void setOtpExpiresAt(LocalDateTime otpExpiresAt) {
+        this.otpExpiresAt = otpExpiresAt;
     }
 }

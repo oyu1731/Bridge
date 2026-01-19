@@ -8,6 +8,7 @@ import 'package:bridge/11-common/59-global-method.dart';
 import 'package:bridge/11-common/60-ScreenWrapper.dart';
 import 'voice_setting_dialog.dart';
 import 'dart:js' as js; // ※Web以外でエラーになる場合は削除してください
+import 'package:http/http.dart' as http;
 
 // カスタムのScrollBehaviorを定義
 class NoThumbScrollBehavior extends ScrollBehavior {
@@ -459,10 +460,10 @@ class _AiTrainingListPageState extends State<AiTrainingListPage> {
                       ),
                       child: Opacity(
                         opacity:
-                            (user?['plan_status'] ?? '無料') == '無料' ? 0.6 : 1.0,
+                            (user?['planStatus'] ?? '無料') == '無料' ? 0.6 : 1.0,
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            if ((user?['plan_status'] ?? '無料') == '無料') {
+                            if ((user?['planStatus'] ?? '無料') == '無料') {
                               showGenericDialog(
                                 context: context,
                                 type: DialogType.onlyOk,

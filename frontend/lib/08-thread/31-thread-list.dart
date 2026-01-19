@@ -4,68 +4,10 @@ import 'package:http/http.dart' as http;
 import 'package:bridge/11-common/58-header.dart';
 import '32-thread-official-detail.dart';
 import '33-thread-unofficial-detail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'thread_api_client.dart';
+import 'thread_model.dart';
 import 'thread-unofficial-list.dart';
-
-// Thread モデル
-class Thread {
-  final String id;
-  final String title;
-  final int type; // 1=公式, 2=非公式
-  final DateTime? lastCommentDate;
-  final String timeAgo;
-
-  Thread({
-    required this.id,
-    required this.title,
-    required this.type,
-    this.lastCommentDate,
-    required this.timeAgo,
-  });
-
-  factory Thread.fromJson(Map<String, dynamic> json) {
-    String timeAgoText = "";
-    DateTime? lastUpdateDate;
-
-    // lastUpdateDate → timeAgo に使用 & 並び替えにも使う
-    final lastUpdateStr = json["lastUpdateDate"] ?? json["lastUpdateDate"];
-    if (lastUpdateStr != null && lastUpdateStr != "") {
-      lastUpdateDate = DateTime.parse(lastUpdateStr);
-      timeAgoText = _formatTimeAgo(lastUpdateDate);
-    }
-
-    return Thread(
-      id: json['id'].toString(),
-      title: json['title']?.toString() ?? '',
-      type: json['type'] != null ? int.parse(json['type'].toString()) : 2,
-      lastCommentDate: lastUpdateDate,  // ← ★ここ重要！
-      timeAgo: timeAgoText,
-    );
-  }
-
-  /// 時間差 → 「〜分前」「〜時間前」「〜日前」
-  static String _formatTimeAgo(DateTime time) {
-    final diff = DateTime.now().difference(time);
-
-    if (diff.inSeconds < 60) return 'たった今';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}分前';
-    if (diff.inHours < 24) return '${diff.inHours}時間前';
-    return '${diff.inDays}日前';
-  }
-}
-
-// API呼び出し関数
-Future<List<Thread>> fetchThreads() async {
-  final url = Uri.parse('http://localhost:8080/api/threads');
-  final response = await http.get(url);
-  print(response.body); 
-
-  if (response.statusCode == 200) {
-    final List<dynamic> data = json.decode(response.body);
-    return data.map((json) => Thread.fromJson(json)).toList();
-  } else {
-    throw Exception('スレッド取得に失敗しました: ${response.statusCode}');
-  }
-}
 
 class ThreadList extends StatefulWidget {
   @override
@@ -75,32 +17,61 @@ class ThreadList extends StatefulWidget {
 class _ThreadListState extends State<ThreadList> {
   List<Thread> officialThreads = [];
   List<Thread> hotUnofficialThreads = [];
-
+  //ユーザ情報取得
+  int? userType;
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('current_user');
+    if (jsonString == null) return;
+    final userData = jsonDecode(jsonString);
+    setState(() {
+      userType = userData['type']+1;
+    });
+  }
   @override
   void initState() {
     super.initState();
-    _fetchThreads(); // DBから取得
+    _init();
+  }
+  Future<void> _init() async {
+    await _loadUserData();   //ユーザ取得
+    await _fetchThreads();  //userType を使う処理
   }
 
   Future<void> _fetchThreads() async {
-    try {
-      final threads = await fetchThreads();
-      print(threads.map((t) => t.timeAgo).toList()); 
+  try {
+    final threads = await ThreadApiClient.getAllThreads();
 
-      setState(() {
-        officialThreads = threads.where((t) => t.type == 1).toList();
-        hotUnofficialThreads = threads.where((t) => t.type == 2)
-          .toList()
-          ..sort((a, b) {
-            final aDate = a.lastCommentDate ?? DateTime(2000);
-            final bDate = b.lastCommentDate ?? DateTime(2000);
-            return bDate.compareTo(aDate); // 新しい順
-          });
-      });
-    } catch (e) {
-      print('スレッド取得に失敗: $e');
-    }
+    // ---- 公式スレッド ----
+    final official = threads.where((t) => t.type == 1).toList();
+
+    // ---- 非公式フィルタ ----
+    final filtered = threads
+        .where((t) =>
+            t.type == 2 &&
+            (t.entryCriteria == userType || t.entryCriteria == 1))
+        .toList();
+
+    // 並び替え（新しい順）
+    filtered.sort((a, b) {
+      final aDate = a.lastCommentDate ?? DateTime(2000);
+      final bDate = b.lastCommentDate ?? DateTime(2000);
+      return bDate.compareTo(aDate);
+    });
+
+    // 上位5件
+    final top5 = filtered.take(5).toList();
+
+    setState(() {
+      officialThreads = official;
+      hotUnofficialThreads = top5;
+    });
+
+  } catch (e) {
+    print('スレッド取得に失敗: $e');
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -139,6 +110,15 @@ class _ThreadListState extends State<ThreadList> {
                         thread.title,
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      //スレッドの説明文
+                      subtitle: Text(
+                        thread.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                        ),
                       ),
                       trailing: Text(
                         thread.timeAgo,
@@ -202,6 +182,15 @@ class _ThreadListState extends State<ThreadList> {
                         thread.title,
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      //スレッドの説明文
+                      subtitle: Text(
+                        thread.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                        ),
                       ),
                       trailing: Text(
                         thread.timeAgo,

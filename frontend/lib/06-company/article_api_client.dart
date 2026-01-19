@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'api_config.dart';
 
+
 class ArticleDTO {
   final int? id;
   final int companyId;
@@ -11,11 +12,13 @@ class ArticleDTO {
   final int? totalLikes;
   final bool? isDeleted;
   final String? createdAt;
+  final bool? isLikedByUser;
   final int? photo1Id;
   final int? photo2Id;
   final int? photo3Id;
   final List<String>? tags; // タグ情報を追加
-  final String? industry; // 会社の業界名
+  final String? industry; // 旧：業界名（後方互換）
+  final List<String>? industries; // 新：業界リスト
 
   ArticleDTO({
     this.id,
@@ -26,14 +29,24 @@ class ArticleDTO {
     this.totalLikes,
     this.isDeleted,
     this.createdAt,
+    this.isLikedByUser,
     this.photo1Id,
     this.photo2Id,
     this.photo3Id,
     this.tags,
     this.industry,
+    this.industries,
   });
 
   factory ArticleDTO.fromJson(Map<String, dynamic> json) {
+    List<String>? industries;
+    if (json['industries'] != null) {
+      if (json['industries'] is List) {
+        industries = (json['industries'] as List).map((e) => e.toString()).toList();
+      } else if (json['industries'] is String) {
+        industries = (json['industries'] as String).split(',');
+      }
+    }
     return ArticleDTO(
       id: json['id'],
       companyId: json['companyId'] ?? 0,
@@ -43,11 +56,13 @@ class ArticleDTO {
       totalLikes: json['totalLikes'],
       isDeleted: json['isDeleted'],
       createdAt: json['createdAt'],
+      isLikedByUser: json['isLikedByUser'],
       photo1Id: json['photo1Id'],
       photo2Id: json['photo2Id'],
       photo3Id: json['photo3Id'],
       tags: json['tags'] != null ? List<String>.from(json['tags']) : null,
       industry: json['industry'],
+      industries: industries,
     );
   }
 
@@ -61,11 +76,13 @@ class ArticleDTO {
       'totalLikes': totalLikes,
       'isDeleted': isDeleted,
       'createdAt': createdAt,
+      'isLikedByUser': isLikedByUser,
       'photo1Id': photo1Id,
       'photo2Id': photo2Id,
       'photo3Id': photo3Id,
       'tags': tags,
       'industry': industry,
+      'industries': industries,
     };
   }
 }
@@ -91,7 +108,7 @@ class ArticleApiClient {
   static Future<List<ArticleDTO>> searchArticles({
     int? companyId,
     String? keyword,
-    int? industryId,
+      List<int>? industryIds,
   }) async {
     try {
       final uri = Uri.parse('$baseUrl/search');
@@ -103,8 +120,9 @@ class ArticleApiClient {
       if (keyword != null && keyword.isNotEmpty) {
         queryParams['keyword'] = keyword;
       }
-      if (industryId != null) {
-        queryParams['industryId'] = industryId.toString();
+        if (industryIds != null && industryIds.isNotEmpty) {
+          // 複数業界IDをカンマ区切りで送信
+          queryParams['industryIds'] = industryIds.join(',');
       }
       
       final searchUri = uri.replace(queryParameters: queryParams);
@@ -121,9 +139,13 @@ class ArticleApiClient {
     }
   }
 
-  static Future<ArticleDTO?> getArticleById(int id) async {
+  static Future<ArticleDTO?> getArticleById(int id, {int? userId}) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/$id'));
+      var uri = Uri.parse('$baseUrl/$id');
+      if (userId != null) {
+        uri = uri.replace(queryParameters: {'userId': userId.toString()});
+      }
+      final response = await http.get(uri);
       
       if (response.statusCode == 200) {
         return ArticleDTO.fromJson(json.decode(response.body));
@@ -185,9 +207,16 @@ class ArticleApiClient {
     }
   }
 
-  static Future<void> likeArticle(int id) async {
+  static Future<void> likeArticle(int id, int userId, bool isLiking) async {
     try {
-      final response = await http.post(Uri.parse('$baseUrl/$id/like'));
+      final response = await http.post(
+        Uri.parse('$baseUrl/$id/like'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'userId': userId,
+          'liking': isLiking,
+        }),
+      );
       
       if (response.statusCode != 200) {
         throw Exception('Failed to like article: ${response.statusCode}');
@@ -197,17 +226,7 @@ class ArticleApiClient {
     }
   }
 
-  static Future<void> unlikeArticle(int id) async {
-    try {
-      final response = await http.delete(Uri.parse('$baseUrl/$id/like'));
-      
-      if (response.statusCode != 200) {
-        throw Exception('Failed to unlike article: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error unliking article: $e');
-    }
-  }
+
 
   static Future<List<ArticleDTO>> getArticlesByCompanyId(int companyId) async {
     try {

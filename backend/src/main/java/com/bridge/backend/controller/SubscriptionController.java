@@ -1,7 +1,8 @@
 package com.bridge.backend.controller;
 
 import com.bridge.backend.entity.Subscription;
-import com.bridge.backend.dto.SubscriptionResponseDto; // DTOをインポート
+import com.bridge.backend.repository.UserRepository;
+import com.bridge.backend.dto.SubscriptionResponseDto;
 import com.bridge.backend.service.SubscriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,37 +12,47 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/subscriptions")
+// @CrossOrigin(origins = "*")
+//ここはデプロイした後に変わるかもしれない～
+@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
 public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
+    private final UserRepository userRepository;
 
     @Autowired
-    public SubscriptionController(SubscriptionService subscriptionService) {
+    public SubscriptionController(SubscriptionService subscriptionService, UserRepository userRepository) {
         this.subscriptionService = subscriptionService;
+        this.userRepository = userRepository;
     }
 
     /**
-     * ユーザーIDから有効なサブスクリプション情報を取得する。
-     * 500エラー（LocalDateTimeのシリアライズ問題）を避けるため、DTOに変換して返却する。
-     * @param userId ユーザーID
-     * @return SubscriptionResponseDto（JSON）または404
+     * 1. リアルタイムのプラン名取得
+     * 型を Integer userId に変更してリポジトリと一致させます
+     */
+    @GetMapping("/status/{userId}")
+    public ResponseEntity<String> getSubscriptionStatus(@PathVariable Integer userId) {
+        // UserRepository.findById(Integer) に合わせて Integer を渡す
+        return userRepository.findById(userId)
+                .map(user -> {
+                    String status = user.getPlanStatus();
+                    return ResponseEntity.ok(status != null ? status : "無料");
+                })
+                .orElse(ResponseEntity.status(404).body("User Not Found"));
+    }
+
+    /**
+     * 2. 有効なサブスクリプション詳細情報の取得
      */
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getActiveSubscription(@PathVariable Integer userId) {
-        // ServiceからSubscriptionエンティティを取得
         Optional<Subscription> subscriptionOpt = subscriptionService.getActiveSubscriptionByUserId(userId);
 
         if (subscriptionOpt.isPresent()) {
-            // エンティティをDTOに変換
             SubscriptionResponseDto dto = new SubscriptionResponseDto(subscriptionOpt.get());
-            // DTOを返却
             return ResponseEntity.ok(dto);
         } else {
-            // 有効なサブスクリプションがない場合は404を返却（無料プランと判断）
-            return ResponseEntity.status(404).body("Active subscription not found for user ID: " + userId);
+            return ResponseEntity.status(404).body("Active subscription not found");
         }
     }
-
-    // 他のPostMappingなどはそのまま残す
-    // ...
 }
