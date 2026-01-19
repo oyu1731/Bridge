@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ChatRepository extends JpaRepository<Chat, Integer> {
     List<Chat> findByThreadIdOrderByCreatedAtAsc(Integer threadId);
+    List<Chat> findByThreadIdAndIsDeletedFalseOrderByCreatedAtAsc(Integer threadId);
 }

@@ -98,7 +98,11 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
 
   Future<void> pickImage() async {
     final picker = ImagePicker();
-    final XFile? picked = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,      //これをいれなきゃたまに画像が送れない（0〜100）
+      //maxWidth: 1200,        // ← 大きすぎる画像を縮小
+    );
     if (picked == null) return;
     if (kIsWeb) {
       final bytes = await picked.readAsBytes();
@@ -126,13 +130,13 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
         'file',
         _webImageBytes!,
         filename: _webImageName ?? "upload.jpg",
-        contentType: MediaType('image', 'jpeg'),
+        //contentType: MediaType('image', 'jpeg'),
       ));
     } else {
       request.files.add(await http.MultipartFile.fromPath(
         'file',
         _selectedImage!.path,
-        // contentType: MediaType('image', 'jpeg'),
+        //contentType: MediaType('image', 'jpeg'),
       ));
     }
 
@@ -147,6 +151,9 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
         // );
         return photoId;
       }
+      print("aaaaaaaaaaaaaaaaa");
+      print("=== Upload Response Status === ${response.statusCode}");
+      print("=== Upload Response Body === $body");
       return null;
     } catch (e) {
       print("Upload error: $e");
@@ -167,7 +174,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
 
   Future<void> _fetchMessages() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/chat/${widget.thread['id']}'));
+      final response = await http.get(Uri.parse('$baseUrl/chat/${widget.thread['id']}/active'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         final fetched = data.map((msg) {
@@ -427,27 +434,31 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                                     FutureBuilder(
                                       future: fetchPhotoUrl(msg['photoId']),
                                       builder: (context, snapshot) {
-                                        Widget imageWidget;
-
-                                        if (snapshot.hasData) {
-                                          // 画像が読み込まれたらスクロール
-                                          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-
-                                          imageWidget = Image.network(
-                                            snapshot.data!,
-                                            width: 200,
-                                            height: 200,
-                                            fit: BoxFit.cover,
-                                          );
-                                        } else {
-                                          imageWidget = SizedBox(width: 200, height: 200); // プレースホルダー
+                                        if (!snapshot.hasData) {
+                                          return SizedBox(width: 200, height: 200); // プレースホルダー
                                         }
-
                                         return Padding(
                                           padding: const EdgeInsets.only(bottom: 8.0),
                                           child: ClipRRect(
                                             borderRadius: BorderRadius.circular(12),
-                                            child: imageWidget,
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (_) => Dialog(
+                                                    child: InteractiveViewer(
+                                                      child: Image.network(snapshot.data!),
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              child: Image.network(
+                                                snapshot.data!,
+                                                width: 200,
+                                                height: 200,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
                                           ),
                                         );
                                       },
