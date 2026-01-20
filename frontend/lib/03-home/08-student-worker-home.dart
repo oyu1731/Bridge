@@ -8,6 +8,10 @@ import 'dart:convert';
 import '../06-company/article_api_client.dart';
 import '../06-company/16-article-list.dart';
 import '../06-company/18-article-detail.dart';
+import '../08-thread/thread_api_client.dart';
+import '../08-thread/31-thread-list.dart';
+import 'package:bridge/08-thread/33-thread-unofficial-detail.dart';
+import 'package:bridge/08-thread/thread_model.dart';
 import 'package:bridge/style.dart';
 
 class StudentWorkerHome extends StatefulWidget {
@@ -18,10 +22,50 @@ class StudentWorkerHome extends StatefulWidget {
   State<StudentWorkerHome> createState() => _StudentWorkerHomeState();
 }
 
-class _StudentWorkerHomeState extends State<StudentWorkerHome> {
-  final GlobalActions _globalActions = GlobalActions(); // グローバルアクション利用
-  Map<String, dynamic>? _user;
+class _StudentWorkerHomeState extends State<StudentWorkerHome>
+  with SingleTickerProviderStateMixin {
+    List<Thread> officialThreads = [];
+    List<Thread> hotUnofficialThreads = [];
+    late TabController _tabController;
+    final GlobalActions _globalActions = GlobalActions(); // グローバルアクション利用
+    Map<String, dynamic>? _user;
+    // API呼び出し　並び替え　上位３件に絞り込み
+    Future<List<Thread>> fetchTop3UnofficialThreads() async {
+      final threads = await ThreadApiClient.getAllThreads();
+      final unofficial = threads.where((t) => t.type == 2 && (t.entryCriteria == userType || t.entryCriteria == 1)).toList();
+      unofficial.sort((a, b) {
+        final aTime = a.lastCommentDate ?? DateTime(2000);
+        final bTime = b.lastCommentDate ?? DateTime(2000);
+        return bTime.compareTo(aTime); // 新しい順
+      });
+      return unofficial.take(3).toList();
+    }
+     //ユーザ情報取得
+    int? userType;
+    Future<void> _loadUserData() async {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString('current_user');
+      if (jsonString == null) return;
+      final userData = jsonDecode(jsonString);
+      setState(() {
+        userType = userData['type']+1;
+      });
+    }
 
+    Future<void> _init() async {
+      await _loadUserData();   //ユーザ取得
+      print("iiiiiiiiii");
+      print(userType);
+    }
+
+    @override
+    void initState() {
+      super.initState();
+      _tabController = TabController(length: 5, vsync: this);
+      // ホーム表示時にリアルタイムで状態を更新する
+      _refreshUserStatus();
+      _init();
+    }
 
   /// サーバーから最新のプラン状態を取得し、セッションを更新する
   Future<void> _refreshUserStatus() async {
@@ -95,9 +139,7 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome> {
       ),
     );
   }
-}
-
-// =====================
+  // =====================
 // トップページタブ
 // =====================
 Widget _buildTopPageTab(BuildContext context) {
@@ -130,7 +172,12 @@ Widget _buildTopPageTab(BuildContext context) {
                     ),
                   ),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => ThreadList()),
+                        );
+                    },
                     child: const Text(
                       '>スレッド一覧',
                     ),
@@ -142,11 +189,64 @@ Widget _buildTopPageTab(BuildContext context) {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
                 children: [
-                  _buildThreadCard(title: 'これは、学生・社会人トップです。', time: '1分前'),
-                  const SizedBox(height: 12),
-                  _buildThreadCard(title: '株式会社AAAーフリースレッド', time: '2分前'),
-                  const SizedBox(height: 12),
-                  _buildThreadCard(title: '学生×社会人スレッド', time: '7分前'),
+                  FutureBuilder<List<Thread>>(
+                    future: fetchTop3UnofficialThreads(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return Text('スレッド取得エラー');
+                      }
+                      final threads = snapshot.data ?? [];
+                      if (threads.isEmpty) {
+                        return Text('表示できるスレッドがありません');
+                      }
+                      return Column(
+                        children: threads.map((t) {
+                          return Column(
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ThreadUnOfficialDetail(
+                                        thread: {'id': t.id, 'title': t.title},
+                                      ),
+                                    ),
+                                  );
+                                },
+                                //説明文の表示
+                                child: Card(
+                                  child: ListTile(
+                                    title: Text(
+                                      t.title,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      t.description,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(color: Colors.grey[700]),
+                                    ),
+                                    trailing: Text(
+                                      t.timeAgo,
+                                      style: const TextStyle(color: Colors.grey),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                            ],
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -250,6 +350,7 @@ Widget _buildTopPageTab(BuildContext context) {
       );
     },
   );
+}
 }
 
 // =====================

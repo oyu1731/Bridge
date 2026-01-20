@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDateTime;
 
+import java.util.List;
+
 public class CompanyDTO {
     private Integer id;
     private String name;
@@ -17,17 +19,14 @@ public class CompanyDTO {
 
     private Integer userId;
     private Integer iconId; // ユーザーのアイコンID
-    
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
-    
+
     private Integer photoId;
     private String photoPath; // 写真パスを追加
-    private String industry; // 業界情報を追加
-    
-    // デフォルトコンストラクタ
-    public CompanyDTO() {
-    }
+    private String industry; // 旧：業界情報（今後非推奨）
+    private List<String> industries; // 新：業界情報リスト
     
     // Entityから変換するコンストラクタ
     public CompanyDTO(Company company) {
@@ -156,9 +155,17 @@ public class CompanyDTO {
     public String getIndustry() {
         return industry;
     }
-    
+
     public void setIndustry(String industry) {
         this.industry = industry;
+    }
+
+    public List<String> getIndustries() {
+        return industries;
+    }
+
+    public void setIndustries(List<String> industries) {
+        this.industries = industries;
     }
     
     public String getEmail() {

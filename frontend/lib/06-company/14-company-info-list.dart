@@ -189,11 +189,14 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     // 業界でフィルタリング
     if (_selectedIndustry != '業界' && _selectedIndustry.isNotEmpty) {
       filtered = filtered.where((company) {
-        // 実際の業界情報を使用してフィルタリング（正確な一致）
-        if (company.industry != null) {
+        // industriesリストでフィルタリング
+        if (company.industries != null && company.industries!.isNotEmpty) {
+          return company.industries!.contains(_selectedIndustry);
+        } else if (company.industry != null) {
+          // 後方互換: 旧industryフィールド
           return company.industry == _selectedIndustry;
         }
-        return false; // 業界情報がない場合は除外
+        return false;
       }).toList();
       print('業種フィルタリング後: ${filtered.length}件 (業種: $_selectedIndustry)');
     }
@@ -595,8 +598,13 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     if (company is CompanyDTO) {
       companyName = company.name;
       companyLocation = company.address;
-      companyCategory = company.industry ?? '情報なし'; // 業界情報を使用
-      photoPath = company.photoPath; // 写真パスを取得
+      // industriesリストをカンマ区切りで表示、なければindustry
+      if (company.industries != null && company.industries!.isNotEmpty) {
+        companyCategory = company.industries!.join(', ');
+      } else {
+        companyCategory = company.industry ?? '情報なし';
+      }
+      photoPath = company.photoPath;
     } else if (company is Map<String, String>) {
       companyName = company['name'] ?? '';
       companyLocation = company['location'] ?? '';
