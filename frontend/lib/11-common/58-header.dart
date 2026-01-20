@@ -87,45 +87,37 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                 height: 58,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Image.asset(
                       'lib/01-images/bridge-logo.png',
                       height: 55,
                       width: 110,
                     ),
-
                     const Spacer(),
-
-                    // 👇 テキストだけ Expanded
-                    Expanded(
-                      child: Builder(
-                        builder: (context) {
-                          final width = MediaQuery.of(context).size.width;
-
-                          String text;
-                          if (width < 500) {
-                            text = '$nicknameさん';
-                          } else {
-                            text = '$greeting、$nicknameさん。';
-                          }
-
-                          return Text(
-                            text,
-                            maxLines: 1,
-                            overflow: TextOverflow.visible, // ← 重要
-                            softWrap: false,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF424242),
-                            ),
-                          );
-                        },
-                      ),
+                    Builder(
+                      builder: (context) {
+                        final width = MediaQuery.of(context).size.width;
+                        String text;
+                        if (width < 500) {
+                          text = '$nicknameさん';
+                        } else {
+                          text = '$greeting、$nicknameさん。';
+                        }
+                        return Text(
+                          text,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF424242),
+                          ),
+                        );
+                      },
                     ),
-
-                    const SizedBox(width: 8),
-
+                    const SizedBox(width: 12),
                     PopupMenuButton<String>(
                       onSelected: (v) => _handleProfileMenuSelection(context, v),
                       child: CircleAvatar(
@@ -142,8 +134,6 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                       ),
                       itemBuilder: (_) => _buildProfileMenu(accountType),
                     ),
-
-
                     IconButton(
                       onPressed: () {},
                       icon: const Icon(Icons.notifications_none_outlined),
