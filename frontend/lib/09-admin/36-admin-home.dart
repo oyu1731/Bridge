@@ -4,6 +4,7 @@ import '37-admin-report-log-list.dart';
 import '38-admin-thread-list.dart';
 import '42-admin-account-list.dart';
 import 'package:bridge/05-notice/45-admin-mail-send.dart';
+import '40-admin-company-column-list.dart';
 
 class AdminHome extends StatefulWidget {
   @override
@@ -30,7 +31,7 @@ class _AdminHomeState extends State<AdminHome> {
                 _buildButton('スレッド一覧', buttonWidth, buttonHeight, () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => AdminThreadList()),
+                    MaterialPageRoute(builder: (context) => AdminCompanyColumnList()),
                   );
                 }),
                 SizedBox(width: 20),

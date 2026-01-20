@@ -1,5 +1,8 @@
 package com.bridge.backend.controller;
 
+import com.bridge.backend.dto.UserListDto;
+import com.bridge.backend.dto.UserCommentHistoryDto;
+import com.bridge.backend.dto.UserDetailDto;
 import com.bridge.backend.dto.UserDto;
 import com.bridge.backend.entity.User;
 import com.bridge.backend.service.UserService;
@@ -11,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -25,7 +29,31 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping
+    @GetMapping(value = "/list", produces = "application/json; charset=UTF-8")
+    public ResponseEntity<List<UserListDto>> getUsers() {
+        try {
+            List<UserListDto> users = userService.getUsers();
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping(value = "/search", produces = "application/json; charset=UTF-8")
+    public ResponseEntity<List<UserListDto>> searchUsers(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer type
+    ) {
+        return ResponseEntity.ok(userService.searchUsers(keyword, type));
+    }
+
+    @GetMapping("/{id}/comments")
+    public List<UserCommentHistoryDto> getUserCommentHistory(@PathVariable Integer id) {
+        return userService.getUserCommentHistory(id);
+    }
+
+    @PostMapping(produces = "application/json; charset=UTF-8")
     public User createUser(@RequestBody UserDto userDto) {
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -34,6 +62,12 @@ public class UserController {
             e.printStackTrace();
         }
         return userService.createUser(userDto);
+    }
+
+    @PutMapping("/{id}/delete")
+    public ResponseEntity<Void> deleteAdmin(@PathVariable Integer id) {
+        userService.deleteAdmin(id);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -60,6 +94,11 @@ public class UserController {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<UserDetailDto> getUserDetail(@PathVariable Integer id) {
+        return ResponseEntity.ok(userService.getUserDetail(id));
     }
 
     /**
