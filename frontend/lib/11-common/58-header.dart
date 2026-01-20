@@ -79,73 +79,70 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: Image.asset(
-                        'lib/01-images/bridge-logo.png',
-                        height: 55,
-                        width: 110,
-                        fit: BoxFit.contain,
-                        errorBuilder:
-                            (_, __, ___) => const Text(
-                              'Bridge',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1976D2),
-                              ),
+                    Image.asset(
+                      'lib/01-images/bridge-logo.png',
+                      height: 55,
+                      width: 110,
+                    ),
+
+                    const Spacer(),
+
+                    // 👇 テキストだけ Expanded
+                    Expanded(
+                      child: Builder(
+                        builder: (context) {
+                          final width = MediaQuery.of(context).size.width;
+
+                          String text;
+                          if (width < 500) {
+                            text = '$nicknameさん';
+                          } else {
+                            text = '$greeting、$nicknameさん。';
+                          }
+
+                          return Text(
+                            text,
+                            maxLines: 1,
+                            overflow: TextOverflow.visible, // ← 重要
+                            softWrap: false,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF424242),
                             ),
+                          );
+                        },
                       ),
                     ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        Text(
-                          '$greeting、$nicknameさん。',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF424242),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        // プロフィール
-                        PopupMenuButton<String>(
-                          onSelected:
-                              (v) => _handleProfileMenuSelection(context, v),
-                          offset: const Offset(0, 50),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: CircleAvatar(
-                            radius: 18,
-                            backgroundColor: const Color(0xFFF5F5F5),
-                            backgroundImage:
-                                iconPath.isNotEmpty
-                                    ? NetworkImage(iconPath)
-                                    : null,
-                            child:
-                                iconPath.isEmpty
-                                    ? const Icon(
-                                      Icons.account_circle_outlined,
-                                      color: Color(0xFF616161),
-                                    )
-                                    : null,
-                          ),
-                          itemBuilder: (_) => _buildProfileMenu(accountType),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          onPressed: () {
-                            print('お知らせ');
-                          },
-                          icon: const Icon(Icons.notifications_outlined),
-                        ),
-                      ],
+
+                    const SizedBox(width: 8),
+
+                    PopupMenuButton<String>(
+                      onSelected: (v) => _handleProfileMenuSelection(context, v),
+                      child: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: const Color(0xFFF5F5F5),
+                        backgroundImage:
+                            iconPath.isNotEmpty ? NetworkImage(iconPath) : null,
+                        child: iconPath.isEmpty
+                            ? const Icon(
+                                Icons.account_circle_outlined,
+                                color: Color(0xFF616161),
+                              )
+                            : null,
+                      ),
+                      itemBuilder: (_) => _buildProfileMenu(accountType),
+                    ),
+
+
+                    IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.notifications_none_outlined),
                     ),
                   ],
                 ),
               ),
+
 
               Container(height: 1, color: const Color(0xFFF0F0F0)),
 

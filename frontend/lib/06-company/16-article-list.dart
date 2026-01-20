@@ -542,47 +542,95 @@ class _ArticleListPageState extends State<ArticleListPage> {
                             ),
                           ),
                         SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // すべての条件に当てはまるもののみ表示チェックボックス
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _isStrictMode,
-                                  onChanged: (bool? value) {
-                                    setState(() {
-                                      _isStrictMode = value ?? false;
-                                    });
-                                    // 検索ボタンを押すまで検索しない
-                                  },
-                                  activeColor: Color(0xFF1976D2),
-                                ),
-                                Text(
-                                  'すべてのタグに当てはまる記事のみを表示',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF424242),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            if (constraints.maxWidth <= 430) {
+                              // スマホ幅: 縦並び
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Checkbox(
+                                        value: _isStrictMode,
+                                        onChanged: (bool? value) {
+                                          setState(() {
+                                            _isStrictMode = value ?? false;
+                                          });
+                                        },
+                                        activeColor: Color(0xFF1976D2),
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          'すべてのタグに当てはまる記事のみを表示',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF424242),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
-                            // リセットボタン
-                            OutlinedButton(
-                              onPressed: _resetFilters,
-                              style: OutlinedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                side: BorderSide(color: Color(0xFF757575)),
-                              ),
-                              child: Text(
-                                'リセット',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF757575),
-                                ),
-                              ),
-                            ),
-                          ],
+                                  SizedBox(height: 8),
+                                  OutlinedButton(
+                                    onPressed: _resetFilters,
+                                    style: OutlinedButton.styleFrom(
+                                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                      side: BorderSide(color: Color(0xFF757575)),
+                                    ),
+                                    child: Text(
+                                      'リセット',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF757575),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            } else {
+                              // PC/タブレット幅: 横並び
+                              return Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Checkbox(
+                                        value: _isStrictMode,
+                                        onChanged: (bool? value) {
+                                          setState(() {
+                                            _isStrictMode = value ?? false;
+                                          });
+                                        },
+                                        activeColor: Color(0xFF1976D2),
+                                      ),
+                                      Text(
+                                        'すべてのタグに当てはまる記事のみを表示',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF424242),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  OutlinedButton(
+                                    onPressed: _resetFilters,
+                                    style: OutlinedButton.styleFrom(
+                                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                      side: BorderSide(color: Color(0xFF757575)),
+                                    ),
+                                    child: Text(
+                                      'リセット',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF757575),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }
+                          },
                         ),
                       ],
                     ),
