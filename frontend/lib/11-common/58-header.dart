@@ -34,6 +34,14 @@ import '../08-thread/31-thread-list.dart';
 // Home
 import '../03-home/08-student-worker-home.dart';
 import '../03-home/09-company-home.dart';
+import '../09-admin/36-admin-home.dart';
+
+// 管理者
+import '../09-admin/37-admin-report-log-list.dart';
+import '../09-admin/38-admin-thread-list.dart';
+import '../09-admin/40-admin-company-column-list.dart';
+import '../09-admin/42-admin-account-list.dart';
+import '../05-notice/45-admin-mail-send.dart';
 
 // アイコン取得
 import '../06-company/photo_api_client.dart';
@@ -53,6 +61,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         final accountType = userInfo['accountType'] ?? 'unknown';
         final nickname = userInfo['nickname'] ?? '';
         final iconPath = userInfo['iconPath'] ?? '';
+        final isAdmin = userInfo['isAdmin'] == true;
 
         final greetings = ['こんにちは', 'いらっしゃいませ', 'ようこそ', 'お帰りなさい'];
         final greeting =
@@ -162,7 +171,12 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
 
                     buttons.add(
                       _nav('TOPページ', () {
-                        if (accountType == '企業') {
+                        if (isAdmin) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => AdminHome()),
+                          );
+                        } else if (accountType == '企業') {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (_) => CompanyHome()),
@@ -206,28 +220,63 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                       buttons.add(SizedBox(width: space));
                     }
 
-                    buttons.add(
-                      _nav('スレッド', () {
+                    if (isAdmin) {
+                      // 管理者用ナビ
+                      buttons.add(_nav('スレッド', () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => ThreadList()),
+                          MaterialPageRoute(builder: (_) => AdminThreadList()),
                         );
-                      }, isSmall),
-                    );
-
-                    buttons.add(SizedBox(width: space));
-
-                    buttons.add(
-                      _nav('企業情報', () {
+                      }, isSmall));
+                      buttons.add(SizedBox(width: space));
+                      buttons.add(_nav('企業情報', () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (_) => CompanySearchPage(),
-                          ),
+                          MaterialPageRoute(builder: (_) => AdminCompanyColumnList()),
                         );
-                      }, isSmall),
-                    );
-
+                      }, isSmall));
+                      buttons.add(SizedBox(width: space));
+                      buttons.add(_nav('メール送信', () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => AdminMailSend()),
+                        );
+                      }, isSmall));
+                      buttons.add(SizedBox(width: space));
+                      buttons.add(_nav('アカウント管理', () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => AdminAccountList()),
+                        );
+                      }, isSmall));
+                      buttons.add(SizedBox(width: space));
+                      buttons.add(_nav('通報一覧', () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => AdminReportLogList()),
+                        );
+                      }, isSmall));
+                    } else {
+                      buttons.add(
+                        _nav('スレッド', () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => ThreadList()),
+                          );
+                        }, isSmall),
+                      );
+                      buttons.add(SizedBox(width: space));
+                      buttons.add(
+                        _nav('企業情報', () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CompanySearchPage(),
+                            ),
+                          );
+                        }, isSmall),
+                      );
+                    }
                     return SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(children: buttons),
@@ -267,25 +316,30 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
 
   // ===== プロフィールメニュー =====
   List<PopupMenuEntry<String>> _buildProfileMenu(String accountType) {
+    // 管理者は一部メニュー非表示
+    if (accountType == '管理者') {
+      return <PopupMenuEntry<String>>[
+        _menu('password_change', Icons.lock, 'パスワード変更'),
+        const PopupMenuDivider(),
+        _menu('logout', Icons.logout, 'ログアウト', danger: true),
+      ];
+    }
     final items = <PopupMenuEntry<String>>[
       _menu('profile_edit', Icons.edit, 'プロフィール編集'),
       _menu('password_change', Icons.lock, 'パスワード変更'),
     ];
-
     if (accountType == '企業') {
       items.addAll([
         _menu('post_article', Icons.article, '記事投稿'),
         _menu('article_list', Icons.list_alt, '投稿記事一覧'),
       ]);
     }
-
     items.addAll([
       _menu('plan_check', Icons.credit_card, 'プラン確認'),
       const PopupMenuDivider(),
       _menu('withdraw', Icons.exit_to_app, '退会手続き', danger: true),
       _menu('logout', Icons.logout, 'ログアウト', danger: true),
     ]);
-
     return items;
   }
 
@@ -336,6 +390,8 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                 ? '社会人'
                 : type == 3
                 ? '企業'
+                : type == 4
+                ? '管理者'
                 : 'unknown';
 
         String iconPath = '';
@@ -350,11 +406,12 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
           'accountType': typeStr,
           'nickname': nickname,
           'iconPath': iconPath,
+          'isAdmin': type == 4,
         };
       }
     } catch (_) {}
 
-    return {'accountType': 'unknown', 'nickname': nickname, 'iconPath': ''};
+    return {'accountType': 'unknown', 'nickname': nickname, 'iconPath': '', 'isAdmin': false};
   }
 
   // ===== メニュー処理 =====
