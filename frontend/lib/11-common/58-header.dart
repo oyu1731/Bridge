@@ -36,6 +36,10 @@ import '../03-home/08-student-worker-home.dart';
 import '../03-home/09-company-home.dart';
 import '../09-admin/36-admin-home.dart';
 
+
+//メール
+import '../05-notice/44-admin-mail-list.dart';
+
 // 管理者
 import '../09-admin/37-admin-report-log-list.dart';
 import '../09-admin/38-admin-thread-list.dart';
@@ -135,8 +139,13 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                       itemBuilder: (_) => _buildProfileMenu(accountType),
                     ),
                     IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.notifications_none_outlined),
+                      tooltip: 'メール一覧',
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => AdminMailList()),
+                        );
+                      },
+                      icon: const Icon(Icons.notifications_none_outlined, color: Color(0xFF1976D2)),
                     ),
                   ],
                 ),
