@@ -20,7 +20,7 @@ class _ArticleListPageState extends State<ArticleListPage> {
   final TextEditingController _searchController = TextEditingController();
   bool _isFilterExpanded = false;
   List<String> _selectedTags = [];
-  String? _selectedIndustry;
+  List<String> _selectedIndustries = [];
   bool _isStrictMode = false; // すべての条件に当てはまるもののみ表示
   String _sortOrder = 'newest'; // newest, oldest, mostLiked, leastLiked
 
@@ -109,21 +109,21 @@ class _ArticleListPageState extends State<ArticleListPage> {
         _isLoading = true;
         _error = null;
       });
-      
+
       String? keyword = _searchController.text.isEmpty ? null : _searchController.text;
-      int? industryId = _selectedIndustry != null ? _industryIdMap[_selectedIndustry] : null;
-      
+      List<int> industryIds = _selectedIndustries.map((name) => _industryIdMap[name]).whereType<int>().toList();
+
       final articles = await ArticleApiClient.searchArticles(
-        keyword: keyword, 
-        industryId: industryId
+        keyword: keyword,
+        industryIds: industryIds.isNotEmpty ? industryIds : null,
       );
-      
+
       setState(() {
         _allArticles = articles;
         _filteredArticles = articles;
         _isLoading = false;
       });
-      
+
       // Apply remaining local filters (tags) and sorting after getting API results
       _applyLocalFilters();
     } catch (e) {
@@ -143,11 +143,11 @@ class _ArticleListPageState extends State<ArticleListPage> {
 
   void _filterArticles() {
     // If there's a search keyword or industry filter, use API search
-    if (_searchController.text.isNotEmpty || _selectedIndustry != null) {
+    if (_searchController.text.isNotEmpty || _selectedIndustries.isNotEmpty) {
       _searchArticlesFromAPI();
       return;
     }
-    
+
     // Otherwise, filter locally by tags only
     _applyLocalFilters();
   }
@@ -156,23 +156,33 @@ class _ArticleListPageState extends State<ArticleListPage> {
     setState(() {
       _filteredArticles = _allArticles.where((article) {
         bool matchesTag = true;
+        bool matchesIndustry = true;
 
         // タグでフィルタ
         if (_selectedTags.isNotEmpty && article.tags != null) {
           if (_isStrictMode) {
-            // すべての選択されたタグが記事に含まれているかチェック（AND条件）
             matchesTag = _selectedTags.every((tag) => article.tags!.contains(tag));
           } else {
-            // いずれかのタグが一致すればOK（OR条件）
             matchesTag = _selectedTags.any((tag) => article.tags!.contains(tag));
           }
         } else if (_selectedTags.isNotEmpty && article.tags == null) {
           matchesTag = false;
         }
 
-        return matchesTag;
+        // 業界でローカルフィルタ（APIで取得した場合は不要だが、念のため）
+        if (_selectedIndustries.isNotEmpty) {
+          if (article.industries != null && article.industries!.isNotEmpty) {
+            matchesIndustry = _selectedIndustries.any((ind) => article.industries!.contains(ind));
+          } else if (article.industry != null) {
+            matchesIndustry = _selectedIndustries.contains(article.industry);
+          } else {
+            matchesIndustry = false;
+          }
+        }
+
+        return matchesTag && matchesIndustry;
       }).toList();
-      
+
       // ソート適用
       _applySorting();
     });
@@ -217,7 +227,7 @@ class _ArticleListPageState extends State<ArticleListPage> {
     setState(() {
       _searchController.clear();
       _selectedTags.clear();
-      _selectedIndustry = null;
+      _selectedIndustries.clear();
       _isStrictMode = false;
       _sortOrder = 'newest';
       _filteredArticles = List.from(_allArticles);
@@ -383,16 +393,19 @@ class _ArticleListPageState extends State<ArticleListPage> {
                                     child: SingleChildScrollView(
                                       child: Column(
                                         children: _availableIndustries.map((industry) {
-                                          return RadioListTile<String>(
+                                          return CheckboxListTile(
                                             title: Text(
                                               industry,
                                               style: TextStyle(fontSize: 13),
                                             ),
-                                            value: industry,
-                                            groupValue: _selectedIndustry,
-                                            onChanged: (String? value) {
+                                            value: _selectedIndustries.contains(industry),
+                                            onChanged: (bool? value) {
                                               setState(() {
-                                                _selectedIndustry = value;
+                                                if (value == true) {
+                                                  _selectedIndustries.add(industry);
+                                                } else {
+                                                  _selectedIndustries.remove(industry);
+                                                }
                                               });
                                               // 検索ボタンを押すまで検索しない
                                             },
@@ -529,47 +542,95 @@ class _ArticleListPageState extends State<ArticleListPage> {
                             ),
                           ),
                         SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // すべての条件に当てはまるもののみ表示チェックボックス
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _isStrictMode,
-                                  onChanged: (bool? value) {
-                                    setState(() {
-                                      _isStrictMode = value ?? false;
-                                    });
-                                    // 検索ボタンを押すまで検索しない
-                                  },
-                                  activeColor: Color(0xFF1976D2),
-                                ),
-                                Text(
-                                  'すべてのタグに当てはまる記事のみを表示',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF424242),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            if (constraints.maxWidth <= 430) {
+                              // スマホ幅: 縦並び
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Checkbox(
+                                        value: _isStrictMode,
+                                        onChanged: (bool? value) {
+                                          setState(() {
+                                            _isStrictMode = value ?? false;
+                                          });
+                                        },
+                                        activeColor: Color(0xFF1976D2),
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          'すべてのタグに当てはまる記事のみを表示',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF424242),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
-                            // リセットボタン
-                            OutlinedButton(
-                              onPressed: _resetFilters,
-                              style: OutlinedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                side: BorderSide(color: Color(0xFF757575)),
-                              ),
-                              child: Text(
-                                'リセット',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF757575),
-                                ),
-                              ),
-                            ),
-                          ],
+                                  SizedBox(height: 8),
+                                  OutlinedButton(
+                                    onPressed: _resetFilters,
+                                    style: OutlinedButton.styleFrom(
+                                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                      side: BorderSide(color: Color(0xFF757575)),
+                                    ),
+                                    child: Text(
+                                      'リセット',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF757575),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            } else {
+                              // PC/タブレット幅: 横並び
+                              return Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Checkbox(
+                                        value: _isStrictMode,
+                                        onChanged: (bool? value) {
+                                          setState(() {
+                                            _isStrictMode = value ?? false;
+                                          });
+                                        },
+                                        activeColor: Color(0xFF1976D2),
+                                      ),
+                                      Text(
+                                        'すべてのタグに当てはまる記事のみを表示',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF424242),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  OutlinedButton(
+                                    onPressed: _resetFilters,
+                                    style: OutlinedButton.styleFrom(
+                                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                      side: BorderSide(color: Color(0xFF757575)),
+                                    ),
+                                    child: Text(
+                                      'リセット',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF757575),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }
+                          },
                         ),
                       ],
                     ),
@@ -766,9 +827,11 @@ class _ArticleListPageState extends State<ArticleListPage> {
                       ),
                     ),
                   ),
-                  if (article.industry != null && article.industry!.isNotEmpty)
+                  if ((article.industries != null && article.industries!.isNotEmpty) || (article.industry != null && article.industry!.isNotEmpty))
                     Text(
-                      article.industry!,
+                      (article.industries != null && article.industries!.isNotEmpty)
+                          ? article.industries!.join(', ')
+                          : article.industry ?? '',
                       style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFF757575),

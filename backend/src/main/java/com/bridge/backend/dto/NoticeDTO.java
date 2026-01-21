@@ -10,18 +10,23 @@ public class NoticeDTO {
     private Integer chatId;
     private LocalDateTime createdAt;
 
+    private String title;
+    private String content;
+
     // デフォルトコンストラクタ
     public NoticeDTO() {
     }
 
     // 全フィールドのコンストラクタ
-    public NoticeDTO(Integer id, Integer fromUserId, Integer toUserId, Integer threadId, Integer chatId, LocalDateTime createdAt) {
+    public NoticeDTO(Integer id, Integer fromUserId, Integer toUserId, Integer threadId, Integer chatId, LocalDateTime createdAt, String title, String content) {
         this.id = id;
         this.fromUserId = fromUserId;
         this.toUserId = toUserId;
         this.threadId = threadId;
         this.chatId = chatId;
         this.createdAt = createdAt;
+        this.title = title;
+        this.content = content;
     }
 
     
@@ -73,5 +78,21 @@ public class NoticeDTO {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
     }
 }
