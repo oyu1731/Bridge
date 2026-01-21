@@ -1,3 +1,4 @@
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:bridge/03-home/09-company-home.dart';
@@ -5,6 +6,8 @@ import 'package:bridge/03-home/08-student-worker-home.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:js' as js;
 
 // ===============================
 // 決済完了画面（軽量版）
@@ -53,31 +56,12 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
   }
 
   Future<void> _handleSessionAndNavigate() async {
-    // 1) 優先順: widget.userType -> query param -> fragment
+    // 1) 優先順: widget.userType -> query param
     String userType = widget.userType ?? '';
     if (userType.isEmpty) userType = Uri.base.queryParameters['userType'] ?? '';
-    // extract session_id (query or fragment)
+
+    // extract session_id (query parameters)
     String? sessionId = Uri.base.queryParameters['session_id'];
-    if (sessionId == null || sessionId.isEmpty) {
-      // try fragment parsing
-      final frag =
-          Uri
-              .base
-              .fragment; // '/payment-success?userType=company&session_id=cs_...'
-      if (frag.contains('?')) {
-        final parts = frag.split('?');
-        if (parts.length > 1) {
-          try {
-            final qmap = Uri.splitQueryString(parts[1]);
-            sessionId = qmap['session_id'];
-            if ((userType.isEmpty) && qmap.containsKey('userType'))
-              userType = qmap['userType'] ?? '';
-          } catch (_) {
-            sessionId = null;
-          }
-        }
-      }
-    }
 
     if (sessionId != null && sessionId.isNotEmpty) {
       // Poll backend for user info (webhook may not have finished yet)
@@ -89,6 +73,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
           final res = await http.get(
             Uri.parse(
               'http://localhost:8080/api/v1/payment/session/$sessionId',
+              // '${ApiConfig.baseUrl}/api/v1/payment/session/$sessionId',
             ),
           );
           if (res.statusCode == 200) {
@@ -106,76 +91,48 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
         // save to SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('current_user', jsonEncode(user));
-        // determine userType from returned user if available
-        final int? type =
-            user['type'] is int
-                ? user['type'] as int
-                : (user['type'] is String ? int.tryParse(user['type']) : null);
-        String finalUserType = userType;
-        if (type != null) {
-          if (type == 3)
-            finalUserType = 'company';
-          else if (type == 1)
-            finalUserType = '学生';
-          else if (type == 2)
-            finalUserType = '社会人';
-        }
-        // short delay to show success animation
-        await Future.delayed(const Duration(milliseconds: 800));
-        _navigateByUserType(finalUserType);
-        return;
-      } else {
-        // fallback: session present but user not ready — keep success screen and let user press button
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('アカウントの準備が整うまで少しお待ちください。ホームへはボタンから移動できます。'),
-            ),
-          );
-        }
-        return;
       }
     }
 
-    // session_id が無ければ従来の遅延遷移を行う
-    await Future.delayed(const Duration(milliseconds: 6000));
-    _navigateByUserType(userType.isEmpty ? 'company' : userType);
+    // 完了ページを表示し続ける（自動遷移しない）
   }
 
   void _navigateByUserType(String userType) {
     String message;
+    Widget nextPage;
+
     switch (userType) {
       case '学生':
       case 'student':
         message = '決済が完了しました。ご利用ありがとうございます！';
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => StudentWorkerHome(initialMessage: message),
-          ),
-          (route) => false,
-        );
-        return;
+        nextPage = StudentWorkerHome(initialMessage: message);
+        break;
       case '社会人':
       case 'worker':
         message = '決済が完了しました。ご利用ありがとうございます！';
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => StudentWorkerHome(initialMessage: message),
-          ),
-          (route) => false,
-        );
-        return;
+        nextPage = StudentWorkerHome(initialMessage: message);
+        break;
       case 'company':
       case '企業':
       default:
         message = '企業アカウントの登録と決済が完了しました。ありがとうございます！';
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => CompanyHome(initialMessage: message),
-          ),
-          (route) => false,
-        );
+        nextPage = CompanyHome(initialMessage: message);
     }
+
+    // URLリセットなしで遷移実行
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => nextPage),
+      (route) => false,
+    );
+  }
+
+  // ホームへ戻る時にURLをリセット
+  void _resetUrlAndNavigateHome() {
+    // URLリセットなしで直接ホームへ遷移
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const CompanyHome()),
+      (route) => false,
+    );
   }
 
   @override
@@ -213,6 +170,10 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final maxWidth = isMobile ? screenWidth : 500.0;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -225,106 +186,114 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
         child: Stack(
           children: [
             SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AnimatedScale(
-                      scale: 1,
-                      duration: const Duration(milliseconds: 600),
-                      curve: Curves.elasticOut,
-                      child: Container(
-                        width: 180,
-                        height: 180,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.green.shade400,
-                              Colors.teal.shade400,
-                            ],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.green.withOpacity(0.3),
-                              blurRadius: 20,
-                            ),
-                          ],
-                        ),
-                        child: AnimatedBuilder(
-                          animation: _checkAnimation,
-                          child: const SizedBox(width: 80, height: 80),
-                          builder: (_, child) {
-                            return CustomPaint(
-                              painter: CheckmarkPainter(
-                                progress: _checkAnimation.value,
-                                color: Colors.white,
-                                strokeWidth: 7,
-                              ),
-                              child: child,
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    AnimatedOpacity(
-                      opacity: 1,
-                      duration: const Duration(milliseconds: 500),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Padding(
+                    padding: EdgeInsets.all(isMobile ? 16.0 : 24.0),
+                    child: SingleChildScrollView(
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            '決済が完了しました！',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green.shade800,
+                          AnimatedScale(
+                            scale: 1,
+                            duration: const Duration(milliseconds: 600),
+                            curve: Curves.elasticOut,
+                            child: Container(
+                              width: isMobile ? 140 : 180,
+                              height: isMobile ? 140 : 180,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.green.shade400,
+                                    Colors.teal.shade400,
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.green.withOpacity(0.3),
+                                    blurRadius: 20,
+                                  ),
+                                ],
+                              ),
+                              child: AnimatedBuilder(
+                                animation: _checkAnimation,
+                                child: const SizedBox(width: 80, height: 80),
+                                builder: (_, child) {
+                                  return CustomPaint(
+                                    painter: CheckmarkPainter(
+                                      progress: _checkAnimation.value,
+                                      color: Colors.white,
+                                      strokeWidth: 7,
+                                    ),
+                                    child: child,
+                                  );
+                                },
+                              ),
                             ),
-                            textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'ご登録いただきありがとうございます。\nプレミアムプランのすべての機能がご利用いただけます。',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey.shade700,
+                          SizedBox(height: isMobile ? 24 : 40),
+                          AnimatedOpacity(
+                            opacity: 1,
+                            duration: const Duration(milliseconds: 500),
+                            child: Column(
+                              children: [
+                                Text(
+                                  '決済が完了しました！',
+                                  style: TextStyle(
+                                    fontSize: isMobile ? 24 : 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green.shade800,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: isMobile ? 12 : 16),
+                                Text(
+                                  'ご登録いただきありがとうございます。\nプレミアムプランのすべての機能がご利用いただけます。',
+                                  style: TextStyle(
+                                    fontSize: isMobile ? 14 : 16,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
-                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: isMobile ? 24 : 40),
+                          ElevatedButton(
+                            onPressed: () {
+                              _resetUrlAndNavigateHome();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isMobile ? 30 : 40,
+                                vertical: isMobile ? 12 : 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.home),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'ホームに戻る',
+                                  style: TextStyle(
+                                    fontSize: isMobile ? 16 : 18,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 40),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                            builder: (_) => const CompanyHome(),
-                          ),
-                          (route) => false,
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 40,
-                          vertical: 16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.home),
-                          SizedBox(width: 8),
-                          Text('ホームに戻る', style: TextStyle(fontSize: 18)),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

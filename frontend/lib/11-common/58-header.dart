@@ -38,11 +38,17 @@ import '../03-home/09-company-home.dart';
 // アイコン取得
 import '../06-company/photo_api_client.dart';
 
+// 隠しページ
+import '99-hidden-page.dart';
+
 class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
   const BridgeHeader({Key? key}) : super(key: key);
 
   @override
   Size get preferredSize => const Size.fromHeight(120);
+
+  static int _logoTapCount = 0;
+  static DateTime? _lastTapTime;
 
   @override
   Widget build(BuildContext context) {
@@ -77,73 +83,221 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
               Container(
                 height: 58,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: Image.asset(
-                        'lib/01-images/bridge-logo.png',
-                        height: 55,
-                        width: 110,
-                        fit: BoxFit.contain,
-                        errorBuilder:
-                            (_, __, ___) => const Text(
-                              'Bridge',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1976D2),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isSmallScreen = constraints.maxWidth < 600;
+
+                    if (isSmallScreen) {
+                      // スマホ：1行コンパクトレイアウト
+                      return SizedBox(
+                        height: 58,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                final now = DateTime.now();
+
+                                // 1.5秒以上空いたらリセット
+                                if (_lastTapTime == null ||
+                                    now.difference(_lastTapTime!) >
+                                        const Duration(seconds: 1)) {
+                                  _logoTapCount = 0;
+                                }
+
+                                _lastTapTime = now;
+                                _logoTapCount++;
+
+                                if (_logoTapCount >= 3) {
+                                  _logoTapCount = 0;
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const HiddenPage(),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: Image.asset(
+                                  'lib/01-images/bridge-logo.png',
+                                  height: 30,
+                                  width: 50,
+                                  fit: BoxFit.contain,
+                                  errorBuilder:
+                                      (_, __, ___) => const Text(
+                                        'B',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1976D2),
+                                        ),
+                                      ),
+                                ),
                               ),
                             ),
-                      ),
-                    ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        Text(
-                          '$greeting、$nicknameさん。',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF424242),
-                            fontWeight: FontWeight.w500,
-                          ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                '$greeting、$nicknameさん。',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF424242),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: PopupMenuButton<String>(
+                                onSelected:
+                                    (v) =>
+                                        _handleProfileMenuSelection(context, v),
+                                offset: const Offset(0, 32),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 12,
+                                  backgroundColor: const Color(0xFFF5F5F5),
+                                  backgroundImage:
+                                      iconPath.isNotEmpty
+                                          ? NetworkImage(iconPath)
+                                          : null,
+                                  child:
+                                      iconPath.isEmpty
+                                          ? const Icon(
+                                            Icons.account_circle_outlined,
+                                            size: 16,
+                                            color: Color(0xFF616161),
+                                          )
+                                          : null,
+                                ),
+                                itemBuilder:
+                                    (_) => _buildProfileMenu(accountType),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: IconButton(
+                                onPressed: () {
+                                  print('お知らせ');
+                                },
+                                icon: const Icon(
+                                  Icons.notifications_outlined,
+                                  size: 16,
+                                ),
+                                padding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 16),
-                        // プロフィール
-                        PopupMenuButton<String>(
-                          onSelected:
-                              (v) => _handleProfileMenuSelection(context, v),
-                          offset: const Offset(0, 50),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      );
+                    } else {
+                      // PC：1行レイアウト（従来通り）
+                      return Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              final now = DateTime.now();
+
+                              // 1.5秒以上空いたらリセット
+                              if (_lastTapTime == null ||
+                                  now.difference(_lastTapTime!) >
+                                      const Duration(seconds: 1)) {
+                                _logoTapCount = 0;
+                              }
+
+                              _lastTapTime = now;
+                              _logoTapCount++;
+
+                              if (_logoTapCount >= 3) {
+                                _logoTapCount = 0;
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const HiddenPage(),
+                                  ),
+                                );
+                              }
+                            },
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: Image.asset(
+                                'lib/01-images/bridge-logo.png',
+                                height: 55,
+                                width: 110,
+                                fit: BoxFit.contain,
+                                errorBuilder:
+                                    (_, __, ___) => const Text(
+                                      'Bridge',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1976D2),
+                                      ),
+                                    ),
+                              ),
+                            ),
                           ),
-                          child: CircleAvatar(
-                            radius: 18,
-                            backgroundColor: const Color(0xFFF5F5F5),
-                            backgroundImage:
-                                iconPath.isNotEmpty
-                                    ? NetworkImage(iconPath)
-                                    : null,
-                            child:
-                                iconPath.isEmpty
-                                    ? const Icon(
-                                      Icons.account_circle_outlined,
-                                      color: Color(0xFF616161),
-                                    )
-                                    : null,
+                          const Spacer(),
+                          Row(
+                            children: [
+                              Text(
+                                '$greeting、$nicknameさん。',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF424242),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              // プロフィール
+                              PopupMenuButton<String>(
+                                onSelected:
+                                    (v) =>
+                                        _handleProfileMenuSelection(context, v),
+                                offset: const Offset(0, 50),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 18,
+                                  backgroundColor: const Color(0xFFF5F5F5),
+                                  backgroundImage:
+                                      iconPath.isNotEmpty
+                                          ? NetworkImage(iconPath)
+                                          : null,
+                                  child:
+                                      iconPath.isEmpty
+                                          ? const Icon(
+                                            Icons.account_circle_outlined,
+                                            color: Color(0xFF616161),
+                                          )
+                                          : null,
+                                ),
+                                itemBuilder:
+                                    (_) => _buildProfileMenu(accountType),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: () {
+                                  print('お知らせ');
+                                },
+                                icon: const Icon(Icons.notifications_outlined),
+                              ),
+                            ],
                           ),
-                          itemBuilder: (_) => _buildProfileMenu(accountType),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          onPressed: () {
-                            print('お知らせ');
-                          },
-                          icon: const Icon(Icons.notifications_outlined),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      );
+                    }
+                  },
                 ),
               ),
 

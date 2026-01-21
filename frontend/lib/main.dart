@@ -23,14 +23,14 @@ void main() async {
   // Webの場合、URLをチェックしてリダイレクト先を決定
   if (kIsWeb) {
     final uri = Uri.parse(html.window.location.href);
-    final fragment = uri.fragment; // 例: '/payment-success?userType=company'
+    final fragment = uri.fragment; // 例: '/payment-success?userType=...'
     print('【Debug】現在のURL: ${html.window.location.href}');
     print('【Debug】URL fragment: $fragment');
 
     // フラグメントが payment-success / payment-cancel を含む場合は専用ページに遷移
     if (fragment.startsWith('/payment-success') ||
         fragment.startsWith('payment-success')) {
-      // フラグメント内のクエリ (例: /payment-success?userType=company) を解析して userType を抽出
+      // フラグメント内のクエリを解析
       String? userType;
       if (fragment.contains('?')) {
         final parts = fragment.split('?');

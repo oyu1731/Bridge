@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bridge/main.dart';
 import 'package:bridge/03-home/09-company-home.dart';
 import '../10-payment/53-payment-input-company.dart';
-import 'package:bridge/style.dart'; 
+import 'package:bridge/style.dart';
 
 class CompanyInputPage extends StatefulWidget {
   const CompanyInputPage({super.key});
@@ -60,7 +60,6 @@ class PhoneNumberFormatter extends TextInputFormatter {
     );
   }
 }
-
 
 class _CompanyInputPageState extends State<CompanyInputPage> {
   final _formKey = GlobalKey<FormState>();
@@ -135,7 +134,6 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
 
   @override
   Widget build(BuildContext context) {
-
     return Theme(
       data: AppTheme.theme,
       child: Scaffold(
@@ -148,25 +146,17 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
           padding: const EdgeInsets.all(16),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 600, 
-              ),
+              constraints: const BoxConstraints(maxWidth: 600),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      '企業向けのアカウント作成ページです。',
-                      style: AppTheme.mainTextStyle,
-                    ),
+                    Text('企業向けのアカウント作成ページです。', style: AppTheme.mainTextStyle),
                     const SizedBox(height: 10),
                     Text(
                       '企業用アカウントは有料プランに加入していただく必要があります。',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.orange[700],
-                      ),
+                      style: TextStyle(fontSize: 15, color: Colors.orange[700]),
                     ),
                     const SizedBox(height: 5),
                     Text(
@@ -177,11 +167,9 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
-                          child: Icon(
-                            Icons.person_outline,
-                            color: cyanDark,
-                          )
+                        Padding(
+                          padding: EdgeInsets.only(top: 14),
+                          child: Icon(Icons.person_outline, color: cyanDark),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -191,8 +179,11 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                               border: OutlineInputBorder(),
                               labelText: '企業名',
                             ),
-                            validator: (v) =>
-                                v == null || v.isEmpty ? '企業名を入力してください' : null,
+                            validator:
+                                (v) =>
+                                    v == null || v.isEmpty
+                                        ? '企業名を入力してください'
+                                        : null,
                           ),
                         ),
                       ],
@@ -201,11 +192,9 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
-                          child: Icon(
-                            Icons.email_outlined,
-                            color: cyanDark,
-                          )
+                        Padding(
+                          padding: EdgeInsets.only(top: 14),
+                          child: Icon(Icons.email_outlined, color: cyanDark),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -232,11 +221,9 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
-                          child: Icon(
-                            Icons.lock_outline,
-                            color: cyanDark,
-                          )
+                        Padding(
+                          padding: EdgeInsets.only(top: 14),
+                          child: Icon(Icons.lock_outline, color: cyanDark),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -260,8 +247,11 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                                 },
                               ),
                             ),
-                            validator: (v) =>
-                                v == null || v.length < 8 ? '8文字以上で入力してください' : null,
+                            validator:
+                                (v) =>
+                                    v == null || v.length < 8
+                                        ? '8文字以上で入力してください'
+                                        : null,
                           ),
                         ),
                       ],
@@ -270,11 +260,9 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
-                          child: Icon(
-                            Icons.phone_outlined,
-                            color: cyanDark,
-                          )
+                        Padding(
+                          padding: EdgeInsets.only(top: 14),
+                          child: Icon(Icons.phone_outlined, color: cyanDark),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -293,11 +281,13 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                               if (value == null || value.isEmpty) {
                                 return '電話番号を入力してください';
                               }
-                              if (!RegExp(r'^\d{3}-\d{4}-\d{4}$').hasMatch(value)) {
+                              if (!RegExp(
+                                r'^\d{3}-\d{4}-\d{4}$',
+                              ).hasMatch(value)) {
                                 return '電話番号の形式が正しくありません';
                               }
-                                return null;
-                              },
+                              return null;
+                            },
                           ),
                         ),
                       ],
@@ -306,11 +296,12 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
+                        Padding(
+                          padding: EdgeInsets.only(top: 14),
                           child: Icon(
                             Icons.location_on_outlined,
                             color: cyanDark,
-                          )
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -333,74 +324,79 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                     const SizedBox(height: 30),
                     Row(
                       children: [
-                        Padding(padding:  EdgeInsetsGeometry.only(top: 4),
-                          child: Icon(
-                            Icons.business_outlined,
-                            color: cyanDark,
-                          )
+                        Padding(
+                          padding: EdgeInsets.only(top: 4),
+                          child: Icon(Icons.business_outlined, color: cyanDark),
                         ),
                         const SizedBox(width: 10),
                         const Text(
                           '所属業界：',
-                          style: TextStyle(
-                            fontSize: 17,
-                            color: textCyanDark,
-                          ),
+                          style: TextStyle(fontSize: 17, color: textCyanDark),
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
                     _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : Container(
+                        ? const Center(child: CircularProgressIndicator())
+                        : Container(
                           decoration: BoxDecoration(
                             border: Border.all(
-                              color: _industryError.isNotEmpty
-                                  ? errorOrange
-                                  : cyanDark,
+                              color:
+                                  _industryError.isNotEmpty
+                                      ? errorOrange
+                                      : cyanDark,
                               width: 1.0,
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           child: Column(
-                            children: _industries.map((industry) {
-                              return CheckboxListTile(
-                                title: Text(
-                                  industry['name'],
-                                  style: const TextStyle(
-                                    color: textCyanDark,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                value: _selectedIndustryIds.contains(industry['id']),
-                                activeColor: cyanDark,
-                                onChanged: (v) {
-                                  setState(() {
-                                    if (v == true &&
-                                        !_selectedIndustryIds.contains(industry['id'])) {
-                                      _selectedIndustryIds.add(industry['id']);
-                                    } else {
-                                      _selectedIndustryIds.remove(industry['id']);
-                                    }
-                                    _industryError = '';
-                                  });
-                                },
-                              );
-                            }).toList(),
+                            children:
+                                _industries.map((industry) {
+                                  return CheckboxListTile(
+                                    title: Text(
+                                      industry['name'],
+                                      style: const TextStyle(
+                                        color: textCyanDark,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    value: _selectedIndustryIds.contains(
+                                      industry['id'],
+                                    ),
+                                    activeColor: cyanDark,
+                                    onChanged: (v) {
+                                      setState(() {
+                                        if (v == true &&
+                                            !_selectedIndustryIds.contains(
+                                              industry['id'],
+                                            )) {
+                                          _selectedIndustryIds.add(
+                                            industry['id'],
+                                          );
+                                        } else {
+                                          _selectedIndustryIds.remove(
+                                            industry['id'],
+                                          );
+                                        }
+                                        _industryError = '';
+                                      });
+                                    },
+                                  );
+                                }).toList(),
                           ),
                         ),
 
-                  if (_industryError.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        _industryError,
-                        style: const TextStyle(color: errorOrange),
+                    if (_industryError.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          _industryError,
+                          style: const TextStyle(color: errorOrange),
+                        ),
                       ),
-                    ),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     ElevatedButton(
                       onPressed: () async {
@@ -426,48 +422,49 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                           'desiredIndustries': _selectedIndustryIds,
                         });
 
-                    try {
-                      // 1) 一時サインアップを作成して tempId を取得
-                      final tempRes = await http.post(
-                        Uri.parse('http://localhost:8080/api/v1/temp-signups'),
-                        headers: {
-                          'Content-Type': 'application/json; charset=UTF-8',
-                        },
-                        body: body,
-                      );
+                        try {
+                          // 1) 一時サインアップを作成して tempId を取得
+                          final tempRes = await http.post(
+                            Uri.parse(
+                              'http://localhost:8080/api/v1/temp-signups',
+                            ),
+                            headers: {
+                              'Content-Type': 'application/json; charset=UTF-8',
+                            },
+                            body: body,
+                          );
 
-                      if (tempRes.statusCode == 200 ||
-                          tempRes.statusCode == 201) {
-                        final tempData = jsonDecode(tempRes.body);
-                        final tempId = tempData['tempId'];
+                          if (tempRes.statusCode == 200 ||
+                              tempRes.statusCode == 201) {
+                            final tempData = jsonDecode(tempRes.body);
+                            final tempId = tempData['tempId'];
 
-                        // 2) Stripe Checkout を開始 (企業は金額例: 5000)
-                        await startWebCheckout(
-                          amount: 5000,
-                          currency: 'JPY',
-                          planType: 'プレミアム',
-                          companyName: _nicknameController.text,
-                          companyEmail: _emailController.text,
-                          tempId:
-                              tempId is int
-                                  ? tempId
-                                  : int.tryParse(tempId.toString()),
-                        );
-                        // Checkout にリダイレクトされるため、ここでの画面遷移は不要
-                      } else {
-                        setState(() {
-                          _errorMessage = '一時サインアップの作成に失敗しました';
-                        });
-                      }
-                    } catch (e) {
-                      if (!mounted) return;
-                      setState(() {
-                        _errorMessage = '通信エラー: $e';
-                      });
-                    }
-                  },
-                  child: const Text('次へ'),
-                ),
+                            // 2) Stripe Checkout を開始 (企業は金額例: 5000)
+                            await startWebCheckout(
+                              amount: 5000,
+                              currency: 'JPY',
+                              companyName: _nicknameController.text,
+                              companyEmail: _emailController.text,
+                              tempId:
+                                  tempId is int
+                                      ? tempId
+                                      : int.tryParse(tempId.toString()),
+                            );
+                            // Checkout にリダイレクトされるため、ここでの画面遷移は不要
+                          } else {
+                            setState(() {
+                              _errorMessage = '一時サインアップの作成に失敗しました';
+                            });
+                          }
+                        } catch (e) {
+                          if (!mounted) return;
+                          setState(() {
+                            _errorMessage = '通信エラー: $e';
+                          });
+                        }
+                      },
+                      child: const Text('次へ'),
+                    ),
 
                     if (_errorMessage.isNotEmpty)
                       Padding(

@@ -316,6 +316,8 @@ class _AiTrainingListPageState extends State<AiTrainingListPage> {
                                     subtitle: "電話対応をAIと練習",
                                     tokenCost: 20,
                                     currentTokens: currentTokens,
+                                    isPremium:
+                                        (user?['planStatus'] ?? '無料') != '無料',
                                     gradient: const LinearGradient(
                                       colors: [
                                         Color(0xFF10B981),
@@ -341,6 +343,8 @@ class _AiTrainingListPageState extends State<AiTrainingListPage> {
                                     subtitle: "模擬面接で実践力を養う",
                                     tokenCost: 20,
                                     currentTokens: currentTokens,
+                                    isPremium:
+                                        (user?['planStatus'] ?? '無料') != '無料',
                                     gradient: const LinearGradient(
                                       colors: [
                                         Color(0xFF3B82F6),
@@ -367,6 +371,8 @@ class _AiTrainingListPageState extends State<AiTrainingListPage> {
                                     subtitle: "ビジネスメールをAIが添削",
                                     tokenCost: 5,
                                     currentTokens: currentTokens,
+                                    isPremium:
+                                        (user?['planStatus'] ?? '無料') != '無料',
                                     gradient: const LinearGradient(
                                       colors: [
                                         Color(0xFF8B5CF6),
@@ -552,10 +558,13 @@ class _AiTrainingListPageState extends State<AiTrainingListPage> {
     required String subtitle,
     required int tokenCost,
     required int currentTokens,
+    required bool isPremium,
     required Gradient gradient,
     required VoidCallback onTap,
   }) {
-    final bool hasEnoughTokens = currentTokens >= tokenCost;
+    // プレミアムユーザーの場合はトークンコストを0に設定
+    final int effectiveTokenCost = isPremium ? 0 : tokenCost;
+    final bool hasEnoughTokens = currentTokens >= effectiveTokenCost;
 
     return GestureDetector(
       onTap: hasEnoughTokens ? onTap : null,
@@ -636,7 +645,7 @@ class _AiTrainingListPageState extends State<AiTrainingListPage> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        "$tokenCost トークン",
+                        isPremium ? "無制限" : "$tokenCost トークン",
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
