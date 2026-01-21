@@ -49,6 +49,9 @@ public class User {
     @Column(name = "is_withdrawn", nullable = false)
     private Boolean isWithdrawn; // 退会済みフラグ
 
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted; // 退会済みフラグ
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt; // 作成日時
 
@@ -82,6 +85,9 @@ public class User {
         if (isWithdrawn == null) {
             isWithdrawn = false;
         }
+        if (isDeleted == null) {
+            isDeleted = false;
+        }
         if (announcementDeletion == null) {
             announcementDeletion = 1;
         }
@@ -93,7 +99,7 @@ public class User {
     public User() {
     }
 
-    public User(Integer id, String nickname, Integer type, String password, String phoneNumber, String email, Integer companyId, Integer reportCount, String planStatus, Boolean isWithdrawn, LocalDateTime createdAt, Integer societyHistory, Integer icon, Integer announcementDeletion, Integer token, String otp, LocalDateTime otpExpiresAt) {
+    public User(Integer id, String nickname, Integer type, String password, String phoneNumber, String email, Integer companyId, Integer reportCount, String planStatus, Boolean isWithdrawn, Boolean isDeleted, LocalDateTime createdAt, Integer societyHistory, Integer icon, Integer announcementDeletion, Integer token, String otp, LocalDateTime otpExpiresAt) {
         this.id = id;
         this.nickname = nickname;
         this.type = type;
@@ -104,6 +110,7 @@ public class User {
         this.reportCount = reportCount;
         this.planStatus = planStatus;
         this.isWithdrawn = isWithdrawn;
+        this.isDeleted = isDeleted;
         this.createdAt = createdAt;
         this.societyHistory = societyHistory;
         this.icon = icon;
@@ -191,6 +198,14 @@ public class User {
 
     public void setIsWithdrawn(Boolean withdrawn) {
         isWithdrawn = withdrawn;
+    }
+
+    public Boolean getIsDeleted() {
+        return isDeleted;
+    }
+
+    public void setIsDeleted(Boolean deleted) {
+        isDeleted = deleted;
     }
 
     public LocalDateTime getCreatedAt() {

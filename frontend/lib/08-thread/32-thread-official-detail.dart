@@ -10,6 +10,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bridge/main.dart';
 
 class ThreadOfficialDetail extends StatefulWidget {
   final Map<String, dynamic> thread;
@@ -23,16 +24,40 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   final TextEditingController _messageController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  //サインインしているユーザーのアイコンのURL
+  String? _currentUserIconUrl; 
   //initでユーザのIDを入れる
   String currentUserId="";
+  //読み込めたかどうかの判定
+  bool _isUserLoaded = false;
   //ユーザ情報取得
   Future<void> _loadCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString('current_user');
     if (jsonString == null) return;
     final userData = jsonDecode(jsonString);
+    currentUserId = userData['id'].toString();
+    final res = await http.get(
+      Uri.parse('$baseUrl/chat/user/$currentUserId'),
+    );
+    if (res.statusCode == 200) {
+      final iconId = json.decode(res.body)['icon'];
+      if (iconId != null) {
+        final res2 = await http.get(
+          Uri.parse('$baseUrl/photos/$iconId'),
+        );
+        if (res2.statusCode == 200) {
+          final path = json.decode(res2.body)['photoPath'];
+          _currentUserIconUrl = "http://localhost:8080$path";
+        }
+      }
+    }
+    // setState(() {
+    //   currentUserId = userData['id'].toString();
+    // });
     setState(() {
       currentUserId = userData['id'].toString();
+      _isUserLoaded = true;
     });
   }
   Map<String, String> _userNicknames = {};
@@ -70,6 +95,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
             'text': msg['content'],
             'created_at': msg['createdAt'],
             'photoId': msg['photoId'],
+            'userIconUrl': msg['userIconUrl'], 
           });
           _messages.sort((a, b) =>
               DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
@@ -96,9 +122,14 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     super.dispose();
   }
 
+  //写真を大きく表示（写真をクリックされた時用）
   Future<void> pickImage() async {
     final picker = ImagePicker();
-    final XFile? picked = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,      //これをいれなきゃたまに画像が送れない（0〜100）
+      //maxWidth: 1200,        // ← 大きすぎる画像を縮小
+    );
     if (picked == null) return;
     if (kIsWeb) {
       final bytes = await picked.readAsBytes();
@@ -115,6 +146,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     }
   }
 
+  //写真の保存
   Future<int?> uploadImage() async {
     if (_selectedImage == null && _webImageBytes == null) return null;
     setState(() => _isUploading = true);
@@ -126,13 +158,13 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
         'file',
         _webImageBytes!,
         filename: _webImageName ?? "upload.jpg",
-        contentType: MediaType('image', 'jpeg'),
+        //contentType: MediaType('image', 'jpeg'),
       ));
     } else {
       request.files.add(await http.MultipartFile.fromPath(
         'file',
         _selectedImage!.path,
-        // contentType: MediaType('image', 'jpeg'),
+        //contentType: MediaType('image', 'jpeg'),
       ));
     }
 
@@ -145,6 +177,9 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
         // final int? photoId = int.tryParse(
         //   RegExp(r'"id"\s*:\s*(\d+)').firstMatch(body)?.group(1) ?? '',
         // );
+        print("aaaaaaaaaaaaaaaaa");
+        print("=== Upload Response Status === ${response.statusCode}");
+        print("=== Upload Response Body === $body");
         return photoId;
       }
       return null;
@@ -156,6 +191,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     }
   }
 
+  //写真のパス取得
   Future<String?> fetchPhotoUrl(int photoId) async {
     final response = await http.get(Uri.parse('$baseUrl/photos/$photoId'));
     if (response.statusCode == 200) {
@@ -167,38 +203,62 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
 
   Future<void> _fetchMessages() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/chat/${widget.thread['id']}'));
+      final response = await http.get(
+        Uri.parse('$baseUrl/chat/${widget.thread['id']}/active')
+      );
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        final fetched = data.map((msg) {
-          return {
-            'id': msg['id'],
-            'user_id': msg['userId'].toString(),
-            'text': msg['content'],
-            'created_at': msg['createdAt'],
-            'photoId': msg['photoId'],
-          };
-        }).toList();
-        bool updated = false;
-        for (var msg in fetched) {
+        for (var msg in data) {
+          final userId = msg['userId'].toString();
+          String? userIconUrl;
+          //ユーザーidを指定してアイコンidを取得する
+          final response = await http.get(
+            Uri.parse('$baseUrl/chat/user/$userId')
+          );
+          //名前、アイコンidが取得
+          print(json.decode(response.body)['icon']);
+          final chat_userid=json.decode(response.body)['icon'];
+          //アイコンidを指定してアイコンの写真のパスを取得
+          final response2 = await http.get(
+            Uri.parse('$baseUrl/photos/$chat_userid')
+          );
+          print(json.decode(response2.body));
+          print("これでアイコンの写真のパスが取得できる");
+          print(json.decode(response2.body)['photoPath']);
+          final iconPath = json.decode(response2.body)['photoPath'];
+          userIconUrl = "http://localhost:8080$iconPath";
+          // アイコンIDがあればURLを取得
+          // if (msg['userIconId'] != null) {
+          //   final iconResponse = await http.get(Uri.parse('$baseUrl/photos/${msg['userIconId']}'));
+          //   if (iconResponse.statusCode == 200) {
+          //     final iconData = json.decode(iconResponse.body);
+          //     userIconUrl = "http://localhost:8080/photos/${iconData['photoPath']}";
+          //   }
+          // }
+          // メッセージリストに追加
           if (!_messages.any((m) => m['id'] == msg['id'])) {
-            _messages.add(msg);
-            updated = true;
+            _messages.add({
+              'id': msg['id'],
+              'user_id': userId,
+              'text': msg['content'],
+              'created_at': msg['createdAt'],
+              'photoId': msg['photoId'],
+              'userIconUrl': userIconUrl,
+            });
           }
+          print("UserId: $userId, IconUrl: $userIconUrl");
         }
-
-        //メッセージを投稿時間順にする
-        if (updated) {
-          _messages.sort((a, b) =>
-              DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
-          _messageStreamController.add(List.from(_messages));
-        }
+        // 投稿時間順にソート
+        _messages.sort((a, b) =>
+            DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+        _messageStreamController.add(List.from(_messages));
       }
     } catch (e) {
       print("Fetch error: $e");
     }
   }
 
+  //読み込める場所までスクロール
   void _scrollToBottom() {
     // スクロール対象があるか確認
     if (!_scrollController.hasClients) return;
@@ -215,65 +275,120 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     });
   }
 
-  Future<void> _sendMessage() async {
-  if (_isSending) return;
-  final text = _messageController.text.trim();
-  if (text.isEmpty && _selectedImage == null && _webImageBytes == null) return;
-  setState(() => _isSending = true);
+  //サインインができていないユーザーをサインインページに
+  void _showLoginExpiredDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('ログインが必要です'),
+          content: const Text(
+            'ログイン状態が切れています。\nもう一度サインインしてください。',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                // ダイアログを閉じる
+                Navigator.of(context).pop();
 
-  int? photoId;
-  if (_selectedImage != null || _webImageBytes != null) {
-    photoId = await uploadImage();
-  }
+                // ログイン情報をクリア（安全のため）
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
 
-  final payload = {
-    'userId': int.parse(currentUserId),
-    'content': text,
-    'threadId': widget.thread['id'],
-    'photoId': photoId,
-  };
-
-  try {
-    final response = await http.post(
-      Uri.parse('$baseUrl/chat/${widget.thread['id']}'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(payload),
+                // サインイン画面（MyHomePage）へ戻す
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MyHomePage(title: 'Bridge'),
+                  ),
+                  (_) => false,
+                );
+              },
+              child: const Text('サインインへ'),
+            ),
+          ],
+        );
+      },
     );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final msg = json.decode(response.body);
-      _messages.add({
-        'id': msg['id'],
-        'user_id': msg['userId'].toString(),
-        'text': msg['content'],
-        'created_at': msg['createdAt'],
-        'photoId': msg['photoId'],
-      });
-      _messages.sort((a, b) =>
-          DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
-      _messageStreamController.add(List.from(_messages));
-
-      _messageController.clear();
-      setState(() {
-        _selectedImage = null;
-        _webImageBytes = null;
-        _webImageName = null;
-      });
-
-      _channel.sink.add(json.encode(msg));
-
-      //自動スクロール
-      _scrollToBottom(); 
-    } else {
-      print("Send failed: ${response.statusCode}");
-    }
-  } catch (e) {
-    print("Send error: $e");
-  } finally {
-    setState(() => _isSending = false);
   }
-}
 
+  //チャットを送信する
+  Future<void> _sendMessage() async {
+    //セッションが切れていないか確認する
+    if (currentUserId.isEmpty) {
+      _showLoginExpiredDialog();
+      return;
+    }
+    // if (currentUserId.isEmpty) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text("ログインが切れています。再ログインしてください")),
+    //   );
+    //   return;
+    // }
+    if (_isSending) return;
+    final text = _messageController.text.trim();
+    if (text.isEmpty && _selectedImage == null && _webImageBytes == null) return;
+    setState(() => _isSending = true);
+
+    int? photoId;
+    if (_selectedImage != null || _webImageBytes != null) {
+      photoId = await uploadImage();
+    }
+
+    final payload = {
+      'userId': int.parse(currentUserId),
+      'content': text,
+      'threadId': widget.thread['id'],
+      'photoId': photoId,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/chat/${widget.thread['id']}'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(payload),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final msg = json.decode(response.body);
+        _messages.add({
+          'id': msg['id'],
+          'user_id': msg['userId'].toString(),
+          'text': msg['content'],
+          'created_at': msg['createdAt'],
+          'photoId': msg['photoId'],
+          'userIconUrl': _currentUserIconUrl,
+        });
+        _messages.sort((a, b) =>
+            DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+        _messageStreamController.add(List.from(_messages));
+
+        _messageController.clear();
+        setState(() {
+          _selectedImage = null;
+          _webImageBytes = null;
+          _webImageName = null;
+        });
+
+        _channel.sink.add(json.encode({
+          ...msg,
+          'userIconUrl': _currentUserIconUrl,
+        }));
+
+        //自動スクロール
+        _scrollToBottom(); 
+      } else {
+        print("Send failed: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Send error: $e");
+    } finally {
+      setState(() => _isSending = false);
+    }
+  }
+
+  //チャットを通報
   Future<void> _reportMessage(Map<String, dynamic> msg) async {
     try {
       final payload = {
@@ -309,6 +424,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     }
   }
 
+  //名前の取得
   Future<String> _getNickname(String userId) async {
     if (_userNicknames.containsKey(userId)) return _userNicknames[userId]!;
 
@@ -328,6 +444,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     return "Unknown";
   }
 
+  //表示部分
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -393,15 +510,46 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                             FutureBuilder<String>(
                               future: _getNickname(msg['user_id']),
                               builder: (context, snapshot) {
-                                final name = snapshot.data ?? '...';
+                                final nickname = snapshot.data ?? '...';
+                                final iconUrl = msg['userIconUrl']; // ここでアイコンURL取得
+
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 2.0),
-                                  child: Text(
-                                    isMe ? 'あなた' : name,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // アイコン表示
+                                      ClipOval(
+                                        child: iconUrl != null && iconUrl.toString().isNotEmpty
+                                            ? Image.network(
+                                                iconUrl,
+                                                width: 16,
+                                                height: 16,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  //画像が無い
+                                                  return const Icon(
+                                                    Icons.account_circle_outlined,
+                                                    color: Color(0xFF616161),
+                                                    size: 16,
+                                                  );
+                                                },
+                                              )
+                                            : const Icon(
+                                                Icons.account_circle_outlined,
+                                                color: Color(0xFF616161),
+                                                size: 16,
+                                              ),
+                                      ),
+                                      SizedBox(width: 4), // アイコンと名前の間の余白
+                                      Text(
+                                        isMe ? 'あなた' : nickname,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 );
                               },
@@ -427,27 +575,31 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                                     FutureBuilder(
                                       future: fetchPhotoUrl(msg['photoId']),
                                       builder: (context, snapshot) {
-                                        Widget imageWidget;
-
-                                        if (snapshot.hasData) {
-                                          // 画像が読み込まれたらスクロール
-                                          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-
-                                          imageWidget = Image.network(
-                                            snapshot.data!,
-                                            width: 200,
-                                            height: 200,
-                                            fit: BoxFit.cover,
-                                          );
-                                        } else {
-                                          imageWidget = SizedBox(width: 200, height: 200); // プレースホルダー
+                                        if (!snapshot.hasData) {
+                                          return SizedBox(width: 200, height: 200); // プレースホルダー
                                         }
-
                                         return Padding(
                                           padding: const EdgeInsets.only(bottom: 8.0),
                                           child: ClipRRect(
                                             borderRadius: BorderRadius.circular(12),
-                                            child: imageWidget,
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (_) => Dialog(
+                                                    child: InteractiveViewer(
+                                                      child: Image.network(snapshot.data!),
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              child: Image.network(
+                                                snapshot.data!,
+                                                width: 200,
+                                                height: 200,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
                                           ),
                                         );
                                       },

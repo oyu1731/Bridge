@@ -12,6 +12,12 @@ import java.util.List;
 @Entity
 @Table(name = "articles")
 public class Article {
+        // 業界リスト（複数業界対応）
+        @ElementCollection(fetch = FetchType.LAZY)
+        @CollectionTable(name = "article_industries", joinColumns = @JoinColumn(name = "article_id"))
+        @Column(name = "industry")
+        private List<String> industries;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id; // 記事ID (主キー、自動生成)
@@ -56,6 +62,7 @@ public class Article {
      * JPAが必要とする引数なしコンストラクタ
      */
     public Article() {
+        this.industries = null;
     }
 
     /**
@@ -82,6 +89,15 @@ public class Article {
         this.photo1Id = photo1Id;
         this.photo2Id = photo2Id;
         this.photo3Id = photo3Id;
+        this.industries = null;
+    }
+
+    public List<String> getIndustries() {
+        return industries;
+    }
+
+    public void setIndustries(List<String> industries) {
+        this.industries = industries;
     }
 
     @PrePersist
