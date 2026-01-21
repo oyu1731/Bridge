@@ -31,6 +31,23 @@ public class PaymentController {
     @PostMapping("/checkout-session")
     public ResponseEntity<Map<String, String>> createCheckoutSession(@RequestBody Map<String, Object> request) {
         try {
+            // 必須パラメータのnullチェック
+            if (request.get("amount") == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "amount is required"));
+            }
+            if (request.get("currency") == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "currency is required"));
+            }
+            if (request.get("userType") == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "userType is required"));
+            }
+            if (request.get("successUrl") == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "successUrl is required"));
+            }
+            if (request.get("cancelUrl") == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "cancelUrl is required"));
+            }
+
             Long amount = Long.valueOf(request.get("amount").toString());
             String currency = request.get("currency").toString();
             String userType = request.get("userType").toString();
