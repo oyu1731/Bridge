@@ -128,7 +128,16 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
 
   // ホームへ戻る時にURLをリセット
   void _resetUrlAndNavigateHome() {
-    // URLリセットなしで直接ホームへ遷移
+    // URLリセット
+    if (kIsWeb) {
+      try {
+        js.context.callMethod('eval', [
+          'window.history.replaceState({}, "", "/")',
+        ]);
+      } catch (e) {
+        print('URL reset failed: $e');
+      }
+    }
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const CompanyHome()),
       (route) => false,
