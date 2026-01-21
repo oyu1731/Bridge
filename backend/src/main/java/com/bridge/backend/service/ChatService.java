@@ -39,6 +39,18 @@ public class ChatService {
 
     // スレッドにメッセージ投稿
     public Chat postMessage(Integer threadId, Chat chat) {
+        //単体テストの時にここが発揮される
+        if (chat.getUserId() == null) {
+            throw new RuntimeException("ログインが必要です");
+        }
+        if (chat.getThreadId() == null) {
+            throw new RuntimeException("スレッドidが必要です");
+        }
+
+        User user = userRepository.findById(chat.getUserId()).orElse(null);
+        if (user == null) {
+            throw new RuntimeException("ユーザーが存在しません");
+        }
         chat.setThreadId(threadId);
         chat.setCreatedAt(LocalDateTime.now());
         Chat saved = chatRepository.save(chat);
@@ -58,7 +70,9 @@ public class ChatService {
         Map<String, String> result = new HashMap<>();
         if (user != null) {
             result.put("nickname", user.getNickname());
-            result.put("email", user.getEmail());
+            //result.put("email", user.getEmail());
+            //nullでないならStringにする
+            result.put("icon", user.getIcon() != null ? user.getIcon().toString() : null);
         } else {
             result.put("nickname", "Unknown");
         }
