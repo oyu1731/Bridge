@@ -11,6 +11,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bridge/main.dart';
+import '31-thread-list.dart';
 
 class ThreadUnOfficialDetail extends StatefulWidget {
 final Map<String, dynamic> thread;
@@ -26,6 +27,62 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
   final ScrollController _scrollController = ScrollController();
   //サインインしているユーザーのアイコンのURL
   String? _currentUserIconUrl; 
+  // ユーザーID,ニックネーム
+  final Map<String, String> _nicknameCache = {};
+  // ユーザーID,アイコンURL
+  final Map<String, String?> _userIconCache = {};
+  // photoId,photoUrl
+  final Map<int, String> _photoUrlCache = {};
+  // ユーザーID, ユーザータイプ
+  final Map<String, String?> _userTypeCache = {};
+  //名前とアイコンを取得
+  Future<void> _loadUserInfo(String userId) async {
+    if (_nicknameCache.containsKey(userId)) return;
+
+    final res = await http.get(
+      Uri.parse('$baseUrl/chat/user/$userId'),
+    );
+    if (res.statusCode != 200) return;
+
+    final data = json.decode(res.body);
+    _nicknameCache[userId] = data['nickname'] ?? 'Unknown';
+    _userTypeCache[userId] = data['type']?.toString();
+
+    final iconId = data['icon'];
+    if (iconId != null) {
+      final res2 = await http.get(
+        Uri.parse('$baseUrl/photos/$iconId'),
+      );
+      if (res2.statusCode == 200) {
+        final path = json.decode(res2.body)['photoPath'];
+        if (path != null && path.toString().isNotEmpty) {
+          _userIconCache[userId] = "http://localhost:8080$path";
+        } else {
+          _userIconCache[userId] = null;
+        }
+      } else {
+        _userIconCache[userId] = null;
+      }
+    } else {
+      _userIconCache[userId] = null;
+    }
+  }
+
+  String _typeLabel(String? type) {
+    switch (type) {
+      case '1':
+        return '学生';
+      case '2':
+        return '社会人';
+      case '3':
+        return '企業';
+      case '4':
+        return '運営';
+      default:
+        return '';
+    }
+  }
+
   //initでユーザのIDを入れる
   String currentUserId="";
   //読み込めたかどうかの判定
@@ -183,11 +240,19 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
   }
   //写真のパス取得
   Future<String?> fetchPhotoUrl(int photoId) async {
-    final response = await http.get(Uri.parse('$baseUrl/photos/$photoId'));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-        return "http://localhost:8080${data['photoPath']}";
-      }
+    if (_photoUrlCache.containsKey(photoId)) {
+      return _photoUrlCache[photoId];
+    }
+
+    final res = await http.get(
+      Uri.parse('$baseUrl/photos/$photoId'),
+    );
+    if (res.statusCode == 200) {
+      final path = json.decode(res.body)['photoPath'];
+      final url = "http://localhost:8080$path";
+      _photoUrlCache[photoId] = url;
+      return url;
+    }
     return null;
   }
 
@@ -196,10 +261,16 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
       final response = await http.get(
         Uri.parse('$baseUrl/chat/${widget.thread['id']}/active'),
       );
+      if (response.statusCode == 410) {
+        _showThreadDeletedDialog();
+        return;
+      }
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         for (var msg in data) {
           final userId = msg['userId'].toString();
+          // ユーザー情報は初回だけ取得
+          await _loadUserInfo(userId);
           String? userIconUrl;
           //ユーザーidを指定してアイコンidを取得する
           final response = await http.get(
@@ -227,12 +298,11 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
               'userIconUrl': userIconUrl,
             });
           }
-          print("UserId: $userId, IconUrl: $userIconUrl");
+          // 投稿時間順にソート
+          _messages.sort((a, b) =>
+            DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+          _messageStreamController.add(List.from(_messages));
         }
-        // 投稿時間順にソート
-        _messages.sort((a, b) =>
-          DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
-        _messageStreamController.add(List.from(_messages));
       }
     } catch (e) {
       print("Fetch error: $e");
@@ -253,6 +323,31 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
         );
       }
     });
+  }
+
+  //スレッド内にいる時にスレッドが削除された場合スレッド一覧ページに戻す
+  void _showThreadDeletedDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text('スレッドが削除されました'),
+        content: const Text('このスレッドは既に存在しません。'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => ThreadList()),
+                (route) => false,
+              );
+            },
+            child: const Text('一覧へ戻る'),
+          ),
+        ],
+      ),
+    );
   }
 
   //サインインができていないユーザーをサインインページに
@@ -297,6 +392,13 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
     //セッションが切れていないか確認する
     if (currentUserId.isEmpty) {
       _showLoginExpiredDialog();
+      return;
+    }
+    final text_check = _messageController.text.trim();
+    if (text_check.length > 255) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('メッセージは255文字以内で入力してください')),
+      );
       return;
     }
     if (_isSending) return;
@@ -350,6 +452,8 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
         }));
         //自動スクロール
         _scrollToBottom(); 
+      } else if (response.statusCode == 404 || response.statusCode == 410) {
+        _showThreadDeletedDialog();
       } else {
         print("Send failed: ${response.statusCode}");
       }
@@ -474,7 +578,10 @@ Widget build(BuildContext context) {
                     final createdAt = DateTime.parse(msg['created_at']);
                     final timeStr =
                         '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
-
+                    final nickname = _nicknameCache[msg['user_id']] ?? '...';
+                    final iconUrl = msg['userIconUrl'];
+                    final userType = _userTypeCache[msg['user_id']];
+                    final typeLabel = _typeLabel(userType);
                     return Align(
                       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                       child: ConstrainedBox(
@@ -485,50 +592,60 @@ Widget build(BuildContext context) {
                           crossAxisAlignment:
                               isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                           children: [
-                            FutureBuilder<String>(
-                              future: _getNickname(msg['user_id']),
-                              builder: (context, snapshot) {
-                                final nickname = snapshot.data ?? '...';
-                                final iconUrl = msg['userIconUrl'];//アイコンURL取得
-
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 2.0),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      ClipOval(
-                                        child: iconUrl != null && iconUrl.isNotEmpty
-                                            ? Image.network(
-                                                iconUrl,
-                                                width: 16,
-                                                height: 16,
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (context, error, stackTrace) {
-                                                  return const Icon(
-                                                    Icons.account_circle_outlined,
-                                                    size: 16,
-                                                    color: Color(0xFF616161),
-                                                  );
-                                                },
-                                              )
-                                            : const Icon(
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 2.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ClipOval(
+                                    child: iconUrl != null && iconUrl.isNotEmpty
+                                        ? Image.network(
+                                            iconUrl,
+                                            width: 16,
+                                            height: 16,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return const Icon(
                                                 Icons.account_circle_outlined,
                                                 size: 16,
                                                 color: Color(0xFF616161),
-                                              ),
+                                              );
+                                            },
+                                          )
+                                        : const Icon(
+                                            Icons.account_circle_outlined,
+                                            size: 16,
+                                            color: Color(0xFF616161),
+                                          ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    isMe ? 'あなた' : nickname,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  if (!isMe && typeLabel.isNotEmpty) ...[
+                                    const SizedBox(width: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black,
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                      SizedBox(width: 4), // アイコンと名前の間の余白
-                                      Text(
-                                        isMe ? 'あなた' : nickname,
-                                        style: TextStyle(
-                                          fontSize: 12,
+                                      child: Text(
+                                        typeLabel,
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.white,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                );
-                              },
+                                    ),
+                                  ]
+                                ],
+                              ),
                             ),
                             Container(
                               margin: EdgeInsets.symmetric(vertical: 4),
@@ -664,6 +781,7 @@ Widget build(BuildContext context) {
                 ),
                 child: TextField(
                   controller: _messageController,
+                  maxLength: 255,
                   decoration: InputDecoration(
                     hintText: 'メッセージを入力',
                     border: InputBorder.none,
