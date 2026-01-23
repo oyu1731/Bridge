@@ -100,7 +100,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                     final isSmallScreen = constraints.maxWidth < 600;
 
                     if (isSmallScreen) {
-                      // スマホ：1行コンパクトレイアウト
+                      // スマホ：1行コンパクトレイアウト（ロゴは左、他は右寄せ）
                       return SizedBox(
                         height: 58,
                         child: Row(
@@ -109,17 +109,13 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                             GestureDetector(
                               onTap: () {
                                 final now = DateTime.now();
-
-                                // 1.5秒以上空いたらリセット
                                 if (_lastTapTime == null ||
                                     now.difference(_lastTapTime!) >
                                         const Duration(seconds: 1)) {
                                   _logoTapCount = 0;
                                 }
-
                                 _lastTapTime = now;
                                 _logoTapCount++;
-
                                 if (_logoTapCount >= 3) {
                                   _logoTapCount = 0;
                                   Navigator.push(
@@ -149,19 +145,24 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 8),
                             Flexible(
-                              child: Text(
-                                '$greeting、$nicknameさん。',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF424242),
-                                  fontWeight: FontWeight.w500,
+                              flex: 3,
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  '$greeting、$nicknameさん。',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF424242),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            const Spacer(),
                             const SizedBox(width: 2),
                             SizedBox(
                               width: 28,
