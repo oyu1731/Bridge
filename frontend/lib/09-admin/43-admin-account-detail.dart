@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AdminAccountDetail extends StatefulWidget {
-  final String userId;
-
-  const AdminAccountDetail({Key? key, required this.userId}) : super(key: key);
+  final int userId;
+  const AdminAccountDetail({required this.userId, super.key});
 
   @override
   _AdminAccountDetailState createState() => _AdminAccountDetailState();
@@ -14,90 +15,43 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
   Map<String, dynamic>? _userData;
   List<Map<String, dynamic>> _commentHistory = [];
 
-  // ダミーデータ（本来はバックエンドから取得）
-  final List<Map<String, dynamic>> _dummyUsers = [
-    {
-      'id': '001',
-      'icon': 'A',
-      'name': '山田太郎',
-      'type': 1,
-      'accountId': '001',
-      'phone': '090-1111-2222',
-      'email': 'taro@example.com',
-      'password': '••••••',
-      'registeredAt': '2024-12-01',
-      'reports': 2,
-      'industry': 'IT業界（希望）',
-      'comments': [
-        {
-          'thread': 'キャリア相談スレッド',
-          'comment': 'IT業界に興味があります！',
-          'date': '2025-10-20',
-        },
-        {
-          'thread': '自己紹介スレッド',
-          'comment': 'よろしくお願いします！',
-          'date': '2025-10-01',
-        },
-      ],
-    },
-    {
-      'id': '002',
-      'icon': 'B',
-      'name': '佐藤花子',
-      'type': 2,
-      'accountId': '002',
-      'phone': '080-2222-3333',
-      'email': 'hanako@example.com',
-      'password': '••••••',
-      'registeredAt': '2025-01-15',
-      'reports': 1,
-      'industry': '教育業界（希望）',
-      'comments': [
-        {
-          'thread': '勉強スレッド',
-          'comment': '最近Pythonを学習しています。',
-          'date': '2025-09-10',
-        },
-      ],
-    },
-    {
-      'id': '003',
-      'icon': 'C',
-      'name': '株式会社テック',
-      'type': 3,
-      'accountId': '003',
-      'phone': '03-5555-6666',
-      'email': 'tech@example.com',
-      'password': '••••••',
-      'registeredAt': '2023-11-20',
-      'reports': 0,
-      'industry': 'IT企業',
-      'comments': [],
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadCommentHistory();
   }
 
   Future<void> _loadUserData() async {
-    // 疑似通信
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    final user = _dummyUsers.firstWhere(
-      (u) => u['id'] == widget.userId,
-      orElse: () => {},
+    final response = await http.get(
+      Uri.parse('http://localhost:8080/api/users/${widget.userId}/detail'),
     );
+    final data = json.decode(utf8.decode(response.bodyBytes));
+    setState(() {
+      _userData = {
+        'id': data['id'],
+        'icon': data['icon'] ?? '',
+        'name': data['nickname'] ?? '',
+        'type': data['type'] ?? 0,
+        'accountId': data['id'].toString(),
+        'phone': data['phoneNumber'] ?? '',
+        'email': data['email'] ?? '',
+        'password': '••••••',
+        'registeredAt': data['createdAt'] ?? '',
+        'reports': data['reportCount'] ?? 0,
+        'industry': data['industry'] ?? '',
+      };
+    });
+  }
 
-    if (user.isNotEmpty) {
-      setState(() {
-        _userData = user;
-        _commentHistory = List<Map<String, dynamic>>.from(user['comments'] ?? []);
-      });
-    }
+  Future<void> _loadCommentHistory() async {
+    final res = await http.get(
+      Uri.parse('http://localhost:8080/api/users/${widget.userId}/comments'),
+    );
+    final List list = json.decode(utf8.decode(res.bodyBytes));
+    setState(() {
+      _commentHistory = List<Map<String, dynamic>>.from(list);
+    });
   }
 
   String _getAccountTypeLabel(int type) {
@@ -108,8 +62,10 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
         return '社会人アカウント';
       case 3:
         return '企業アカウント';
+      case 4:
+        return '管理者アカウント';
       default:
-        return '不明';
+        return '不明なアカウント';
     }
   }
 
@@ -121,187 +77,150 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildUserInfoCard(),
-                  const SizedBox(height: 32),
-                  _buildCommentHistoryTable(),
-                ],
+              child: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 1000),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.grey.shade400),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildUserInfoInner(),
+                      const SizedBox(height: 24),
+                      const Divider(thickness: 1),
+                      const SizedBox(height: 24),
+                      _buildCommentHistoryTable(),
+                    ],
+                  ),
+                ),
               ),
             ),
     );
   }
 
-  Widget _buildUserInfoCard() {
-    return Stack(
+  // ====== ユーザー情報(中身は完全そのまま) ======
+  Widget _buildUserInfoInner() {
+    String industryLabel = _userData!['type'] == 1
+        ? '希望業界'
+        : _userData!['type'] == 2
+            ? '所属業界'
+        : _userData!['type'] == 3
+            ? '企業所属業界'
+            : '';
+
+    return Column(
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.grey.shade400),
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-            ],
+        Row(children: [
+          CircleAvatar(
+            radius: 40,
+            backgroundImage: _userData!['icon'] != '' ? NetworkImage(_userData!['icon']) : null,
+            child: _userData!['icon'] == '' ? const Icon(Icons.person, size: 40) : null,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 上段（アイコン＋基本情報）
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    radius: 40,
-                    child: Text(_userData!['icon']),
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${_userData!['name']} <${_getAccountTypeLabel(_userData!['type'])}>',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Text('アカウントID: ', style: TextStyle(color: Colors.grey)),
-                          Text(_userData!['accountId']),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              const Divider(),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildInfoRow('電話番号', _userData!['phone']),
-                        _buildInfoRow('メールアドレス', _userData!['email']),
-                        _buildInfoRow('パスワード', _userData!['password']),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildInfoRow('登録日', _userData!['registeredAt']),
-                        _buildInfoRow('通報回数', _userData!['reports'].toString()),
-                        _buildInfoRow('業界', _userData!['industry']),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        Positioned(
-          top: 8,
-          right: 8,
-          child: IconButton(
-            icon: const Icon(Icons.delete, color: Colors.black),
-            onPressed: () {
-              showDialog(
+          const SizedBox(width: 16),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('${_userData!['name']} <${_getAccountTypeLabel(_userData!['type'])}>',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text('アカウントID: ${_userData!['accountId']}', style: const TextStyle(color: Colors.grey)),
+          ]),
+          const Spacer(), // ← 右端へ押し出す
+
+          // ===== 削除ボタン =====
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () async {
+              bool ok = await showDialog(
                 context: context,
                 builder: (_) => AlertDialog(
                   title: const Text('削除確認'),
-                  content: const Text('このアカウント情報を削除しますか？'),
+                  content: const Text('このアカウントを削除しますか？'),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('キャンセル')),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                        // TODO: バック側で削除処理
-                      },
-                      child: const Text('削除'),
-                    ),
+                    TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('削除')),
                   ],
                 ),
               );
+
+              if (!ok) return;
+
+              await http.put(Uri.parse(
+                  'http://localhost:8080/api/users/${widget.userId}/delete'));
+
+              Navigator.pop(context, true); // 一覧へ戻す
             },
-            tooltip: 'アカウント削除',
           ),
-        ),
+        ]),
+        const SizedBox(height: 24),
+        const Divider(),
+        Row(children: [
+          Expanded(child: Column(children: [
+            _buildInfoRow('電話番号', _userData!['phone']),
+            _buildInfoRow('メールアドレス', _userData!['email']),
+            _buildInfoRow('パスワード', _userData!['password']),
+          ])),
+          Expanded(child: Column(children: [
+            _buildInfoRow('登録日', _userData!['registeredAt'].split('T')[0]),
+            _buildInfoRow('通報回数', _userData!['reports'].toString()),
+            _buildInfoRow(industryLabel, _userData!['industry']),
+          ])),
+        ]),
       ],
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          SizedBox(width: 90, child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold))),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
-  }
+  Widget _buildInfoRow(String l, String v) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(children: [
+          SizedBox(width: 90, child: Text(l, style: const TextStyle(fontWeight: FontWeight.bold))),
+          Expanded(child: Text(v)),
+        ]),
+      );
 
+  // ====== コメント履歴 ======
   Widget _buildCommentHistoryTable() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade400),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('コメント履歴', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return SizedBox(
-                width: constraints.maxWidth,
-                height: 300,
-                child: Scrollbar(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.vertical,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                        child: DataTable(
-                          columns: const [
-                            DataColumn(label: Text('スレッド名')),
-                            DataColumn(label: Text('コメント')),
-                            DataColumn(label: Text('日付')),
-                          ],
-                          rows: _commentHistory
-                              .map((comment) => DataRow(cells: [
-                                    DataCell(Text(comment['thread'])),
-                                    DataCell(Text(comment['comment'])),
-                                    DataCell(Text(comment['date'])),
-                                  ]))
-                              .toList(),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('コメント履歴'),
+        const SizedBox(height: 12),
+        _commentHistory.isEmpty
+            ? const Text('コメント履歴はありません')
+            : DataTable(
+                border: TableBorder.all(color: Colors.grey.shade400),
+                headingRowColor: MaterialStateProperty.all(Colors.grey.shade200),
+                columns: const [
+                  DataColumn(label: Center(child: Text('スレッド名'))),
+                  DataColumn(label: Center(child: Text('コメント'))),
+                  DataColumn(label: Center(child: Text('日付'))),
+                ],
+                rows: _commentHistory.map((c) => DataRow(cells: [
+                      DataCell(Center(child: Text(c['threadTitle']))),
+                      DataCell(
+                        Center(
+                          child: c['isDeleted'] == true
+                              ? Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(c['content'] ?? ''),
+                                    const SizedBox(height: 4),
+                                    const Text(
+                                      '削除済み',
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Text(c['content'] ?? ''),
                         ),
                       ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
+                      DataCell(Center(child: Text(c['createdAt'].split('T')[0]))),
+                    ])).toList(),
+              ),
+      ],
     );
   }
 }

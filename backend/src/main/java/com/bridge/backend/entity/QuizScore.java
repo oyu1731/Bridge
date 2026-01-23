@@ -18,6 +18,9 @@ public class QuizScore {
     @Column(name = "user_id", nullable = false)
     private Integer userId; // ユーザーID
 
+    @Column(name = "nickname", nullable = false)
+    private String nickname; // ニックネーム
+
     @Column(name = "score", nullable = false)
     private Integer score; // スコア
 
@@ -37,9 +40,10 @@ public class QuizScore {
      * @param score スコア
      * @param createdAt 作成日時
      */
-    public QuizScore(Integer id, Integer userId, Integer score, LocalDateTime createdAt) {
+    public QuizScore(Integer id, Integer userId, String nickname, Integer score, LocalDateTime createdAt) {
         this.id = id;
         this.userId = userId;
+        this.nickname = nickname;
         this.score = score;
         this.createdAt = createdAt;
     }
@@ -64,6 +68,14 @@ public class QuizScore {
 
     public void setUserId(Integer userId) {
         this.userId = userId;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
     public Integer getScore() {

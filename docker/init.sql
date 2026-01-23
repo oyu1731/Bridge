@@ -17,6 +17,7 @@ USE bridgedb;
 
 -- 既存のテーブルがあれば削除 (開発用)
 DROP TABLE IF EXISTS articles_tag;
+DROP TABLE IF EXISTS article_likes;
 DROP TABLE IF EXISTS articles;
 DROP TABLE IF EXISTS notices;
 DROP TABLE IF EXISTS chats;
@@ -47,10 +48,14 @@ CREATE TABLE users (
     report_count INT(10) NOT NULL DEFAULT 0,
     plan_status VARCHAR(20) NOT NULL DEFAULT '無料',
     is_withdrawn BOOLEAN NOT NULL,
+    is_deleted BOOLEAN NOT NULL,
     created_at DATETIME NOT NULL,
     society_history INT(2),
     icon INT(10),
-    announcement_deletion INT(1) NOT NULL DEFAULT 1 COMMENT '1=新規お知らせなし、2=新規お知らせあり'
+    announcement_deletion INT(1) NOT NULL DEFAULT 1 COMMENT '1=新規お知らせなし、2=新規お知らせあり',
+    token INT(10) NOT NULL DEFAULT 50 COMMENT '面接練習やメール添削で使用',
+    otp VARCHAR(6) COMMENT 'パスワード再設定用ワンタイムパスワード',
+    otp_expires_at DATETIME COMMENT 'OTP有効期限'
 );
 
 
@@ -109,6 +114,17 @@ CREATE TABLE articles (
     photo2_id INT(10),
     photo3_id INT(10),
     FOREIGN KEY (company_id) REFERENCES companies(id)
+);
+
+-- テーブル定義書_記事いいね
+CREATE TABLE article_likes (
+    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    article_id INT(20) NOT NULL,
+    user_id INT(20) NOT NULL,
+    created_at DATETIME NOT NULL,
+    FOREIGN KEY (article_id) REFERENCES articles(id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    UNIQUE KEY unique_article_user (article_id, user_id)
 );
 
 -- テーブル定義書_スレッド
@@ -189,6 +205,8 @@ CREATE TABLE notifications (
     reservation_time DATETIME,
     send_flag DATETIME COMMENT '送信フラグが2になった時の日付',
     send_flag_int INT(1) NOT NULL COMMENT '1=予約, 2=送信完了',
+    category INT(1) NOT NULL COMMENT '1=運営情報, 2=重要',
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
@@ -257,11 +275,11 @@ INSERT INTO companies (name, address, phone_number, description, plan_status, is
 ('株式会社Bridge', '東京都渋谷区', '03-1234-5678', 'IT企業です', 1, FALSE, NOW(), 1);
 
 -- users
-INSERT INTO users (nickname, type, password, phone_number, email, company_id, report_count, plan_status, is_withdrawn, created_at, society_history, icon, announcement_deletion) VALUES
-('学生ユーザー', 1, 'hashed_password_student', '090-1111-2222', 'student@example.com', NULL, 0, '無料', FALSE, NOW(), NULL, 1, 1),
-('社会人ユーザー', 2, 'hashed_password_worker', '080-3333-4444', 'worker@example.com', NULL, 0, '無料', FALSE, NOW(), 5, 2, 1),
-('企業ユーザー', 3, 'hashed_password_company', '070-5555-6666', 'company@example.com', 1, 0, '無料', FALSE, NOW(), NULL, 3, 1),
-('管理者ユーザー', 4, 'hashed_password_admin', '060-7777-8888', 'admin@example.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1);
+INSERT INTO users (nickname, type, password, phone_number, email, company_id, report_count, plan_status, is_withdrawn, is_deleted, created_at, society_history, icon, announcement_deletion) VALUES
+('学生ユーザー', 1, 'hashed_password_student', '090-1111-2222', 'student@example.com', NULL, 0, '無料', FALSE, FALSE, NOW(), NULL, 1, 1),
+('社会人ユーザー', 2, 'hashed_password_worker', '080-3333-4444', 'worker@example.com', NULL, 0, '無料', FALSE, FALSE, NOW(), 5, 2, 1),
+('企業ユーザー', 3, 'hashed_password_company', '070-5555-6666', 'company@example.com', 1, 0, '無料', FALSE, FALSE, NOW(), NULL, 3, 1),
+('管理者ユーザー', 4, 'hashed_password_admin', '060-7777-8888', 'admin@example.com', NULL, 0, '無料', FALSE, FALSE, NOW(), NULL, NULL, 1);
 
 -- industries
 INSERT INTO industries (industry) VALUES
@@ -271,7 +289,7 @@ INSERT INTO industries (industry) VALUES
 
 -- subscriptions
 INSERT INTO subscriptions (user_id, plan_name, start_date, end_date, is_plan_status, created_at) VALUES
-(1, '無料', NOW(), '2026-01-01 00:00:00', TRUE, NOW()),
+(1, 'プレミアム', NOW(), '2026-01-01 00:00:00', TRUE, NOW()),
 (2, 'プレミアム', NOW(), '2026-01-01 00:00:00', TRUE, NOW());
 
 -- articles
@@ -299,10 +317,75 @@ INSERT INTO quiz_scores (user_id, score, created_at) VALUES
 (1, 80, NOW()),
 (2, 90, NOW());
 
--- interviews
+
+-- interviews 初期データ挿入
 INSERT INTO interviews (question, type) VALUES
-('面接質問1', 1),
-('面接質問2', 2);
+-- 一般質問 20問
+('自己紹介をお願いします。', 1),
+('あなたの強みと弱みを教えてください。', 1),
+('学生時代に力を入れたことは何ですか？', 1),
+('志望動機を教えてください。', 1),
+('今までの経験で最も困難だったことは何ですか？', 1),
+('チームで取り組んだ経験について教えてください。', 1),
+('短所を克服した経験はありますか？', 1),
+('5年後のキャリアプランを教えてください。', 1),
+('仕事で大切にしている価値観は何ですか？', 1),
+('失敗から学んだことはありますか？', 1),
+('リーダー経験はありますか？具体的に教えてください。', 1),
+('ストレスをどのように管理していますか？', 1),
+('あなたが尊敬する人物は誰ですか？', 1),
+('最近学んだことで印象に残ったことは何ですか？', 1),
+('どのような環境で力を発揮できますか？', 1),
+('自分を一言で表すと何ですか？', 1),
+('困難な状況での意思決定の経験はありますか？', 1),
+('学生時代の趣味や特技について教えてください。', 1),
+('仕事を通して実現したいことは何ですか？', 1),
+('チーム内での役割について意識していることは何ですか？', 1),
+
+-- カジュアル質問 20問
+('最近ハマっていることは何ですか？', 2),
+('休日の過ごし方を教えてください。', 2),
+('最近読んだ本や記事で印象に残ったことは？', 2),
+('友人や同僚からどんな人と言われますか？', 2),
+('学生時代に楽しかった思い出は何ですか？', 2),
+('これまでに挑戦したことは何ですか？', 2),
+('自分を動物に例えると何ですか？', 2),
+('これまでに影響を受けた映画やドラマは？', 2),
+('理想の一日を教えてください。', 2),
+('好きな仕事のスタイルは何ですか？', 2),
+('座右の銘や大切にしている言葉はありますか？', 2),
+('尊敬する友人や家族はいますか？', 2),
+('最近のニュースで関心を持ったものは？', 2),
+('あなたにとって仕事とは何ですか？', 2),
+('これまでに感動した出来事は何ですか？', 2),
+('好きなスポーツや運動は何ですか？', 2),
+('普段から意識している健康法はありますか？', 2),
+('最近挑戦してみたいことは何ですか？', 2),
+('自分の長所を活かせる場面はどんなときですか？', 2),
+('働く上で大切にしていることは何ですか？', 2),
+
+-- 圧迫質問 20問
+('なぜ他の候補者よりあなたを採用すべきですか？', 3),
+('あなたの弱みは致命的だと思いませんか？', 3),
+('この会社で結果を出せる自信はありますか？', 3),
+('これまでの経験で失敗したことは何ですか？', 3),
+('当社の業務に適応できると思いますか？', 3),
+('あなたのスキルは当社には不十分では？', 3),
+('短期間で成果を出す自信はありますか？', 3),
+('他に優秀な候補者がいる中で、あなたの強みは何ですか？', 3),
+('残業やプレッシャーに耐えられますか？', 3),
+('学生時代の失敗をどう会社で活かせますか？', 3),
+('入社してもすぐに辞めるのでは？', 3),
+('他社でも同じ質問をされていると思いますが、何が違いますか？', 3),
+('あなたの提案は現実的だと思いますか？', 3),
+('チーム内でうまくやれなかった経験は？', 3),
+('あなたにこの仕事は向いていないのでは？', 3),
+('結果を出せなかった場合、どう責任を取りますか？', 3),
+('上司の指示に納得できない場合どうしますか？', 3),
+('他の社員に比べて経験不足では？', 3),
+('この業界でやっていける自信はありますか？', 3),
+('あなたの計画は非現実的ではありませんか？', 3);
+
 
 -- phone_exercises
 INSERT INTO phone_exercises (example, difficulty) VALUES
@@ -310,9 +393,9 @@ INSERT INTO phone_exercises (example, difficulty) VALUES
 ('電話対応例題2', 2);
 
 -- notifications
-INSERT INTO notifications (type, title, content, user_id, created_at, reservation_time, send_flag, send_flag_int) VALUES
-(7, '全体お知らせ', '全体向けのお知らせです', NULL, NOW(), NULL, NULL, 2),
-(1, '学生向けお知らせ', '学生向けのお知らせです', 1, NOW(), '2025-11-05 10:00:00', NULL, 1);
+INSERT INTO notifications (type, title, content, user_id, created_at, reservation_time, send_flag, send_flag_int, category, is_deleted) VALUES
+(7, '全体お知らせ', '全体向けのお知らせです', NULL, NOW(), NULL, NOW(), 2, 2, FALSE),
+(1, '学生向けお知らせ', '学生向けのお知らせです', NULL, NOW(), '2025-12-05 10:00:00', NULL, 1, 1, FALSE);
 
 -- notices
 INSERT INTO notices (from_user_id, to_user_id, type, thread_id, chat_id, created_at) VALUES

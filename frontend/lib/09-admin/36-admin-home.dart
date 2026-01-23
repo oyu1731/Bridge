@@ -4,6 +4,7 @@ import '37-admin-report-log-list.dart';
 import '38-admin-thread-list.dart';
 import '42-admin-account-list.dart';
 import 'package:bridge/05-notice/45-admin-mail-send.dart';
+import '40-admin-company-column-list.dart';
 
 class AdminHome extends StatefulWidget {
   @override
@@ -30,14 +31,16 @@ class _AdminHomeState extends State<AdminHome> {
                 _buildButton('スレッド一覧', buttonWidth, buttonHeight, () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => AdminThreadList()),
+                    MaterialPageRoute(builder: (context) => AdminCompanyColumnList()),
                   );
                 }),
                 SizedBox(width: 20),
                 _buildButton('通報一覧', buttonWidth, buttonHeight, () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => AdminReportLogList()),
+                    MaterialPageRoute(
+                      builder: (context) => AdminReportLogList(),
+                    ),
                   );
                 }),
               ],
@@ -67,7 +70,12 @@ class _AdminHomeState extends State<AdminHome> {
     );
   }
 
-  Widget _buildButton(String text, double width, double height, VoidCallback onPressed) {
+  Widget _buildButton(
+    String text,
+    double width,
+    double height,
+    VoidCallback onPressed,
+  ) {
     return SizedBox(
       width: width,
       height: height,
@@ -75,7 +83,7 @@ class _AdminHomeState extends State<AdminHome> {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white, // 背景白
-          foregroundColor: Colors.black,  // 文字黒
+          foregroundColor: Colors.black, // 文字黒
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8), // 少し角丸
           ),

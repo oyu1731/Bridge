@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'api_config.dart';
 
+
 class CompanyDTO {
   final int? id;
   final String name;
@@ -14,21 +15,25 @@ class CompanyDTO {
   final String? createdAt;
   final int? photoId;
   final String? photoPath; // 写真パスを追加
-  final String? industry; // 業界情報を追加
+  final String? industry; // 旧：業界情報（後方互換）
+  final List<String>? industries; // 新：業界リスト
+  final int? iconId; // ユーザーのアイコンID
 
   CompanyDTO({
     this.id,
     required this.name,
     required this.address,
     required this.phoneNumber,
-    this.email, // メールアドレスを追加
+    this.email,
     this.description,
     this.planStatus,
     this.isWithdrawn,
     this.createdAt,
     this.photoId,
-    this.photoPath, // 写真パスを追加
-    this.industry, // 業界情報を追加
+    this.photoPath,
+    this.industry,
+    this.industries,
+    this.iconId,
   });
 
   factory CompanyDTO.fromJson(Map<String, dynamic> json) {
@@ -36,23 +41,35 @@ class CompanyDTO {
     String? photoPath = json['photoPath'];
     String? fullPhotoPath;
     if (photoPath != null && photoPath.isNotEmpty) {
-      // /uploads/photos/xxx.jpg のようなパスを http://localhost:8080/uploads/photos/xxx.jpg に変換
       fullPhotoPath = '${ApiConfig.baseUrl}$photoPath';
     }
-    
+
+    // industriesリストを取得
+    List<String>? industries;
+    if (json['industries'] != null) {
+      if (json['industries'] is List) {
+        industries = (json['industries'] as List).map((e) => e.toString()).toList();
+      } else if (json['industries'] is String) {
+        // 万一文字列で来た場合はカンマ区切りで分割
+        industries = (json['industries'] as String).split(',');
+      }
+    }
+
     return CompanyDTO(
       id: json['id'],
       name: json['name'] ?? '',
       address: json['address'] ?? '',
       phoneNumber: json['phoneNumber'] ?? '',
-      email: json['email'], // メールアドレスを追加
+      email: json['email'],
       description: json['description'],
       planStatus: json['planStatus'],
       isWithdrawn: json['isWithdrawn'],
       createdAt: json['createdAt'],
       photoId: json['photoId'],
-      photoPath: fullPhotoPath, // フルURLに変換した写真パス
-      industry: json['industry'], // 業界情報を追加
+      photoPath: fullPhotoPath,
+      industry: json['industry'],
+      industries: industries,
+      iconId: json['iconId'],
     );
   }
 
@@ -62,14 +79,16 @@ class CompanyDTO {
       'name': name,
       'address': address,
       'phoneNumber': phoneNumber,
-      'email': email, // メールアドレスを追加
+      'email': email,
       'description': description,
       'planStatus': planStatus,
       'isWithdrawn': isWithdrawn,
       'createdAt': createdAt,
       'photoId': photoId,
-      'photoPath': photoPath, // 写真パスを追加
-      'industry': industry, // 業界情報を追加
+      'photoPath': photoPath,
+      'industry': industry,
+      'industries': industries,
+      'iconId': iconId,
     };
   }
 }

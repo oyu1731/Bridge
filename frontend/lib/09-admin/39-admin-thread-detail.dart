@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import '38-admin-thread-list.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'dart:async';
 
 class AdminThreadDetail extends StatefulWidget {
-  final Map<String, dynamic> thread;
+  final int threadId; // ← String → int に変更
 
-  const AdminThreadDetail({required this.thread, Key? key}) : super(key: key);
+  const AdminThreadDetail({required this.threadId, super.key});
 
   @override
   _AdminThreadDetailState createState() => _AdminThreadDetailState();
@@ -107,6 +106,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
     });
   }
 
+  // （将来）外部ソケットからの着信を想定した擬似メソッド
   void _onExternalNewMessage(Map<String, dynamic> msg) {
     setState(() {
       _messages.add(msg);
@@ -141,7 +141,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.thread['title'] ?? 'スレッド',
+                    "スレッドID: ${widget.threadId}", // ← 受け取ったIDのみ使用
                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -255,32 +255,14 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(msg['user_id'], style: const TextStyle(fontSize: 12)),
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: Container(
-                                          margin: const EdgeInsets.symmetric(vertical: 4),
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white, // メッセージ背景を白に
-                                            border: Border.all(width: 1),
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Text(msg['text'], style: const TextStyle(fontSize: 15)),
-                                        ),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete),
-                                        color: Colors.black,
-                                        onPressed: () {
-                                          setState(() {
-                                            _messages.removeWhere((m) => m['id'] == msg['id']);
-                                            _messageStreamController.add(_messages);
-                                          });
-                                        },
-                                      ),
-                                    ],
+                                  Container(
+                                    margin: const EdgeInsets.symmetric(vertical: 4),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(width: 1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(msg['text'], style: const TextStyle(fontSize: 15)),
                                   ),
                                   Text(timeString, style: const TextStyle(fontSize: 11)),
                                 ],

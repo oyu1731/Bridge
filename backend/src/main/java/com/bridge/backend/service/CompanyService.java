@@ -22,6 +22,19 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class CompanyService {
+        /**
+         * 企業のphotoIdのみ更新
+         */
+        public boolean updateCompanyPhotoId(Integer companyId, Integer photoId) {
+            Optional<Company> companyOpt = companyRepository.findByIdAndIsWithdrawnFalse(companyId);
+            if (companyOpt.isPresent()) {
+                Company company = companyOpt.get();
+                company.setPhotoId(photoId);
+                companyRepository.save(company);
+                return true;
+            }
+            return false;
+        }
     
     @Autowired
     private CompanyRepository companyRepository;
@@ -157,44 +170,45 @@ public class CompanyService {
     }
     
     /**
-     * CompanyエンティティをCompanyDTOに変換（写真パス情報、業界情報、email情報を含む）
-     * 
+     * CompanyエンティティをCompanyDTOに変換（写真パス情報、業界情報リスト、email情報を含む）
+     *
      * @param company Companyエンティティ
      * @return CompanyDTO
      */
     private CompanyDTO convertToDTO(Company company) {
         CompanyDTO dto = CompanyDTO.fromEntity(company);
-        
+
         // 写真パス情報を取得して設定
         if (company.getPhotoId() != null) {
             Optional<Photo> photo = photoRepository.findById(company.getPhotoId());
-            if (photo.isPresent()) {
-                dto.setPhotoPath(photo.get().getPhotoPath());
-            }
+            photo.ifPresent(value -> dto.setPhotoPath(value.getPhotoPath()));
         }
-        
+
         // 企業に関連するユーザー情報を取得
         Optional<User> companyUser = userRepository.findByCompanyId(company.getId());
         if (companyUser.isPresent()) {
             User user = companyUser.get();
-            
+
             // email情報を設定
             dto.setEmail(user.getEmail());
-            
-            // 業界情報を取得（type=3で企業の業界を指定）
-            Optional<IndustryRelation> industryRelation = 
-                industryRelationRepository.findByUserIdAndType(user.getId(), 3);
-            
-            if (industryRelation.isPresent()) {
-                Optional<Industry> industry = 
-                    industryRepository.findById(industryRelation.get().getTargetId());
-                
-                if (industry.isPresent()) {
-                    dto.setIndustry(industry.get().getIndustry());
+
+            // 業界情報リストを取得（type=1,2,3で企業の業界を指定）
+            java.util.List<String> industries = new java.util.ArrayList<>();
+            for (int type = 1; type <= 3; type++) {
+                List<IndustryRelation> relations = industryRelationRepository.findAllByUserIdAndType(user.getId(), type);
+                for (IndustryRelation rel : relations) {
+                    Industry industry = rel.getIndustry();
+                    if (industry != null && industry.getIndustry() != null && !industries.contains(industry.getIndustry())) {
+                        industries.add(industry.getIndustry());
+                    }
                 }
             }
+            dto.setIndustries(industries);
+
+            // ユーザーのアイコンIDをセット
+            dto.setIconId(user.getIcon());
         }
-        
+
         return dto;
     }
 }

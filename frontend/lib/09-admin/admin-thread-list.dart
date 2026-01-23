@@ -4,7 +4,7 @@ import '39-admin-thread-detail.dart';
 
 // Thread モデル
 class Thread {
-  final String id;
+  final int id;
   final String title;
   final String timeAgo;
 
@@ -16,7 +16,7 @@ class Thread {
 
   factory Thread.fromJson(Map<String, dynamic> json) {
     return Thread(
-      id: json['id'].toString(),
+      id: json['id'],
       title: json['title'] as String,
       timeAgo: json['timeAgo'] as String,
     );
@@ -45,11 +45,11 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
 
     setState(() {
       unofficialThreads = [
-        Thread(id: 't1', title: '業界別の面接対策', timeAgo: '3分前'),
-        Thread(id: 't2', title: '社会人一年目の過ごし方', timeAgo: '10分前'),
-        Thread(id: 't3', title: 'おすすめの資格', timeAgo: '25分前'),
-        Thread(id: 't4', title: '働きながら転職活動するには', timeAgo: '50分前'),
-        Thread(id: 't5', title: '就活で意識すべきこと', timeAgo: '1時間前'),
+        Thread(id: 1, title: '業界別の面接対策', timeAgo: '3分前'),
+        Thread(id: 2, title: '社会人一年目の過ごし方', timeAgo: '10分前'),
+        Thread(id: 3, title: 'おすすめの資格', timeAgo: '25分前'),
+        Thread(id: 4, title: '働きながら転職活動するには', timeAgo: '50分前'),
+        Thread(id: 5, title: '就活で意識すべきこと', timeAgo: '1時間前'),
       ];
 
       filteredThreads = List.from(unofficialThreads);
@@ -141,12 +141,10 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => AdminThreadDetail(
-                            thread: {
-                              'id': thread.id,
-                              'title': thread.title,
-                            },
-                          ),
+                          builder: (context) =>
+                            AdminThreadDetail(
+                                threadId: thread.id,
+                            ),
                         ),
                       );
                     },
