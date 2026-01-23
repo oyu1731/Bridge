@@ -36,7 +36,6 @@ import '../03-home/08-student-worker-home.dart';
 import '../03-home/09-company-home.dart';
 import '../09-admin/36-admin-home.dart';
 
-
 //メール
 import '../05-notice/44-admin-mail-list.dart';
 
@@ -50,11 +49,17 @@ import '../05-notice/45-admin-mail-send.dart';
 // アイコン取得
 import '../06-company/photo_api_client.dart';
 
+// 隠しページ
+import '99-hidden-page.dart';
+
 class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
   const BridgeHeader({Key? key}) : super(key: key);
 
   @override
   Size get preferredSize => const Size.fromHeight(120);
+
+  static int _logoTapCount = 0;
+  static DateTime? _lastTapTime;
 
   @override
   Widget build(BuildContext context) {
@@ -90,67 +95,241 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
               Container(
                 height: 58,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'lib/01-images/bridge-logo.png',
-                      height: 55,
-                      width: 110,
-                    ),
-                    const Spacer(),
-                    Builder(
-                      builder: (context) {
-                        final width = MediaQuery.of(context).size.width;
-                        String text;
-                        if (width < 500) {
-                          text = '$nicknameさん';
-                        } else {
-                          text = '$greeting、$nicknameさん。';
-                        }
-                        return Text(
-                          text,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: false,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF424242),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isSmallScreen = constraints.maxWidth < 600;
+
+                    if (isSmallScreen) {
+                      // スマホ：1行コンパクトレイアウト
+                      return SizedBox(
+                        height: 58,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                final now = DateTime.now();
+
+                                // 1.5秒以上空いたらリセット
+                                if (_lastTapTime == null ||
+                                    now.difference(_lastTapTime!) >
+                                        const Duration(seconds: 1)) {
+                                  _logoTapCount = 0;
+                                }
+
+                                _lastTapTime = now;
+                                _logoTapCount++;
+
+                                if (_logoTapCount >= 3) {
+                                  _logoTapCount = 0;
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const HiddenPage(),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: Image.asset(
+                                  'lib/01-images/bridge-logo.png',
+                                  height: 30,
+                                  width: 50,
+                                  fit: BoxFit.contain,
+                                  errorBuilder:
+                                      (_, __, ___) => const Text(
+                                        'B',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1976D2),
+                                        ),
+                                      ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                '$greeting、$nicknameさん。',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF424242),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: PopupMenuButton<String>(
+                                onSelected:
+                                    (v) =>
+                                        _handleProfileMenuSelection(context, v),
+                                offset: const Offset(0, 32),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 12,
+                                  backgroundColor: const Color(0xFFF5F5F5),
+                                  backgroundImage:
+                                      iconPath.isNotEmpty
+                                          ? NetworkImage(iconPath)
+                                          : null,
+                                  child:
+                                      iconPath.isEmpty
+                                          ? const Icon(
+                                            Icons.account_circle_outlined,
+                                            size: 16,
+                                            color: Color(0xFF616161),
+                                          )
+                                          : null,
+                                ),
+                                itemBuilder:
+                                    (_) => _buildProfileMenu(accountType),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: IconButton(
+                                tooltip: 'メール一覧',
+                                onPressed: () {
+                                  if (isAdmin) {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => AdminMailList(),
+                                      ),
+                                    );
+                                  }
+                                },
+                                icon: const Icon(
+                                  Icons.notifications_outlined,
+                                  size: 16,
+                                  color: Color(0xFF1976D2),
+                                ),
+                                padding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else {
+                      // PC：1行レイアウト（従来通り）
+                      return Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              final now = DateTime.now();
+
+                              // 1.5秒以上空いたらリセット
+                              if (_lastTapTime == null ||
+                                  now.difference(_lastTapTime!) >
+                                      const Duration(seconds: 1)) {
+                                _logoTapCount = 0;
+                              }
+
+                              _lastTapTime = now;
+                              _logoTapCount++;
+
+                              if (_logoTapCount >= 3) {
+                                _logoTapCount = 0;
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const HiddenPage(),
+                                  ),
+                                );
+                              }
+                            },
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: Image.asset(
+                                'lib/01-images/bridge-logo.png',
+                                height: 55,
+                                width: 110,
+                                fit: BoxFit.contain,
+                                errorBuilder:
+                                    (_, __, ___) => const Text(
+                                      'Bridge',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1976D2),
+                                      ),
+                                    ),
+                              ),
+                            ),
                           ),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 12),
-                    PopupMenuButton<String>(
-                      onSelected: (v) => _handleProfileMenuSelection(context, v),
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundColor: const Color(0xFFF5F5F5),
-                        backgroundImage:
-                            iconPath.isNotEmpty ? NetworkImage(iconPath) : null,
-                        child: iconPath.isEmpty
-                            ? const Icon(
-                                Icons.account_circle_outlined,
-                                color: Color(0xFF616161),
-                              )
-                            : null,
-                      ),
-                      itemBuilder: (_) => _buildProfileMenu(accountType),
-                    ),
-                    IconButton(
-                      tooltip: 'メール一覧',
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => AdminMailList()),
-                        );
-                      },
-                      icon: const Icon(Icons.notifications_none_outlined, color: Color(0xFF1976D2)),
-                    ),
-                  ],
+                          const Spacer(),
+                          Row(
+                            children: [
+                              Text(
+                                '$greeting、$nicknameさん。',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF424242),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              // プロフィール
+                              PopupMenuButton<String>(
+                                onSelected:
+                                    (v) =>
+                                        _handleProfileMenuSelection(context, v),
+                                offset: const Offset(0, 50),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 18,
+                                  backgroundColor: const Color(0xFFF5F5F5),
+                                  backgroundImage:
+                                      iconPath.isNotEmpty
+                                          ? NetworkImage(iconPath)
+                                          : null,
+                                  child:
+                                      iconPath.isEmpty
+                                          ? const Icon(
+                                            Icons.account_circle_outlined,
+                                            color: Color(0xFF616161),
+                                          )
+                                          : null,
+                                ),
+                                itemBuilder:
+                                    (_) => _buildProfileMenu(accountType),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                tooltip: 'メール一覧',
+                                onPressed: () {
+                                  if (isAdmin) {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => AdminMailList(),
+                                      ),
+                                    );
+                                  }
+                                },
+                                icon: const Icon(
+                                  Icons.notifications_none_outlined,
+                                  color: Color(0xFF1976D2),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    }
+                  },
                 ),
               ),
-
 
               Container(height: 1, color: const Color(0xFFF0F0F0)),
 
@@ -221,40 +400,58 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
 
                     if (isAdmin) {
                       // 管理者用ナビ
-                      buttons.add(_nav('スレッド', () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => AdminThreadList()),
-                        );
-                      }, isSmall));
+                      buttons.add(
+                        _nav('スレッド', () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AdminThreadList(),
+                            ),
+                          );
+                        }, isSmall),
+                      );
                       buttons.add(SizedBox(width: space));
-                      buttons.add(_nav('企業情報', () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => AdminCompanyColumnList()),
-                        );
-                      }, isSmall));
+                      buttons.add(
+                        _nav('企業情報', () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AdminCompanyColumnList(),
+                            ),
+                          );
+                        }, isSmall),
+                      );
                       buttons.add(SizedBox(width: space));
-                      buttons.add(_nav('メール送信', () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => AdminMailSend()),
-                        );
-                      }, isSmall));
+                      buttons.add(
+                        _nav('メール送信', () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => AdminMailSend()),
+                          );
+                        }, isSmall),
+                      );
                       buttons.add(SizedBox(width: space));
-                      buttons.add(_nav('アカウント管理', () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => AdminAccountList()),
-                        );
-                      }, isSmall));
+                      buttons.add(
+                        _nav('アカウント管理', () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AdminAccountList(),
+                            ),
+                          );
+                        }, isSmall),
+                      );
                       buttons.add(SizedBox(width: space));
-                      buttons.add(_nav('通報一覧', () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => AdminReportLogList()),
-                        );
-                      }, isSmall));
+                      buttons.add(
+                        _nav('通報一覧', () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AdminReportLogList(),
+                            ),
+                          );
+                        }, isSmall),
+                      );
                     } else {
                       buttons.add(
                         _nav('スレッド', () {
@@ -410,7 +607,12 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
       }
     } catch (_) {}
 
-    return {'accountType': 'unknown', 'nickname': nickname, 'iconPath': '', 'isAdmin': false};
+    return {
+      'accountType': 'unknown',
+      'nickname': nickname,
+      'iconPath': '',
+      'isAdmin': false,
+    };
   }
 
   // ===== メニュー処理 =====
