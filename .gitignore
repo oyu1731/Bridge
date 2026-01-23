@@ -8,6 +8,7 @@ build/
 .vscode/
 *.iml
 frontend/android/local.properties
+frontend/android/local.properties
 
 # Docker
 **/docker-compose.override.yml
@@ -16,3 +17,5 @@ frontend/android/local.properties
 # OS
 .DS_Store
 Thumbs.db
+
+
