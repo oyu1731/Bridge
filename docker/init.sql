@@ -48,7 +48,6 @@ CREATE TABLE users (
     report_count INT(10) NOT NULL DEFAULT 0,
     plan_status VARCHAR(20) NOT NULL DEFAULT '無料',
     is_withdrawn BOOLEAN NOT NULL,
-    is_deleted BOOLEAN NOT NULL,
     created_at DATETIME NOT NULL,
     society_history INT(2),
     icon INT(10),
@@ -135,12 +134,12 @@ CREATE TABLE threads (
     type INT(1) NOT NULL COMMENT '1=公式、2=非公式',
     description VARCHAR(255),
     entry_criteria INT(1) NOT NULL COMMENT '1=全員、2=学生のみ。3=社会人のみ',
-    industry VARCHAR(20),
     last_update_date DATETIME NOT NULL,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
 
 -- テーブル定義書_チャット
 CREATE TABLE chats (
@@ -163,13 +162,13 @@ CREATE TABLE photos (
     user_id INT(20)
 );
 
--- テーブル定義書_一問一答
-CREATE TABLE quiz_questions (
-    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    question TEXT(100) NOT NULL,
-    is_answer BOOLEAN NOT NULL,
-    expanation TEXT(255) NOT NULL
-);
+-- -- テーブル定義書_一問一答
+-- CREATE TABLE quiz_questions (
+--     id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+--     question TEXT(100) NOT NULL,
+--     is_answer BOOLEAN NOT NULL,
+--     expanation TEXT(255) NOT NULL
+-- );
 
 -- テーブル定義書_一問一答スコア
 CREATE TABLE quiz_scores (
@@ -188,11 +187,11 @@ CREATE TABLE interviews (
 );
 
 -- テーブル定義書_電話対応
-CREATE TABLE phone_exercises (
-    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    example TEXT(255) NOT NULL,
-    difficulty INT(1) NOT NULL COMMENT '1=簡単、2=普通、3=難しい'
-);
+-- CREATE TABLE phone_exercises (
+--     id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+--     example TEXT(255) NOT NULL,
+--     difficulty INT(1) NOT NULL COMMENT '1=簡単、2=普通、3=難しい'
+-- );
 
 -- テーブル定義書_お知らせテーブル
 CREATE TABLE notifications (
@@ -263,59 +262,170 @@ ADD CONSTRAINT fk_industry_relations_target_id FOREIGN KEY (target_id) REFERENCE
 ALTER TABLE articles_tag
 ADD CONSTRAINT fk_articles_tag_tag_id FOREIGN KEY (tag_id) REFERENCES tag(id);
 -- 仮データ挿入
+
+-- 画像
 -- photos
 INSERT INTO photos (photo_path, user_id) VALUES
 ('/path/to/photo1.jpg', 1),
 ('/path/to/photo2.jpg', 2),
 ('/path/to/photo3.jpg', 3);
 
--- users
+-- 企業
 -- companies
 INSERT INTO companies (name, address, phone_number, description, plan_status, is_withdrawn, created_at, photo_id) VALUES
-('株式会社Bridge', '東京都渋谷区', '03-1234-5678', 'IT企業です', 1, FALSE, NOW(), 1);
+('株式会社ヤマシタ産業', '東京都渋谷区', '070-5555-5555', '株式会社ヤマシタ産業 は、1978年（昭和53年）創業の総合商社・製造サポート企業です。\n\n創業以来、地域の産業発展とお客様のビジネス成功を第一に考え、物流・資材・機械設備の供給から、製造現場の改善提案まで幅広いサービスを提供しています。\n\n当社は主に以下の事業を展開しています：\n・産業資材の販売\n・物流・在庫管理サービス\n・機械装備の導入支援・保守サービス\n\n私たちは「信頼」「品質」「スピード」を行動指針として、長年培ってきたノウハウとネットワークを生かし、地域社会と企業の成長に貢献しています。', 1, FALSE, NOW(), 1),
+('バイデンウィンド株式会社', '大阪府大阪市', '070-6666-6666', 'バイデンウィンド株式会社は、再生可能エネルギー分野に特化した企業です。\n\n主に風力発電事業を展開しており、環境に優しいエネルギーソリューションを提供しています。\n当社の主な事業内容は以下の通りです：\n・風力発電所の企画、設計、建設、運営\n・再生可能エネルギーに関するコンサルティングサービス\n・地域社会との連携による環境保護活動\n\n私たちは、持続可能な社会の実現に向けて、革新的な技術とサービスを提供し、クリーンエネルギーの普及に貢献しています。',1, FALSE, NOW(), 1),
+('退会済み企業', '愛知県名古屋市', '070-5555-6666', '退会済み企業の説明文です。企業一覧に表示され、投稿されていた記事も残ります。', 1, TRUE, NOW(), NULL),
+('テック・イノベーション株式会社', '東京都千代田区', '070-7777-7777', 'テック・イノベーション株式会社は、最先端のAI・機械学習技術を活用したソリューション企業です。\n\nクラウド、ビッグデータ、IoTなど、デジタル変革に必要な技術を提供し、企業のデジタル化を支援しています。\n\n主な事業：\n・AI・機械学習ソリューション開発\n・クラウドインフラ構築\n・データ分析・活用支援', 1, FALSE, NOW(), 1),
+('グローバル人材サービス株式会社', '京都府京都市', '070-8888-8888', 'グローバル人材サービス株式会社は、国際的な人材育成・派遣事業を展開する企業です。\n\n多言語対応、文化交流、キャリア開発支援を通じて、グローバル人材の育成と雇用創出に貢献しています。\n\n主な事業：\n・グローバル人材育成\n・人材派遣サービス\n・言語研修・コンサルティング', 1, FALSE, NOW(), 1),
+('環境ソリューション株式会社', '福岡県福岡市', '070-9999-9999', '環境ソリューション株式会社は、環境問題への取組みとサステナビリティ実現を目指す企業です。\n\n廃棄物管理、リサイクル事業、環境コンサルティングを通じて、企業のカーボンニュートラル化を支援しています。\n\n主な事業：\n・廃棄物処理・リサイクル\n・環境監査\n・サステナビリティコンサルティング', 1, FALSE, NOW(), 1),
+('エデュケーション・プラス株式会社', '大阪府大阪市', '070-1010-1010', 'エデュケーション・プラス株式会社は、教育技術（EdTech）を活用した学習支援企業です。\n\nオンライン教育プラットフォーム、AI学習システム、企業研修サービスを提供し、人材育成を支援しています。\n\n主な事業：\n・オンライン教育プラットフォーム運営\n・AI学習システム開発\n・企業向け研修プログラム', 1, FALSE, NOW(), 1),
+('フィンテック・パートナーズ株式会社', '東京都中央区', '070-1111-1111', 'フィンテック・パートナーズ株式会社は、金融テクノロジー分野のリーディング企業です。\n\nデジタル決済、ブロックチェーン技術、金融アナリティクスソリューションを提供し、金融サービスの革新を推進しています。\n\n主な事業：\n・デジタル決済システム\n・ブロックチェーン技術\n・金融データ分析', 1, FALSE, NOW(), 1),
+('メディカル・テック株式会社', '名古屋市中区', '070-1212-1212', 'メディカル・テック株式会社は、医療とテクノロジーの融合で、医療の質と効率を向上させる企業です。\n\n医療用ソフトウェア、遠隔診療システム、健康管理アプリを開発し、より良い医療環境の実現に貢献しています。\n\n主な事業：\n・医療用ソフトウェア開発\n・遠隔医療システム\n・健康管理プラットフォーム', 1, FALSE, NOW(), 1),
+('スマートシティ・ソリューション株式会社', '東京都港区', '070-1313-1313', 'スマートシティ・ソリューション株式会社は、スマートシティ実現に向けたIoT・AI技術を提供する企業です。\n\nスマートトラフィック、スマート照明、統合管理システムなど、都市の持続可能な発展を支援しています。\n\n主な事業：\n・スマートシティプラットフォーム\n・IoTセンサーソリューション\n・都市データ分析', 1, FALSE, NOW(), 1);
 
+-- ユーザー
 -- users
-INSERT INTO users (nickname, type, password, phone_number, email, company_id, report_count, plan_status, is_withdrawn, is_deleted, created_at, society_history, icon, announcement_deletion) VALUES
-('学生ユーザー', 1, 'hashed_password_student', '090-1111-2222', 'student@example.com', NULL, 0, '無料', FALSE, FALSE, NOW(), NULL, 1, 1),
-('社会人ユーザー', 2, 'hashed_password_worker', '080-3333-4444', 'worker@example.com', NULL, 0, '無料', FALSE, FALSE, NOW(), 5, 2, 1),
-('企業ユーザー', 3, 'hashed_password_company', '070-5555-6666', 'company@example.com', 1, 0, '無料', FALSE, FALSE, NOW(), NULL, 3, 1),
-('管理者ユーザー', 4, 'hashed_password_admin', '060-7777-8888', 'admin@example.com', NULL, 0, '無料', FALSE, FALSE, NOW(), NULL, NULL, 1);
+INSERT INTO users (nickname, type, password, phone_number, email, company_id, report_count, plan_status, is_withdrawn, created_at, society_history, icon, announcement_deletion, token) VALUES
+-- 学生:type=1
+('佐々木一郎', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-1111-1111', 'sasaki@mail.com', NULL, 0, '学生プレミアム', FALSE, NOW(), NULL, 1, 1, 50),
+('安藤花子', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-2222-2222', 'andou@mail.com', NULL, 0, '無料', FALSE, NOW(), NULL, 2, 1, 50),
+('理系くん', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-2222-3333', 'rikei@mail.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50),
+('文系ちゃん', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-1111-2222', 'bunkei@mail.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50),
+('退会済み学生', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-1234-5678', 'stu.delete@mail.com', NULL, 0, '無料', TRUE, NOW(), NULL, NULL, 1, 50),
+-- 社会人:type=2
+('松井二郎', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-3333-3333', 'matsui@mail.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 5, 3, 1, 50),
+('高田鳥子', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-4444-4444', 'takada@mail.com', NULL, 0, '無料', FALSE, NOW(), 3, 4, 1, 50),
+('残業三昧くん', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-3333-4444', 'zangyou@mail.com', NULL, 0, '無料', FALSE, NOW(), 2, NULL, 1, 50),
+('新卒ちゃん', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-3333-4444', 'shinsotsu@mail.com', NULL, 0, '無料', FALSE, NOW(), 1, NULL, 1, 50),
+('退会済み社会人', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-4444-5555', 'wor.delete@mail.com', NULL, 0, '無料', TRUE, NOW(), 6, NULL, 1, 50),
+-- 企業:type=3
+('株式会社ヤマシタ産業', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-5555-5555', 'yamashita@mail.com', 1, 0, '企業プレミアム', FALSE, NOW(), NULL, 5, 1, 50),
+('バイデンウィンド株式会社', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-6666-6666', 'umeda@mail.com', 2, 0, '企業プレミアム', FALSE, NOW(), NULL, 6, 1, 50),
+('退会済み企業', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-5555-6666', 'com.delete@mail.com', 3, 0, '企業プレミアム', TRUE, NOW(), NULL, NULL, 1, 50),
+-- 管理者:type=4
+('管理者-森本四郎', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-7777-7777', 'morimoto@mail.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50),
+('管理者-西川月子', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-8888-8888', 'nishikawa@mail.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50),
 
+-- 通報用
+('違反スゴ助', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-1234-5678', 'notices@mail.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50),
+
+-- 企業や記事用追加企業
+('テック・イノベーション株式会社', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-7777-7777', 'techinnovation@mail.com', 4, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50),
+('グローバル人材サービス株式会社', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-8888-8888', 'global@mail.com', 5, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50),
+('環境ソリューション株式会社', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-9999-9999', 'ecosolution@mail.com', 6, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50),
+('エデュケーション・プラス株式会社', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-1010-1010', 'education@mail.com', 7, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50),
+('フィンテック・パートナーズ株式会社', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-1111-1111', 'fintech@mail.com', 8, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50),
+('メディカル・テック株式会社', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-1212-1212', 'medtech@mail.com', 9, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50),
+('スマートシティ・ソリューション株式会社', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-1313-1313', 'smartcity@mail.com', 10, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50);
+
+-- 業界
 -- industries
 INSERT INTO industries (industry) VALUES
-('IT'),
-('製造業'),
-('サービス業');
+('メーカー'),
+('商社'),
+('流通・小売'),
+('金融'),
+('サービス・インフラ'),
+('ソフトウェア・通信'),
+('広告・出版・マスコミ'),
+('官公庁・公社・団体');
 
+-- サブスクリプション
 -- subscriptions
 INSERT INTO subscriptions (user_id, plan_name, start_date, end_date, is_plan_status, created_at) VALUES
-(1, 'プレミアム', NOW(), '2026-01-01 00:00:00', TRUE, NOW()),
-(2, 'プレミアム', NOW(), '2026-01-01 00:00:00', TRUE, NOW());
+(1, '学生プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(6, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(11, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(12, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(13, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW());
 
+-- 記事
 -- articles
 INSERT INTO articles (title, description, company_id, is_deleted, total_likes, created_at, photo1_id, photo2_id, photo3_id) VALUES
-('記事タイトル1', '記事説明1', 1, FALSE, 10, NOW(), 1, NULL, NULL),
-('記事タイトル2', '記事説明2', 1, FALSE, 5, NOW(), NULL, 2, NULL);
+('会社説明会のお知らせ', 'みなさんこんにちは！当社ではオンライン会社説明会を随時開催中です。\n-----２月のスケジュール-----\n・５日（月）11:00～12:30\n・７日（水）10:00～11:30\n・１５日（木）11:00～12:30\n・２０日（火）13:00～14:30\n・２３日（金）10:00～11:30\n\n本社採用サイトからエントリーをお願いいたします。\nurl=httqs://www.yamashita_sangyou.recruit \n\n\n皆様のご参加お待ちしています！', 1, FALSE, 10, NOW(), NULL, NULL, NULL),
+('スレッドを開設しました', 'みなさんこんにちは。本日「バイデンウィンド（株）」のスレッドを開設しました。\n\n就職活動に関する質問等、採用担当の者がお答えします！\n採用には一切影響いたしませんので、お気軽にご参加ください。\nみなさんの投稿お待ちしています！', 2, FALSE, 5, NOW(), NULL, NULL, NULL),
+('AI・機械学習技術セミナーのご案内', 'テック・イノベーション株式会社では、最先端のAI・機械学習技術に関するセミナーを開催いたします。\n業界の第一線の専門家による講演会を予定しており、参加者には特別な情報をお得にご提供いたします。\nご興味のある方は、ぜひお気軽にお申し込みください。', 4, FALSE, 0, NOW(), NULL, NULL, NULL),
+('国際人材育成プログラム2026年開始', 'グローバル人材サービス株式会社では、2026年度の国際人材育成プログラムの参加者を募集しています。\n多言語対応・文化交流・キャリア形成支援など、充実した研修内容を用意しております。\nこのプログラムを通じてグローバルに活躍できる人材へとステップアップしませんか？', 5, FALSE, 0, NOW(), NULL, NULL, NULL),
+('環境配慮型製品ラインアップ拡充', '環境ソリューション株式会社では、持続可能な社会実現に向けた新製品をリリースいたします。\n廃棄物処理・リサイクル・環境監査を統合したソリューションで、企業のカーボンニュートラル化を支援します。\n環境への取り組みを始めたい企業様との協力をお待ちしています。', 6, FALSE, 0, NOW(), NULL, NULL, NULL),
 
+('EdTech新サービス「AI学習サポート」ベータ版開始', 'エデュケーション・プラス株式会社が新しいAI学習支援システムのベータ版を公開いたします。\nタブレットやPCで利用可能な本システムは、個人の学習進度に合わせた最適なカリキュラムを提供します。\n無料トライアルもご用意しておりますので、ぜひお試しください。', 7, FALSE, 0, NOW(), NULL, NULL, NULL),
+('フィンテック・パートナーズ新規事業説明会', 'デジタル決済・ブロックチェーン技術を活用したフィンテック・パートナーズより、新規事業についての説明会を開催いたします。\n金融DXに興味のある学生・社会人の皆様ご参加ください。\n企業説明・選考対策セッションも同時開催予定です。', 8, FALSE, 0, NOW(), NULL, NULL, NULL),
+('メディカル・テック医療従事者向けセミナー開催', 'メディカル・テック株式会社では、医療現場でのデジタル化について学ぶセミナーを開催いたします。\n遠隔診療・患者データ管理・医療AIなど、最新の医療テクノロジーについてのお話となります。\n医療業界への就職を検討されている方もぜひご参加ください。', 9, FALSE, 0, NOW(), NULL, NULL, NULL),
+('スマートシティ技術説明会・インターン募集', 'スマートシティ・ソリューション株式会社は、IoT・AI技術を活用した都市構想についての説明会を実施いたします。\nあわせて、2026年夏期インターンシップの参加者も募集中です。\nスマートシティの実現に携わりたい皆様のご応募をお待ちしています。', 10, FALSE, 0, NOW(), NULL, NULL, NULL),
+('株式会社ヤマシタ産業 新卒採用開始のお知らせ', '株式会社ヤマシタ産業では、2026年度新卒採用を開始いたしました。\n製造業界に興味のある学生の皆様、ぜひ当社の採用情報をご覧ください。\nエントリーは当社採用サイトからお願いいたします。', 1, FALSE, 0, NOW(), NULL, NULL, NULL);
+
+-- スレッド
 -- threads
-INSERT INTO threads (user_id, title, type, description, entry_criteria, industry, last_update_date, is_deleted, created_at) VALUES
-(1, '公式スレッド', 1, '公式スレッドの説明', 1, 'IT', NOW(), FALSE, NOW()),
-(2, '非公式スレッド', 2, '非公式スレッドの説明', 2, '製造業', NOW(), FALSE, NOW());
+-- entry_criteria: 1=全員、2=学生のみ。3=社会人のみ
+INSERT INTO threads (user_id, title, type, description, entry_criteria, last_update_date, is_deleted, created_at) VALUES
+-- 公式スレッド:type=1,userid=14(管理者)
+(14, '学生×社会人スレッド', 1, 'こちらは、学生と社会人の公式スレッドです。どなたでも参加できます。', 1, NOW(), FALSE, NOW()),
+(14, '学生スレッド', 1, 'こちらは、学生の方のみの公式スレッドです。学生の方はどなたでも参加できます。', 2, NOW(), FALSE, NOW()),
+(14, '社会人スレッド', 1, 'こちらは、社会人の方のみの公式スレッドです。社会人の方はどなたでも参加できます。', 3, NOW(), FALSE, NOW()),
+-- 非公式スレッド:type=2,userid=各ユーザー,
+(2, '27卒の就活相談室', 2, '27卒の学生同士で就活について情報交換や相談ができる場です。気軽に参加してください！', 2, NOW(), FALSE, NOW()),
+(4, '就活って何から始めたらいいですか？', 2, '27卒の文系です。まだ希望業界も定まっておらず焦っています。経験談などあれば教えてください！', 2, NOW(), FALSE, NOW()),
 
+(8, '面接の練習方法を教えてください', 2, '社会人2年目です。転職活動中ですが、面接が苦手で困っています。効果的な練習方法があれば教えてください。', 3, NOW(), FALSE, NOW()),
+(1, '自己PRの書き方について', 2, '就活中の大学4年生です。自己PRの書き方に悩んでいます。良い例やアドバイスがあれば教えてください。', 2, NOW(), FALSE, NOW()),
+(6, '資格取得のおすすめ', 2, '社会人3年目です。キャリアアップのために資格取得を考えています。おすすめの資格や勉強法があれば教えてください。', 3, NOW(), FALSE, NOW()),
+(16, '27卒と話したい！', 2, 'このスレッドは不適切な内容を含んでいます。通報テスト用スレッドです。', 1, NOW(), TRUE, NOW()),
+(11, '株式会社ヤマシタ産業スレッド', 2, '株式会社ヤマシタ産業の採用に関する質問はこちらでどうぞ！', 1, NOW(), FALSE, NOW()),
+
+(12, 'バイデンウィンド株式会社スレッド', 2, 'バイデンウィンド株式会社の採用に関する質問はこちらでどうぞ！', 1, NOW(), FALSE, NOW()),
+(9, '新卒だけどもうやめたい', 2, 'まだ一年も経っていないのに、辞めちゃって経歴に傷がつくのは嫌だけど、続けられる自信もない・・・', 3, NOW(), FALSE, NOW()),
+(10, 'リモートワークのメリット・デメリット', 2, 'リモートワークが増えてきたけど、実際どうなんだろう？経験者の意見を聞きたいです。', 3, NOW(), FALSE, NOW()),
+(13, '副業ってどう思いますか？', 2, '副業を始めたいけど、会社にバレないか心配です。経験者の意見を聞きたいです。', 3, NOW(), FALSE, NOW()),
+(15, '転職活動の進め方', 2, '転職を考えていますが、何から始めたらいいのか分かりません。アドバイスをお願いします。', 3, NOW(), FALSE, NOW());
+
+-- チャット
 -- chats
 INSERT INTO chats (user_id, content, thread_id, is_deleted, deleted_at, created_at, photo_id) VALUES
-(1, 'チャットメッセージ1', 1, FALSE, NULL, NOW(), NULL),
-(2, 'チャットメッセージ2', 1, FALSE, NULL, NOW(), NULL);
+(8, '最近就活の早期化が進みすぎだと思う。', 1, FALSE, NULL, NOW(), NULL),
+(3, '27卒に人気の業界ってどこ？やっぱりITかな。', 1, FALSE, NULL, NOW(), NULL),
+(5, '私は金融業界を志望してるよ。安定してるし、将来性もあるからね。', 1, FALSE, NULL, NOW(), NULL),
+(1, 'インフル流行ってて怖い。オンライン面接にしてくれてる企業嬉しい', 2, FALSE, NULL, NOW(), NULL),
+(4, '就活のモチベがないんだよなー特にやりたいこともないし。', 2, FALSE, NULL, NOW(), NULL),
 
+(2, 'わかる気がする。別に働かずに済むなら働かないもんな～', 2, FALSE, NULL, NOW(), NULL),
+(8, '残業やばくて転職したいけど、そんな時間すらない。', 3, FALSE, NULL, NOW(), NULL),
+(6, 'それなら体壊す前に辞めてしまうのも手だと思う。健康第一。', 3, FALSE, NULL, NOW(), NULL),
+(7, 'ほんとにそう。体壊してからじゃ遅いよ～', 3, FALSE, NULL, NOW(), NULL),
+(4, '私は自己分析から始めたよ。自分の強み弱みを理解するのが大事かなって。', 4, FALSE, NULL, NOW(), NULL),
+
+(1, '自己分析ってどうやるの？本とか読むの？', 4, FALSE, NULL, NOW(), NULL),
+(5, '私は友達とか家族に自分の良いところ聞いたりしたよ。意外な発見があるかも。', 4, FALSE, NULL, NOW(), NULL),
+(2, 'あとは、過去の経験を振り返ってみるのもいいよ。成功体験とか失敗体験とか。', 4, FALSE, NULL, NOW(), NULL),
+(6, '答えを暗記するのはあんまりおすすめしないな～', 5, FALSE, NULL, NOW(), NULL),
+(2, 'それこそ、ここのAI練習に面接練習あるからやってみたらいい。', 5, FALSE, NULL, NOW(), NULL),
+
+(3, '俺もたまーにやってる！色々フィードバックくれるからいいよ', 5, FALSE, NULL, NOW(), NULL),
+(8, '確かに繰り返し練習するのが一番効果的かも。', 5, FALSE, NULL, NOW(), NULL),
+(2, '自分の話したいことエピソードやアピールポイントをちゃんと固めておくことかな。', 5, FALSE, NULL, NOW(), NULL),
+(1, 'そもそも自己PRと自分の強みって何が違うの？', 6, FALSE, NULL, NOW(), NULL),
+(7, '自己PRは具体的なエピソードを交えた方がいい。サークル、ゼミ、バイト何でもいいから経験を話すべき。', 6, FALSE, NULL, NOW(), NULL),
+
+(2, '私は資格勉強のこと話した！自分が一番頑張ったものをいえばいいよ。', 6, FALSE, NULL, NOW(), NULL),
+(6, '資格は業界によるけど、IT系なら基本情報技術者とか持ってると有利かも。', 7, FALSE, NULL, NOW(), NULL),
+(7, '社会人になるとなかなか勉強する時間取れないから、計画的に進めるのが大事だよね。', 7, FALSE, NULL, NOW(), NULL),
+(16, '27卒の理系です！同じ卒業年度の方としたいです！選考状況など共有してくれるとモチベになります！', 8, FALSE, NULL, NOW(), NULL),
+(3, '文系27卒です！よろしくお願いします', 8, FALSE, NULL, NOW(), NULL),
+
+(4, '27卒理系です。今内定2社です。', 8, FALSE, NULL, NOW(), NULL),
+(2, '私は商社志望で今3社から内定もらってるよ！', 8, FALSE, NULL, NOW(), NULL),
+(16, 'いいね～！SNS交換したい！', 8, FALSE, NULL, NOW(), NULL);
+
+-- クイズ
 -- quiz_questions
-INSERT INTO quiz_questions (question, is_answer, expanation) VALUES
-('問題1', TRUE, '解説1'),
-('問題2', FALSE, '解説2');
+-- INSERT INTO quiz_questions (question, is_answer, expanation) VALUES
+-- ('問題1', TRUE, '解説1'),
+-- ('問題2', FALSE, '解説2');
 
 -- quiz_scores
 INSERT INTO quiz_scores (user_id, score, created_at) VALUES
 (1, 80, NOW()),
-(2, 90, NOW());
+(6, 90, NOW());
 
 
 -- interviews 初期データ挿入
@@ -388,19 +498,20 @@ INSERT INTO interviews (question, type) VALUES
 
 
 -- phone_exercises
-INSERT INTO phone_exercises (example, difficulty) VALUES
-('電話対応例題1', 1),
-('電話対応例題2', 2);
+-- INSERT INTO phone_exercises (example, difficulty) VALUES
+-- ('電話対応例題1', 1),
+-- ('電話対応例題2', 2);
 
 -- notifications
 INSERT INTO notifications (type, title, content, user_id, created_at, reservation_time, send_flag, send_flag_int, category, is_deleted) VALUES
-(7, '全体お知らせ', '全体向けのお知らせです', NULL, NOW(), NULL, NOW(), 2, 2, FALSE),
-(1, '学生向けお知らせ', '学生向けのお知らせです', NULL, NOW(), '2025-12-05 10:00:00', NULL, 1, 1, FALSE);
+(7, 'ご登録ありがとうございます！', 'Bridgeにご登録いただきありがとうございます。', NULL, NOW(), NULL, NOW(), 2, 1, FALSE),
+(4, 'Bridgeの使い方', 'Bridgeではさまざまな機能がご利用いただけます。\nAI練習\nAI練習では、トークンを消費して面接練習・電話対応練習・メール添削が行えます。\nまた、プレミアムプランに加入することでトークンを増やすことができます。\n\n一問一答\n一問一答では、社会人なら知っていて当然のマナーや言葉遣いを〇✕で回答します。\n\nスレッドでは、他のユーザーと交流が出来ます。非公式スレッドを作成することもできるので、気軽にスレッドを作ってみましょう。\n\n企業情報では、Bridgeに参加している企業の記事や企業情報を閲覧できます。', NULL, NOW(), NULL, NOW(), 1, 1, FALSE);
 
 -- notices
 INSERT INTO notices (from_user_id, to_user_id, type, thread_id, chat_id, created_at) VALUES
-(1, 2, 1, 1, NULL, NOW()),
-(2, 1, 2, NULL, 1, NOW());
+(3, 16, 1, 8, NULL, NOW()),
+(4, 16, 2, NULL, 28, NOW()),
+(2, 16, 2, NULL, 28,NOW());
 
 -- tag
 INSERT INTO tag (tag) VALUES
@@ -426,13 +537,45 @@ INSERT INTO tag (tag) VALUES
 INSERT INTO articles_tag (article_id, tag_id, creation_date) VALUES
 (1, 1, NOW()), -- 記事1 に「説明会開催中」
 (1, 8, NOW()), -- 記事1 に「会社紹介」
-(2, 14, NOW()), -- 記事2 に「スレッド開設」
-(2, 2, NOW()); -- 記事2 に「会社員の日常」
+(2, 14, NOW()); -- 記事2 に「スレッド開設」
 
 -- industry_relations
 INSERT INTO industry_relations (type, user_id, target_id, created_at) VALUES
 (1, 1, 1, NOW()),
-(2, 2, 2, NOW()),
-(3, 3, 1, NOW());
+(1, 1, 3, NOW()),
+(1, 2, 2, NOW()),
+(1, 3, 1, NOW()),
+(1, 3, 2, NOW()),
+(1, 4, 6, NOW()),
+(1, 4, 7, NOW()),
+(1, 5, 4, NOW()),
+(2, 6, 1, NOW()),
+(2, 7, 3, NOW()),
+(2, 8, 2, NOW()),
+(2, 9, 6, NOW()),
+(2, 10, 7, NOW()),
+(3, 11, 1, NOW()),
+(3, 11, 3, NOW()),
+(3, 12, 1, NOW()),
+(3, 12, 5, NOW()),
+(3, 13, 4, NOW()),
+(3, 14, 6, NOW()),
+(3, 14, 1, NOW()),
+(3, 15, 1, NOW()),
+(3, 15, 7, NOW()),
+(3, 16, 5, NOW()),
+(3, 17, 4, NOW()),
+(3, 17, 2, NOW()),
+(3, 18, 2, NOW()),
+(3, 19, 3, NOW()),
+(3, 19, 5, NOW()),
+(3, 20, 6, NOW()),
+(3, 20, 1, NOW()),
+(3, 21, 4, NOW()),
+(3, 21, 7, NOW()),
+(3, 22, 2, NOW()),
+(3, 22, 3, NOW()),
+(3, 23, 5, NOW()),
+(3, 23, 6, NOW());
 
 SET FOREIGN_KEY_CHECKS = 1;

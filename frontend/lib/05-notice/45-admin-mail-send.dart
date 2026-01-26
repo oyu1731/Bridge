@@ -172,8 +172,9 @@ class _AdminMailSendState extends State<AdminMailSend> {
         );
         _clearForm();
       } else {
+        final msg = utf8.decode(response.bodyBytes);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('送信失敗: ${response.statusCode}')),
+          SnackBar(content: Text('送信失敗: $msg')),
         );
       }
     } catch (e) {

@@ -50,4 +50,31 @@ public class AuthService {
         userDto.setToken(user.getToken());
         return userDto;
     }
+
+    /**
+     * 指定したIDのユーザーを取得（決済完了後のセッション保存用）
+     */
+    public UserDto getUserById(Integer userId) {
+        Optional<User> opt = userRepository.findById(userId);
+        if (opt.isEmpty()) {
+            throw new IllegalArgumentException("ユーザーが見つかりません");
+        }
+        User user = opt.get();
+
+        if (Boolean.TRUE.equals(user.getIsWithdrawn())) {
+            throw new IllegalArgumentException("このアカウントは退会済みです。");
+        }
+
+        // サインイン時と同じフォーマットでUserDtoを返す
+        UserDto userDto = new UserDto();
+        userDto.setId(user.getId());
+        userDto.setNickname(user.getNickname());
+        userDto.setEmail(user.getEmail());
+        userDto.setPhoneNumber(user.getPhoneNumber());
+        userDto.setSocietyHistory(user.getSocietyHistory());
+        userDto.setType(user.getType() == null ? 0 : user.getType());
+        userDto.setPlanStatus(user.getPlanStatus());
+        userDto.setToken(user.getToken());
+        return userDto;
+    }
 }
