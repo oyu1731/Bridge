@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/gestures.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
@@ -77,6 +78,22 @@ class ArticleDetailPage extends StatefulWidget {
 }
 
 class _ArticleDetailPageState extends State<ArticleDetailPage> {
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+    _loadUserId();
+  }
+
+    Future<void> _checkLoginStatus() async {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString('current_user');
+      if (userJson == null) {
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/signin');
+        }
+      }
+    }
   ArticleDTO? _article;
   List<PhotoDTO?> _photos = [];
   bool _isLoading = true;
@@ -86,12 +103,6 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
   // いいね機能の状態
   bool _isLiked = false;
   bool _isLikeLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserId();
-  }
 
   Future<void> _loadUserId() async {
     try {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import '../11-common/58-header.dart';
@@ -35,7 +36,18 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
   @override
   void initState() {
     super.initState();
+    _checkLoginStatus();
     _initializeData();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('current_user');
+    if (userJson == null) {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/signin');
+      }
+    }
   }
 
   Future<void> _initializeData() async {

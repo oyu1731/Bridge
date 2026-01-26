@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 import 'dart:html' as html show window;
@@ -18,6 +19,17 @@ class CompanySearchPage extends StatefulWidget {
 }
 
 class _CompanySearchPageState extends State<CompanySearchPage> {
+
+
+    Future<void> _checkLoginStatus() async {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString('current_user');
+      if (userJson == null) {
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/signin');
+        }
+      }
+    }
   final TextEditingController _searchController = TextEditingController();
   String _selectedIndustry = '業界';
   String _selectedArea = 'エリア';
@@ -34,6 +46,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
   @override
   void initState() {
     super.initState();
+    _checkLoginStatus();
     _loadCompanies();
     _loadArticles();
     _loadIndustries();
