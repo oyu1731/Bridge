@@ -474,11 +474,23 @@ public class UserService {
                         .map(ForumThread::getTitle)
                         .orElse("不明なスレッド");
 
+                String content = chat.getContent();
+                boolean hasPhoto = chat.getPhotoId() != null;
+
+                String displayContent;
+                if ((content == null || content.isBlank()) && hasPhoto) {
+                    displayContent = "（画像のみ）"; // ← 文言は後で調整OK
+                } else if (hasPhoto) {
+                    displayContent = content + "（画像あり）";
+                } else {
+                    displayContent = content;
+                }
+
                 return new UserCommentHistoryDto(
-                        title,
-                        chat.getContent(),
-                        chat.getCreatedAt().toLocalDate().toString(),
-                        chat.getIsDeleted() != null && chat.getIsDeleted()
+                    title,
+                    displayContent,
+                    chat.getCreatedAt().toLocalDate().toString(),
+                    Boolean.TRUE.equals(chat.getIsDeleted())
                 );
             }).collect(Collectors.toList());
     }
