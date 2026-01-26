@@ -171,4 +171,43 @@ public class UserController {
         UserDto updated = userService.updateUserIcon(id, photoId);
         return ResponseEntity.ok(updated);
     }
+
+    /**
+     * ログイン中のアカウントのサブスク確認・更新
+     * サブスクテーブルからアカウントタイプを確認し、
+     * 切れていた場合はusersテーブルを更新するエンドポイント
+     */
+    @PostMapping("/{id}/check-subscription")
+    public ResponseEntity<Map<String, Object>> checkAndUpdateSubscriptionStatus(@PathVariable Integer id) {
+        try {
+            Map<String, Object> result = userService.checkAndUpdateSubscriptionStatus(id);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * ユーザーの現在のプランステータスのみを取得する
+     * GET /api/users/{id}/plan-status
+     */
+    @GetMapping("/{id}/plan-status")
+    public ResponseEntity<Map<String, String>> getUserPlanStatus(@PathVariable Integer id) {
+        try {
+            // UserServiceに作成するメソッドを呼び出す
+            String planStatus = userService.getPlanStatusById(id);
+            
+            if (planStatus != null) {
+                return ResponseEntity.ok(Map.of("planStatus", planStatus));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
 }

@@ -20,6 +20,7 @@ import '../04-profile/12-worker-profile-edit.dart';
 import '../04-profile/13-company-profile-edit.dart';
 
 // 認証
+import '../02-auth/05-sign-in.dart';
 import '../02-auth/50-password-update.dart';
 import '../02-auth/06-delete-account.dart';
 
@@ -60,6 +61,93 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
 
   static int _logoTapCount = 0;
   static DateTime? _lastTapTime;
+  static Set<String> _shownAlertUserIds = {}; // format: "userId_planStatus"
+  static Map<int, String> _cachedPlanStatus = {};
+
+  // =========================
+  // 🔧 プラン状態取得
+  // =========================
+  static void clearPlanStatusCache() {
+    print('🗑️ プラン状態キャッシュをクリア');
+    _cachedPlanStatus.clear();
+  }
+
+  static void resetAlertHistory(int userId) {
+    print('🗑️ ユーザー $userId のアラート表示履歴をリセット');
+    // このユーザーのすべてのプラン状態に対するアラート履歴をリセット
+    _shownAlertUserIds.removeWhere((key) => key.startsWith('${userId}_'));
+  }
+
+  Future<String?> _fetchPlanStatus(int userId) async {
+    print('🔍 プラン状態取得開始: userId=$userId');
+    try {
+      final response = await http.get(
+        Uri.parse("http://localhost:8080/api/users/$userId/plan-status"),
+      );
+
+      print('📶 APIレスポンスコード: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        print("📡 APIレスポンス: $data");
+        print("📡 レスポンス型: ${data.runtimeType}");
+
+        // レスポンスが直接文字列の場合と、オブジェクトの場合の両対応
+        if (data is String) {
+          print("✅ 文字列として受け取った: $data");
+          return data;
+        } else if (data is Map) {
+          final planStatus = data['planStatus'] as String?;
+          print("✅ Mapから取得: $planStatus");
+          return planStatus;
+        }
+      } else {
+        print("❌ ステータスコード異常: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("❌ プラン状態取得エラー: $e");
+    }
+    print("🛑 プラン状態取得失敗: nullを返却");
+    return null;
+  }
+
+  // =========================
+  // ⚠️ 無料プラン警告ダイアログ
+  // =========================
+  void _showUpgradeAlert(BuildContext context) {
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (_) => AlertDialog(
+            title: const Text('プランのご案内'),
+            content: const Text(
+              '現在のプランは「無料」です。\n\n'
+              '企業機能をすべて利用するには有料プランへのアップグレードが必要です。',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('あとで'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PlanStatusScreen(userType: '企業'),
+                    ),
+                  );
+                },
+                child: const Text('プランを確認'),
+              ),
+            ],
+          ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,10 +159,66 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         final nickname = userInfo['nickname'] ?? '';
         final iconPath = userInfo['iconPath'] ?? '';
         final isAdmin = userInfo['isAdmin'] == true;
+        final userId = userInfo['userId'];
 
         final greetings = ['こんにちは', 'いらっしゃいませ', 'ようこそ', 'お帰りなさい'];
         final greeting =
             greetings[DateTime.now().millisecond % greetings.length];
+
+        // =========================
+        // 🏢 企業アカウントならプランチェック
+        // =========================
+        print('🔍 ヘッダー: プランチェック開始');
+        print('   accountType=$accountType, userId=$userId');
+        print('   _shownAlertUserIds=$_shownAlertUserIds');
+
+        if (accountType == '企業' &&
+            userId != null &&
+            !_shownAlertUserIds.contains(userId)) {
+          print('✅ 企業ユーザー確認: プランステータスを取得中...');
+          _fetchPlanStatus(userId)
+              .then((status) {
+                print('📊 プランステータス取得完了: status=$status, userId=$userId');
+                final alertKey = '${userId}_$status';
+                if (!_shownAlertUserIds.contains(alertKey)) {
+                  if (status == null) {
+                    // ❌ DB登録なし → トップに戻す
+                    print('❌ プラン状態がnull（DB登録なし）');
+                    _shownAlertUserIds.add(alertKey);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      print('❌ DB登録なし → トップに戻します');
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const SignInPage()),
+                        (route) => false,
+                      );
+                    });
+                  } else if (status == '無料' || status == '無料' || status == '') {
+                    // ⚠️ 無料プラン → プラン確認画面へ直接遷移
+                    print('⚠️ 無料プラン検出: status=$status → プラン確認画面へ遷移');
+                    _shownAlertUserIds.add(alertKey);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      print('🚀 プラン確認画面へ遷移中...');
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder:
+                              (_) => const PlanStatusScreen(userType: '企業'),
+                        ),
+                        (route) => false,
+                      );
+                    });
+                  } else {
+                    print('✅ プレミアムプラン: $status');
+                  }
+                } else {
+                  print('⏭️ アラート既に表示済み (key=$alertKey)');
+                }
+              })
+              .catchError((error) {
+                print('❌ プランステータス取得エラー: $error');
+              });
+        } else {
+          print('⏭️ プランチェック条件未満(企業以外またはアラート済み)');
+        }
 
         return Container(
           height: 120,
@@ -100,7 +244,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                     final isSmallScreen = constraints.maxWidth < 600;
 
                     if (isSmallScreen) {
-                      // スマホ：1行コンパクトレイアウト
+                      // スマホ
                       return SizedBox(
                         height: 58,
                         child: Row(
@@ -109,17 +253,13 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                             GestureDetector(
                               onTap: () {
                                 final now = DateTime.now();
-
-                                // 1.5秒以上空いたらリセット
                                 if (_lastTapTime == null ||
                                     now.difference(_lastTapTime!) >
                                         const Duration(seconds: 1)) {
                                   _logoTapCount = 0;
                                 }
-
                                 _lastTapTime = now;
                                 _logoTapCount++;
-
                                 if (_logoTapCount >= 3) {
                                   _logoTapCount = 0;
                                   Navigator.push(
@@ -220,23 +360,19 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                         ),
                       );
                     } else {
-                      // PC：1行レイアウト（従来通り）
+                      // PC
                       return Row(
                         children: [
                           GestureDetector(
                             onTap: () {
                               final now = DateTime.now();
-
-                              // 1.5秒以上空いたらリセット
                               if (_lastTapTime == null ||
                                   now.difference(_lastTapTime!) >
                                       const Duration(seconds: 1)) {
                                 _logoTapCount = 0;
                               }
-
                               _lastTapTime = now;
                               _logoTapCount++;
-
                               if (_logoTapCount >= 3) {
                                 _logoTapCount = 0;
                                 Navigator.push(
@@ -278,7 +414,6 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                                 ),
                               ),
                               const SizedBox(width: 16),
-                              // プロフィール
                               PopupMenuButton<String>(
                                 onSelected:
                                     (v) =>
@@ -399,7 +534,6 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                     }
 
                     if (isAdmin) {
-                      // 管理者用ナビ
                       buttons.add(
                         _nav('スレッド', () {
                           Navigator.push(
@@ -512,7 +646,6 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
 
   // ===== プロフィールメニュー =====
   List<PopupMenuEntry<String>> _buildProfileMenu(String accountType) {
-    // 管理者は一部メニュー非表示
     if (accountType == '管理者') {
       return <PopupMenuEntry<String>>[
         _menu('password_change', Icons.lock, 'パスワード変更'),
@@ -599,6 +732,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         }
 
         return {
+          'userId': userId,
           'accountType': typeStr,
           'nickname': nickname,
           'iconPath': iconPath,
@@ -608,6 +742,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
     } catch (_) {}
 
     return {
+      'userId': userId,
       'accountType': 'unknown',
       'nickname': nickname,
       'iconPath': '',

@@ -33,6 +33,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,7 +96,16 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         user.setPhoneNumber(userDto.getPhoneNumber());
         user.setType(userDto.getType());
-        user.setPlanStatus("無料"); // usersテーブルは文字列
+        
+        // 🏢 企業ユーザーの場合は「企業プレミアム」、それ以外は「無料」
+        if (userDto.getType() == 3) {
+            user.setPlanStatus("企業プレミアム");
+            System.out.println("✅ 企業ユーザー作成: planStatus='企業プレミアム'");
+        } else {
+            user.setPlanStatus("無料");
+            System.out.println("✅ 一般ユーザー作成: planStatus='無料'");
+        }
+        
         user.setIsWithdrawn(false);
         user.setCreatedAt(LocalDateTime.now());
         
@@ -480,4 +491,96 @@ public class UserService {
         user.setIsDeleted(true);
         userRepository.save(user);
     }
+
+    /**
+     * ログイン中のアカウントのサブスク確認・更新
+     * 最新のサブスクリプションをチェックし、
+     * 有効期限が切れていた場合はusersテーブルのplanStatusを"無料"に更新
+     */
+    @Transactional
+    public Map<String, Object> checkAndUpdateSubscriptionStatus(Integer userId) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            // 1. ユーザーが存在するか確認
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+
+            // 2. 最新のサブスクリプションを取得
+            Optional<Subscription> latestSubscription = subscriptionRepository.findTopByUserIdOrderByEndDateDesc(userId);
+
+            // 3. サブスクが存在しない場合は"無料"
+            if (latestSubscription.isEmpty()) {
+                user.setPlanStatus("無料");
+                userRepository.save(user);
+                result.put("status", "no_subscription");
+                result.put("planStatus", "無料");
+                result.put("message", "サブスクリプションが見つかりません。プランを無料に更新しました。");
+                return result;
+            }
+
+            // 4. サブスクの有効期限を確認
+            Subscription subscription = latestSubscription.get();
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime endDate = subscription.getEndDate();
+
+            // 5. 有効期限が切れている場合
+            if (endDate.isBefore(now)) {
+                user.setPlanStatus("無料");
+                userRepository.save(user);
+                
+                // 🏢 企業ユーザー（type=3）の場合、companiesテーブルのplan_statusも更新
+                if (user.getType() == 3 && user.getCompanyId() != null) {
+                    companyRepository.findById(user.getCompanyId()).ifPresent(company -> {
+                        company.setPlanStatus(2); // 2 = 中断中（無料）
+                        companyRepository.save(company);
+                        logger.info("Updated company plan status to free for companyId: {}", user.getCompanyId());
+                    });
+                }
+                
+                result.put("status", "expired");
+                result.put("planStatus", "無料");
+                result.put("message", "サブスクリプションが期限切れです。プランを無料に更新しました。");
+                result.put("expiredDate", endDate);
+                logger.info("Subscription expired for userId: {}, updated to free plan", userId);
+            } else {
+                // 6. まだ有効な場合
+                result.put("status", "active");
+                result.put("planStatus", subscription.getPlanName());
+                result.put("message", "サブスクリプションは有効です。");
+                result.put("endDate", endDate);
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            logger.error("Error checking subscription for userId: {}", userId, e);
+            throw new RuntimeException("サブスクリプション確認エラー: " + e.getMessage());
+        }
+    }
+    public String getPlanStatusById(Integer id) {
+        User user = userRepository.findById(id).orElse(null);
+        if (user == null) {
+            return null;
+        }
+
+        // 🏢 企業ユーザー（type=3）の場合、companiesテーブルから確認
+        if (user.getType() == 3 && user.getCompanyId() != null) {
+            // companyRepositoryを使ってplan_statusを取得
+            // Plan Status: 1=加入中（プレミアム）、2=中断中（無料）
+            return companyRepository.findById(user.getCompanyId())
+                    .map(company -> {
+                        if (company.getPlanStatus() == 1) {
+                            return "プレミアム";
+                        } else {
+                            return "無料";
+                        }
+                    })
+                    .orElse(user.getPlanStatus());
+        }
+
+        // 👤 個人ユーザーの場合、usersテーブルのplanStatusを返す
+        return user.getPlanStatus();
+    }
 }
+
