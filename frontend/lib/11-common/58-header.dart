@@ -277,11 +277,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                     final isSmallScreen = constraints.maxWidth < 600;
 
                     if (isSmallScreen) {
-<<<<<<< HEAD
-                      // スマホ
-=======
                       // スマホ：1行コンパクトレイアウト（ロゴは左、他は右寄せ）
->>>>>>> fcf430462a01ee64dfe8ef601484917781b67fa3
                       return SizedBox(
                         height: 58,
                         child: Row(
