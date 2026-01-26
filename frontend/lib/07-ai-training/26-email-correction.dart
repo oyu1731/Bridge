@@ -69,19 +69,24 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
           _showCorrectionCompleteAlert = true; // アラート表示フラグを立てる
         });
 
-        // トークンを消費
+        // トークンを消費（プレミアムユーザーは除外）
         if (_userSession != null && _userSession!['id'] != null) {
-          final userId = _userSession!['id'] as int;
-          final tokensToDeduct = 5; // メール添削のトークンコスト
-          final bool deducted = await _globalActions.deductUserTokens(
-            userId,
-            tokensToDeduct,
-          );
-          if (deducted) {
-            print('$tokensToDeduct トークンを消費しました。');
-            // セッションのトークン数を更新するなどの処理が必要であればここに追加
+          final isPremium = (_userSession?['planStatus'] ?? '無料') != '無料';
+          if (!isPremium) {
+            final userId = _userSession!['id'] as int;
+            final tokensToDeduct = 5; // メール添削のトークンコスト
+            final bool deducted = await _globalActions.deductUserTokens(
+              userId,
+              tokensToDeduct,
+            );
+            if (deducted) {
+              print('$tokensToDeduct トークンを消費しました。');
+              // セッションのトークン数を更新するなどの処理が必要であればここに追加
+            } else {
+              print('トークン消費に失敗しました。');
+            }
           } else {
-            print('トークン消費に失敗しました。');
+            print('プレミアムユーザーのためトークン消費をスキップしました。');
           }
         }
 
@@ -174,59 +179,85 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+
     return ScreenWrapper(
       appBar: BridgeHeader(),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // メインコンテンツエリア
-            Expanded(
-              flex: 3,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // 左側：オリジナルメール入力
-                  Expanded(child: _buildInputSection()),
+        padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
+        child:
+            isSmallScreen
+                ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // スマホ：縦積みレイアウト
+                    Flexible(flex: 2, child: _buildInputSection()),
+                    const SizedBox(height: 12),
+                    _buildCorrectionButtonSmall(),
+                    const SizedBox(height: 12),
+                    Flexible(flex: 2, child: _buildCorrectedSection()),
+                    const SizedBox(height: 12),
+                    Flexible(flex: 1, child: _buildCorrectionDetails()),
+                  ],
+                )
+                : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // PC：横並びレイアウト
+                    Flexible(
+                      flex: 3,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // 左側：オリジナルメール入力
+                          Expanded(child: _buildInputSection()),
 
-                  // 中央：添削ボタン
-                  _buildCorrectionButton(),
+                          // 中央：添削ボタン
+                          _buildCorrectionButton(),
 
-                  // 右側：添削後メール表示
-                  Expanded(child: _buildCorrectedSection()),
-                ],
-              ),
-            ),
+                          // 右側：添削後メール表示
+                          Expanded(child: _buildCorrectedSection()),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
 
-            const SizedBox(height: 16),
-
-            // 下部：編集内容説明
-            Expanded(flex: 2, child: _buildCorrectionDetails()),
-          ],
-        ),
+                    // 下部：編集内容説明
+                    Flexible(flex: 2, child: _buildCorrectionDetails()),
+                  ],
+                ),
       ),
     );
   }
 
   Widget _buildInputSection() {
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+
     return Card(
       elevation: 4,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               '元のメール',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: isSmallScreen ? 16 : 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               '添削したいメール本文を入力してください',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(
+                fontSize: isSmallScreen ? 12 : 14,
+                color: Colors.grey,
+              ),
             ),
             const SizedBox(height: 16),
-            Expanded(
+            Flexible(
               child: Container(
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade400),
@@ -236,11 +267,13 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
                   controller: _originalEmailController,
                   maxLines: null,
                   expands: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: '例：\nお世話になります。\n先日の件ですが、資料送ってください。\nよろしくお願いします。',
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(12.0),
+                    contentPadding: EdgeInsets.all(isSmallScreen ? 8.0 : 12.0),
+                    hintStyle: TextStyle(fontSize: isSmallScreen ? 12 : 14),
                   ),
+                  style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
                 ),
               ),
             ),
@@ -286,28 +319,78 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
     );
   }
 
+  Widget _buildCorrectionButtonSmall() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _correctEmail,
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child:
+            _isLoading
+                ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+                : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.arrow_forward,
+                      size: 20,
+                      color: _isLoading ? Colors.grey : Colors.white,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _isLoading ? '添削中...' : 'メールを添削',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+      ),
+    );
+  }
+
   Widget _buildCorrectedSection() {
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+
     return Card(
       elevation: 4,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               '添削後のメール',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: isSmallScreen ? 16 : 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'AIによる添削結果が表示されます',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(
+                fontSize: isSmallScreen ? 12 : 14,
+                color: Colors.grey,
+              ),
             ),
             const SizedBox(height: 16),
-            Expanded(
+            Flexible(
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12.0),
+                padding: EdgeInsets.all(isSmallScreen ? 8.0 : 12.0),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(4),
@@ -318,7 +401,7 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
                         ? const Center(
                           child: Text(
                             '添削結果がここに表示されます',
-                            style: TextStyle(color: Colors.grey, fontSize: 16),
+                            style: TextStyle(color: Colors.grey, fontSize: 14),
                           ),
                         )
                         : Scrollbar(
@@ -326,7 +409,10 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
                           child: SingleChildScrollView(
                             child: SelectableText(
                               _correctedEmail,
-                              style: const TextStyle(fontSize: 16, height: 1.5),
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? 14 : 16,
+                                height: 1.5,
+                              ),
                             ),
                           ),
                         ),
@@ -339,27 +425,39 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
   }
 
   Widget _buildCorrectionDetails() {
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+
     return Card(
       elevation: 4,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               '編集内容の詳細',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: isSmallScreen ? 16 : 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               '何をどう編集したかが表示されます',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(
+                fontSize: isSmallScreen ? 12 : 14,
+                color: Colors.grey,
+              ),
             ),
             const SizedBox(height: 16),
-            Expanded(
+            Flexible(
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12.0),
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.3,
+                ),
+                padding: EdgeInsets.all(isSmallScreen ? 8.0 : 12.0),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(4),
@@ -370,32 +468,58 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
                         ? const Center(
                           child: Text(
                             '編集内容の詳細がここに表示されます',
-                            style: TextStyle(color: Colors.grey, fontSize: 16),
+                            style: TextStyle(color: Colors.grey, fontSize: 14),
                           ),
                         )
-                        : Scrollbar(
-                          thumbVisibility: true,
-                          child: SingleChildScrollView(
-                            child: SelectableText(
-                              _correctionDetails,
-                              style: const TextStyle(fontSize: 16, height: 1.5),
+                        : SingleChildScrollView(
+                          child: SelectableText(
+                            _correctionDetails,
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 14 : 16,
+                              height: 1.5,
                             ),
                           ),
                         ),
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton(onPressed: _clearAll, child: const Text('クリア')),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _correctedEmail.isEmpty ? null : _copyToClipboard,
-                  child: const Text('コピー'),
+            isSmallScreen
+                ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: _clearAll,
+                        child: const Text('クリア'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed:
+                            _correctedEmail.isEmpty ? null : _copyToClipboard,
+                        child: const Text('コピー'),
+                      ),
+                    ),
+                  ],
+                )
+                : Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton(
+                      onPressed: _clearAll,
+                      child: const Text('クリア'),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed:
+                          _correctedEmail.isEmpty ? null : _copyToClipboard,
+                      child: const Text('コピー'),
+                    ),
+                  ],
                 ),
-              ],
-            ),
           ],
         ),
       ),

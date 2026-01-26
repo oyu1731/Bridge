@@ -10,6 +10,8 @@ import 'package:http_parser/http_parser.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bridge/main.dart';
+import '31-thread-list.dart';
 
 class ThreadOfficialDetail extends StatefulWidget {
   final Map<String, dynamic> thread;
@@ -23,14 +25,92 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   final TextEditingController _messageController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  // ユーザーID,ニックネーム
+  final Map<String, String> _nicknameCache = {};
+  // ユーザーID,アイコンURL
+  final Map<String, String?> _userIconCache = {};
+  // photoId,photoUrl
+  final Map<int, String> _photoUrlCache = {};
+  // ユーザーID, ユーザータイプ
+  final Map<String, String?> _userTypeCache = {};
+  //名前とアイコンを取得
+  Future<void> _loadUserInfo(String userId) async {
+    if (_nicknameCache.containsKey(userId)) return;
+
+    final res = await http.get(
+      Uri.parse('$baseUrl/chat/user/$userId'),
+    );
+    if (res.statusCode != 200) return;
+
+    final data = json.decode(res.body);
+    _nicknameCache[userId] = data['nickname'] ?? 'Unknown';
+    _userTypeCache[userId] = data['type'];
+
+    final iconId = data['icon'];
+    if (iconId != null) {
+      final res2 = await http.get(
+        Uri.parse('$baseUrl/photos/$iconId'),
+      );
+      if (res2.statusCode == 200) {
+        final path = json.decode(res2.body)['photoPath'];
+        if (path != null && path.toString().isNotEmpty) {
+          _userIconCache[userId] = "http://localhost:8080$path";
+        } else {
+          _userIconCache[userId] = null;
+        }
+      } else {
+        _userIconCache[userId] = null;
+      }
+    } else {
+      _userIconCache[userId] = null;
+    }
+  }
+
+  String _typeLabel(String? type) {
+    switch (type) {
+      case '1':
+        return '学生';
+      case '2':
+        return '社会人';
+      case '3':
+        return '企業';
+      case '4':
+        return '運営';
+      default:
+        return '';
+    }
+  }
+
+  //サインインしているユーザーのアイコンのURL
+  String? _currentUserIconUrl; 
   //initでユーザのIDを入れる
   String currentUserId="";
+  //読み込めたかどうかの判定
   //ユーザ情報取得
   Future<void> _loadCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString('current_user');
     if (jsonString == null) return;
     final userData = jsonDecode(jsonString);
+    currentUserId = userData['id'].toString();
+    final res = await http.get(
+      Uri.parse('$baseUrl/chat/user/$currentUserId'),
+    );
+    if (res.statusCode == 200) {
+      final iconId = json.decode(res.body)['icon'];
+      if (iconId != null) {
+        final res2 = await http.get(
+          Uri.parse('$baseUrl/photos/$iconId'),
+        );
+        if (res2.statusCode == 200) {
+          final path = json.decode(res2.body)['photoPath'];
+          _currentUserIconUrl = "http://localhost:8080$path";
+        }
+      }
+    }
+    // setState(() {
+    //   currentUserId = userData['id'].toString();
+    // });
     setState(() {
       currentUserId = userData['id'].toString();
     });
@@ -70,6 +150,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
             'text': msg['content'],
             'created_at': msg['createdAt'],
             'photoId': msg['photoId'],
+            'userIconUrl': msg['userIconUrl'], 
           });
           _messages.sort((a, b) =>
               DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
@@ -96,6 +177,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     super.dispose();
   }
 
+  //写真を大きく表示（写真をクリックされた時用）
   Future<void> pickImage() async {
     final picker = ImagePicker();
     final XFile? picked = await picker.pickImage(
@@ -119,6 +201,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     }
   }
 
+  //写真の保存
   Future<int?> uploadImage() async {
     if (_selectedImage == null && _webImageBytes == null) return null;
     setState(() => _isUploading = true);
@@ -149,11 +232,11 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
         // final int? photoId = int.tryParse(
         //   RegExp(r'"id"\s*:\s*(\d+)').firstMatch(body)?.group(1) ?? '',
         // );
+        print("aaaaaaaaaaaaaaaaa");
+        print("=== Upload Response Status === ${response.statusCode}");
+        print("=== Upload Response Body === $body");
         return photoId;
       }
-      print("aaaaaaaaaaaaaaaaa");
-      print("=== Upload Response Status === ${response.statusCode}");
-      print("=== Upload Response Body === $body");
       return null;
     } catch (e) {
       print("Upload error: $e");
@@ -163,49 +246,108 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     }
   }
 
+  //写真のパス取得
   Future<String?> fetchPhotoUrl(int photoId) async {
-    final response = await http.get(Uri.parse('$baseUrl/photos/$photoId'));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return "http://localhost:8080${data['photoPath']}";
+    if (_photoUrlCache.containsKey(photoId)) {
+      return _photoUrlCache[photoId];
+    }
+
+    final res = await http.get(
+      Uri.parse('$baseUrl/photos/$photoId'),
+    );
+    if (res.statusCode == 200) {
+      final path = json.decode(res.body)['photoPath'];
+      final url = "http://localhost:8080$path";
+      _photoUrlCache[photoId] = url;
+      return url;
     }
     return null;
   }
 
   Future<void> _fetchMessages() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/chat/${widget.thread['id']}/active'));
+      final response = await http.get(
+        Uri.parse('$baseUrl/chat/${widget.thread['id']}/active')
+      );
+      // ⭐ ここが超重要
+      if (response.statusCode == 410) {
+        _showThreadDeletedDialog();
+        return;
+      }
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        final fetched = data.map((msg) {
-          return {
-            'id': msg['id'],
-            'user_id': msg['userId'].toString(),
-            'text': msg['content'],
-            'created_at': msg['createdAt'],
-            'photoId': msg['photoId'],
-          };
-        }).toList();
-        bool updated = false;
-        for (var msg in fetched) {
+        for (var msg in data) {
+          final userId = msg['userId'].toString();
+          // ユーザー情報は初回だけ取得
+          await _loadUserInfo(userId);
           if (!_messages.any((m) => m['id'] == msg['id'])) {
-            _messages.add(msg);
-            updated = true;
+            _messages.add({
+              'id': msg['id'],
+              'user_id': userId,
+              'text': msg['content'],
+              'created_at': msg['createdAt'],
+              'photoId': msg['photoId'],
+              'userIconUrl': _userIconCache[userId],
+            });
           }
-        }
-
-        //メッセージを投稿時間順にする
-        if (updated) {
           _messages.sort((a, b) =>
-              DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+            DateTime.parse(a['created_at'])
+                .compareTo(DateTime.parse(b['created_at']))
+          );
           _messageStreamController.add(List.from(_messages));
         }
       }
+      //   for (var msg in data) {
+      //     final userId = msg['userId'].toString();
+      //     String? userIconUrl;
+      //     //ユーザーidを指定してアイコンidを取得する
+      //     final response = await http.get(
+      //       Uri.parse('$baseUrl/chat/user/$userId')
+      //     );
+      //     //名前、アイコンidが取得
+      //     print(json.decode(response.body)['icon']);
+      //     final chat_userid=json.decode(response.body)['icon'];
+      //     //アイコンidを指定してアイコンの写真のパスを取得
+      //     final response2 = await http.get(
+      //       Uri.parse('$baseUrl/photos/$chat_userid')
+      //     );
+      //     print(json.decode(response2.body));
+      //     print("これでアイコンの写真のパスが取得できる");
+      //     print(json.decode(response2.body)['photoPath']);
+      //     final iconPath = json.decode(response2.body)['photoPath'];
+      //     userIconUrl = "http://localhost:8080$iconPath";
+      //     // アイコンIDがあればURLを取得
+      //     // if (msg['userIconId'] != null) {
+      //     //   final iconResponse = await http.get(Uri.parse('$baseUrl/photos/${msg['userIconId']}'));
+      //     //   if (iconResponse.statusCode == 200) {
+      //     //     final iconData = json.decode(iconResponse.body);
+      //     //     userIconUrl = "http://localhost:8080/photos/${iconData['photoPath']}";
+      //     //   }
+      //     // }
+      //     // メッセージリストに追加
+      //     if (!_messages.any((m) => m['id'] == msg['id'])) {
+      //       _messages.add({
+      //         'id': msg['id'],
+      //         'user_id': userId,
+      //         'text': msg['content'],
+      //         'created_at': msg['createdAt'],
+      //         'photoId': msg['photoId'],
+      //         'userIconUrl': userIconUrl,
+      //       });
+      //     }
+      //     print("UserId: $userId, IconUrl: $userIconUrl");
+      //   }
+      //   // 投稿時間順にソート
+      //   _messages.sort((a, b) =>
+      //       DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+      //   _messageStreamController.add(List.from(_messages));
+      // }
     } catch (e) {
       print("Fetch error: $e");
     }
   }
 
+  //読み込める場所までスクロール
   void _scrollToBottom() {
     // スクロール対象があるか確認
     if (!_scrollController.hasClients) return;
@@ -222,65 +364,151 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     });
   }
 
-  Future<void> _sendMessage() async {
-  if (_isSending) return;
-  final text = _messageController.text.trim();
-  if (text.isEmpty && _selectedImage == null && _webImageBytes == null) return;
-  setState(() => _isSending = true);
-
-  int? photoId;
-  if (_selectedImage != null || _webImageBytes != null) {
-    photoId = await uploadImage();
-  }
-
-  final payload = {
-    'userId': int.parse(currentUserId),
-    'content': text,
-    'threadId': widget.thread['id'],
-    'photoId': photoId,
-  };
-
-  try {
-    final response = await http.post(
-      Uri.parse('$baseUrl/chat/${widget.thread['id']}'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(payload),
+  //スレッド内にいる時にスレッドが削除された場合スレッド一覧ページに戻す
+  void _showThreadDeletedDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text('スレッドが削除されました'),
+        content: const Text('このスレッドは既に存在しません。'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => ThreadList()),
+                (route) => false,
+              );
+            },
+            child: const Text('一覧へ戻る'),
+          ),
+        ],
+      ),
     );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final msg = json.decode(response.body);
-      _messages.add({
-        'id': msg['id'],
-        'user_id': msg['userId'].toString(),
-        'text': msg['content'],
-        'created_at': msg['createdAt'],
-        'photoId': msg['photoId'],
-      });
-      _messages.sort((a, b) =>
-          DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
-      _messageStreamController.add(List.from(_messages));
-
-      _messageController.clear();
-      setState(() {
-        _selectedImage = null;
-        _webImageBytes = null;
-        _webImageName = null;
-      });
-
-      _channel.sink.add(json.encode(msg));
-
-      //自動スクロール
-      _scrollToBottom(); 
-    } else {
-      print("Send failed: ${response.statusCode}");
-    }
-  } catch (e) {
-    print("Send error: $e");
-  } finally {
-    setState(() => _isSending = false);
   }
-}
 
+  //サインインができていないユーザーをサインインページに
+  void _showLoginExpiredDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('ログインが必要です'),
+          content: const Text(
+            'ログイン状態が切れています。\nもう一度サインインしてください。',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                // ダイアログを閉じる
+                Navigator.of(context).pop();
+
+                // ログイン情報をクリア（安全のため）
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
+
+                // サインイン画面（MyHomePage）へ戻す
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MyHomePage(title: 'Bridge'),
+                  ),
+                  (_) => false,
+                );
+              },
+              child: const Text('サインインへ'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  //チャットを送信する
+  Future<void> _sendMessage() async {
+    //セッションが切れていないか確認する
+    if (currentUserId.isEmpty) {
+      _showLoginExpiredDialog();
+      return;
+    }
+    final text_check = _messageController.text.trim();
+
+    if (text_check.length > 255) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('メッセージは255文字以内で入力してください')),
+      );
+      return;
+    }
+    // if (currentUserId.isEmpty) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text("ログインが切れています。再ログインしてください")),
+    //   );
+    //   return;
+    // }
+    if (_isSending) return;
+    final text = _messageController.text.trim();
+    if (text.isEmpty && _selectedImage == null && _webImageBytes == null) return;
+    setState(() => _isSending = true);
+
+    int? photoId;
+    if (_selectedImage != null || _webImageBytes != null) {
+      photoId = await uploadImage();
+    }
+
+    final payload = {
+      'userId': int.parse(currentUserId),
+      'content': text,
+      'threadId': widget.thread['id'],
+      'photoId': photoId,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/chat/${widget.thread['id']}'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(payload),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final msg = json.decode(response.body);
+        _messages.add({
+          'id': msg['id'],
+          'user_id': msg['userId'].toString(),
+          'text': msg['content'],
+          'created_at': msg['createdAt'],
+          'photoId': msg['photoId'],
+          'userIconUrl': _currentUserIconUrl,
+        });
+        _messages.sort((a, b) =>
+            DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+        _messageStreamController.add(List.from(_messages));
+
+        _messageController.clear();
+        setState(() {
+          _selectedImage = null;
+          _webImageBytes = null;
+          _webImageName = null;
+        });
+
+        _channel.sink.add(json.encode({
+          ...msg,
+          'userIconUrl': _currentUserIconUrl,
+        }));
+
+        //自動スクロール
+        _scrollToBottom(); 
+      } else if (response.statusCode == 404 || response.statusCode == 410) { _showThreadDeletedDialog(); } else { print("Send failed: ${response.statusCode}"); }
+    } catch (e) {
+      print("Send error: $e");
+    } finally {
+      setState(() => _isSending = false);
+    }
+  }
+
+  //チャットを通報
   Future<void> _reportMessage(Map<String, dynamic> msg) async {
     try {
       final payload = {
@@ -316,6 +544,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     }
   }
 
+  //名前の取得
   Future<String> _getNickname(String userId) async {
     if (_userNicknames.containsKey(userId)) return _userNicknames[userId]!;
 
@@ -335,6 +564,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     return "Unknown";
   }
 
+  //表示部分
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -386,6 +616,10 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                     final createdAt = DateTime.parse(msg['created_at']);
                     final timeStr =
                         '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
+                    final nickname = _nicknameCache[msg['user_id']] ?? '...';
+                    final iconUrl = msg['userIconUrl'];
+                    final userType = _userTypeCache[msg['user_id']];
+                    final typeLabel = _typeLabel(userType);
 
                     return Align(
                       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -397,21 +631,60 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                           crossAxisAlignment:
                               isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                           children: [
-                            FutureBuilder<String>(
-                              future: _getNickname(msg['user_id']),
-                              builder: (context, snapshot) {
-                                final name = snapshot.data ?? '...';
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 2.0),
-                                  child: Text(
-                                    isMe ? 'あなた' : name,
-                                    style: TextStyle(
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 2.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ClipOval(
+                                    child: iconUrl != null && iconUrl.isNotEmpty
+                                        ? Image.network(
+                                            iconUrl,
+                                            width: 16,
+                                            height: 16,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return const Icon(
+                                                Icons.account_circle_outlined,
+                                                size: 16,
+                                                color: Color(0xFF616161),
+                                              );
+                                            },
+                                          )
+                                        : const Icon(
+                                            Icons.account_circle_outlined,
+                                            size: 16,
+                                            color: Color(0xFF616161),
+                                          ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    isMe ? 'あなた' : nickname,
+                                    style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                     ),
-                                  ),
-                                );
-                              },
+                                  ),/// 👇 タイプバッジ（自分以外 & typeがある時だけ）
+                                  if (!isMe && typeLabel.isNotEmpty) ...[
+                                    const SizedBox(width: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        typeLabel,
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ]
+                                ],
+                              ),
                             ),
                             Container(
                               margin: EdgeInsets.symmetric(vertical: 4),
@@ -547,6 +820,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                     ),
                     child: TextField(
                       controller: _messageController,
+                      maxLength: 255,
                       decoration: InputDecoration(
                         hintText: 'メッセージを入力',
                         border: InputBorder.none,

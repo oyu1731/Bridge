@@ -17,7 +17,8 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/filters")
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
 public class FilterController {
 
     @Autowired

@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http; // HTTP リクエストのため追加
 import 'dart:convert'; // JSON エンコード/デコードのため追加
 import '28-quiz-question.dart';
 import 'dart:js' as js; // JavaScript との連携のため追加
+import '../06-company/photo_api_client.dart';
 
 class CourseSelectionScreen extends StatefulWidget {
   const CourseSelectionScreen({super.key});
@@ -234,9 +235,7 @@ class _RankingScreenState extends State<RankingScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse(
-          'http://localhost:8080/api/quiz/ranking',
-        ), // バックエンドAPIのエンドポイント
+        Uri.parse('http://localhost:8080/api/quiz/ranking'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -244,17 +243,52 @@ class _RankingScreenState extends State<RankingScreen> {
         List<dynamic> jsonResponse = json.decode(
           utf8.decode(response.bodyBytes),
         );
+
+        final List<Map<String, dynamic>> temp = [];
+
+        for (final item in jsonResponse) {
+          String iconPath = '';
+
+          // user_idからユーザー情報を取得
+          if (item['userId'] != null) {
+            try {
+              final userResponse = await http.get(
+                Uri.parse('http://localhost:8080/api/users/${item['userId']}'),
+                headers: {'Content-Type': 'application/json'},
+              );
+
+              if (userResponse.statusCode == 200) {
+                final userData = json.decode(
+                  utf8.decode(userResponse.bodyBytes),
+                );
+
+                // icon_idを取得
+                if (userData['icon'] != null) {
+                  final photo = await PhotoApiClient.getPhotoById(
+                    userData['icon'],
+                  );
+                  if (photo?.photoPath?.isNotEmpty == true) {
+                    iconPath = photo!.photoPath!;
+                  }
+                }
+              }
+            } catch (e) {
+              // エラーの場合はアイコン取得をスキップ
+            }
+          }
+
+          temp.add({
+            'name': item['nickname'] ?? '名無し',
+            'score': item['score'] ?? 0,
+            'iconPath': iconPath,
+            'avatarColor': GlobalActions.getColorFromName(
+              item['nickname'] ?? '名無し',
+            ),
+          });
+        }
+
         setState(() {
-          _rankingData =
-              jsonResponse.map((item) {
-                return {
-                  'name': item['nickname'] ?? '名無し',
-                  'score': item['score'] ?? 0,
-                  'avatarColor': GlobalActions.getColorFromName(
-                    item['nickname'] ?? '名無し',
-                  ), // ニックネームから色を生成
-                };
-              }).toList();
+          _rankingData = temp;
         });
       } else {
         _errorMessage = 'ランキングデータの取得に失敗しました: ${response.statusCode}';
@@ -326,6 +360,7 @@ class _RankingScreenState extends State<RankingScreen> {
                           final rank = index + 1;
                           return _buildRankingItem(
                             rank: rank,
+                            iconPath: data['iconPath'],
                             name: data['name'],
                             score: data['score'],
                             avatarColor: data['avatarColor'],
@@ -359,8 +394,8 @@ class _RankingScreenState extends State<RankingScreen> {
     required String name,
     required int score,
     required Color avatarColor,
+    required String iconPath,
   }) {
-    // 1位〜3位の色設定
     Color? rankColor;
     IconData? rankIcon;
     double elevation = 1;
@@ -368,18 +403,18 @@ class _RankingScreenState extends State<RankingScreen> {
 
     switch (rank) {
       case 1:
-        rankColor = const Color(0xFFFFD700); // Gold
+        rankColor = const Color(0xFFFFD700);
         rankIcon = Icons.workspace_premium;
         elevation = 4;
-        scale = 1.05; // 1位だけ少し大きく
+        scale = 1.05;
         break;
       case 2:
-        rankColor = const Color(0xFFC0C0C0); // Silver
+        rankColor = const Color(0xFFC0C0C0);
         rankIcon = Icons.looks_two;
         elevation = 3;
         break;
       case 3:
-        rankColor = const Color(0xFFCD7F32); // Bronze
+        rankColor = const Color(0xFFCD7F32);
         rankIcon = Icons.looks_3;
         elevation = 2;
         break;
@@ -405,7 +440,6 @@ class _RankingScreenState extends State<RankingScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              // ランク表示
               SizedBox(
                 width: 40,
                 child:
@@ -423,18 +457,22 @@ class _RankingScreenState extends State<RankingScreen> {
               ),
               const SizedBox(width: 12),
 
-              // アバター
+              // ===== アイコン表示（ここが本題）=====
               CircleAvatar(
+                radius: 20,
                 backgroundColor: avatarColor.withOpacity(0.2),
-                foregroundColor: avatarColor,
-                child: Text(
-                  name.isNotEmpty ? name.substring(0, 1) : '?', // 空文字の場合は'?'を表示
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
+                backgroundImage:
+                    iconPath.isNotEmpty ? NetworkImage(iconPath) : null,
+                child:
+                    iconPath.isEmpty
+                        ? Text(
+                          name.isNotEmpty ? name.substring(0, 1) : '?',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        )
+                        : null,
               ),
               const SizedBox(width: 16),
 
-              // 名前
               Expanded(
                 child: Text(
                   name,
@@ -447,7 +485,6 @@ class _RankingScreenState extends State<RankingScreen> {
                 ),
               ),
 
-              // スコア
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
