@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:bridge/11-common/58-header.dart';
@@ -62,7 +63,8 @@ class _ThreadListState extends State<ThreadList> {
       final response = await http
           .post(
             Uri.parse(
-              "http://localhost:8080/api/users/$userId/check-subscription",
+              // "http://localhost:8080/api/users/$userId/check-subscription",
+              "${ApiConfig.baseUrl}/api/users/$userId/check-subscription",
             ),
           )
           .timeout(const Duration(seconds: 5));

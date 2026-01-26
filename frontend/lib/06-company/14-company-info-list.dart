@@ -1,3 +1,4 @@
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
@@ -94,7 +95,8 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
       final response = await http
           .post(
             Uri.parse(
-              "http://localhost:8080/api/users/$userId/check-subscription",
+              // "http://localhost:8080/api/users/$userId/check-subscription",
+              '${ApiConfig.baseUrl}/api/users/$userId/check-subscription',
             ),
           )
           .timeout(const Duration(seconds: 5));

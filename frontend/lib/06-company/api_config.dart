@@ -1,30 +1,20 @@
+import 'package:flutter/foundation.dart';
+
 class ApiConfig {
   // 環境に応じてベースURLを切り替え
   static String get baseUrl {
-    // 本番環境の判定（例：kReleaseMode、環境変数、ドメインチェックなど）
-    if (_isProduction()) {
-      return 'https://your-production-domain.com'; // 本番環境のURL
-    } else if (_isStaging()) {
-      return 'https://your-staging-domain.com'; // ステージング環境のURL
+    // kReleaseMode は Flutter がビルド（flutter build web）された時に自動で true になります
+    if (kReleaseMode) {
+      return 'https://api.bridge-tesg.com'; // ★本番（独自ドメイン）
     } else {
-      return 'http://localhost:8080'; // 開発環境のURL
+      return 'http://localhost:8080'; // ★開発（自分のPC）
     }
   }
 
-  static bool _isProduction() {
-    // 本番環境の判定ロジック
-    // 例：const bool.fromEnvironment('dart.vm.product')
-    // 例：window.location.hostname == 'your-production-domain.com'
-    return const bool.fromEnvironment('dart.vm.product');
-  }
-
-  static bool _isStaging() {
-    // ステージング環境の判定ロジック
-    return const bool.fromEnvironment('STAGING', defaultValue: false);
-  }
-
-  // 各APIのエンドポイント
+  // 各APIのエンドポイント（ここに必要なものを追加していく）
   static String get articlesUrl => '$baseUrl/api/articles';
   static String get companiesUrl => '$baseUrl/api/companies';
   static String get photosUrl => '$baseUrl/api/photos';
+  static String get notificationsUrl => '$baseUrl/api/notifications'; // ←追加
+  static String get reportUrl => '$baseUrl/api/notice/report'; // ←追加
 }

@@ -1,3 +1,4 @@
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/59-global-method.dart';
@@ -235,7 +236,8 @@ class _RankingScreenState extends State<RankingScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:8080/api/quiz/ranking'),
+        // Uri.parse('http://localhost:8080/api/quiz/ranking'),
+        Uri.parse('${ApiConfig.baseUrl}/api/quiz/ranking'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -253,7 +255,8 @@ class _RankingScreenState extends State<RankingScreen> {
           if (item['userId'] != null) {
             try {
               final userResponse = await http.get(
-                Uri.parse('http://localhost:8080/api/users/${item['userId']}'),
+                // Uri.parse('http://localhost:8080/api/users/${item['userId']}'),
+                Uri.parse('${ApiConfig.baseUrl}/api/users/${item['userId']}'),
                 headers: {'Content-Type': 'application/json'},
               );
 

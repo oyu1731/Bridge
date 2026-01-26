@@ -1,4 +1,5 @@
 import 'package:bridge/02-auth/06-delete-account.dart';
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/59-global-method.dart'; // loadUserSession 等のため
@@ -73,7 +74,8 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
       final response = await http
           .post(
             Uri.parse(
-              "http://localhost:8080/api/users/$userId/check-subscription",
+              // "http://localhost:8080/api/users/$userId/check-subscription",
+              '${ApiConfig.baseUrl}/api/users/$userId/check-subscription',
             ),
           )
           .timeout(const Duration(seconds: 5));
@@ -124,7 +126,8 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
         final response = await http
             .get(
               Uri.parse(
-                "http://localhost:8080/api/subscriptions/status/$userId",
+                // "http://localhost:8080/api/subscriptions/status/$userId",
+                '${ApiConfig.baseUrl}/api/subscriptions/status/$userId',
               ),
             )
             .timeout(const Duration(seconds: 5));

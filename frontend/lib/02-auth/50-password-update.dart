@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/03-home/08-student-worker-home.dart';
@@ -38,81 +39,82 @@ class _PasswordUpdatePageState extends State<PasswordUpdatePage> {
   void _toggleNew() => setState(() => _obscureNew = !_obscureNew);
   void _toggleConfirm() => setState(() => _obscureConfirm = !_obscureConfirm);
 
-Future<void> _onSubmit() async {
-  if (_formKey.currentState?.validate() ?? false) {
-    final prefs = await SharedPreferences.getInstance();
-    final userJson = prefs.getString('current_user');
+  Future<void> _onSubmit() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString('current_user');
 
-    int? userId;
-    int? userType;
+      int? userId;
+      int? userType;
 
-    if (userJson != null) {
-      final userData = jsonDecode(userJson);
-      userId = userData['id'];
-      userType = userData['type'];
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ユーザーが見つかりません')),
+      if (userJson != null) {
+        final userData = jsonDecode(userJson);
+        userId = userData['id'];
+        userType = userData['type'];
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('ユーザーが見つかりません')));
+        return;
+      }
+
+      if (userId == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('ユーザーIDが取得できませんでした')));
+        return;
+      }
+
+      // final url = Uri.parse('http://localhost:8080/api/users/$userId/password');
+      final url = Uri.parse('${ApiConfig.baseUrl}/api/users/$userId/password');
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'currentPassword': _currentController.text,
+          'newPassword': _newController.text,
+        }),
       );
-      return;
-    }
 
-    if (userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ユーザーIDが取得できませんでした')),
-      );
-      return;
-    }
-
-    final url = Uri.parse('http://localhost:8080/api/users/$userId/password');
-    final response = await http.put(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'currentPassword': _currentController.text,
-        'newPassword': _newController.text,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      // 成功時はポップアップ表示
-      showDialog(
-        context: context,
-        builder: (ctx) {
-          return AlertDialog(
-            title: const Text('パスワード変更'),
-            content: const Text('パスワードの変更が完了しました'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  // トップページへ遷移
-                  Widget homePage;
-                  if (userType == 1 || userType == 2) {
-                    homePage = const StudentWorkerHome();
-                  } else if (userType == 3) {
-                    homePage = const CompanyHome();
-                  } else {
-                    homePage = const MyHomePage(title: 'Bridge');
-                  }
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => homePage),
-                  );
-                },
-                child: const Text('閉じる'),
-              ),
-            ],
-          );
-        },
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('エラー: ${response.body}')),
-      );
+      if (response.statusCode == 200) {
+        // 成功時はポップアップ表示
+        showDialog(
+          context: context,
+          builder: (ctx) {
+            return AlertDialog(
+              title: const Text('パスワード変更'),
+              content: const Text('パスワードの変更が完了しました'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    // トップページへ遷移
+                    Widget homePage;
+                    if (userType == 1 || userType == 2) {
+                      homePage = const StudentWorkerHome();
+                    } else if (userType == 3) {
+                      homePage = const CompanyHome();
+                    } else {
+                      homePage = const MyHomePage(title: 'Bridge');
+                    }
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => homePage),
+                    );
+                  },
+                  child: const Text('閉じる'),
+                ),
+              ],
+            );
+          },
+        );
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('エラー: ${response.body}')));
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -127,16 +129,15 @@ Future<void> _onSubmit() async {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   const SizedBox(height: 28),
 
                   // --- タイトル ---
-                  Text('パスワード変更',
-                    style: AppTheme.mainTextStyle,
-                  ),
+                  Text('パスワード変更', style: AppTheme.mainTextStyle),
                   const SizedBox(height: 12),
-                  const Text('現在のパスワードと、新しいパスワードを入力してください。',
-                      style: TextStyle(color: Colors.black54)),
+                  const Text(
+                    '現在のパスワードと、新しいパスワードを入力してください。',
+                    style: TextStyle(color: Colors.black54),
+                  ),
 
                   const SizedBox(height: 28),
 
@@ -188,8 +189,13 @@ Future<void> _onSubmit() async {
                             OutlinedButton(
                               onPressed: () => Navigator.of(context).maybePop(),
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                               child: const Text('戻る'),
                             ),
@@ -201,8 +207,13 @@ Future<void> _onSubmit() async {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.orangeAccent[400],
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 28,
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                                 elevation: 0,
                               ),
                               child: const Text('送信'),
@@ -211,7 +222,6 @@ Future<void> _onSubmit() async {
                         ),
 
                         const SizedBox(height: 32),
-
                       ],
                     ),
                   ),
@@ -253,9 +263,13 @@ Future<void> _onSubmit() async {
         TextFormField(
           controller: controller,
           obscureText: obscure,
-          validator: validator ?? (v) => (v == null || v.isEmpty) ? '入力してください' : null,
+          validator:
+              validator ?? (v) => (v == null || v.isEmpty) ? '入力してください' : null,
           decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             suffixIcon: IconButton(
               icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),

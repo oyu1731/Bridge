@@ -102,9 +102,10 @@ class _PhonePracticeState extends State<PhonePractice> {
           builder: (context, setModalState) {
             bool isFree = (user?['planStatus'] ?? '無料') == '無料';
             final isSmallScreen = MediaQuery.of(context).size.width < 600;
-            final modalHeight = isSmallScreen
-                ? MediaQuery.of(context).size.height * 0.95
-                : MediaQuery.of(context).size.height * 0.88;
+            final modalHeight =
+                isSmallScreen
+                    ? MediaQuery.of(context).size.height * 0.95
+                    : MediaQuery.of(context).size.height * 0.88;
             final padding = isSmallScreen ? 16.0 : 20.0;
             final headerFontSize = isSmallScreen ? 20.0 : 24.0;
 
@@ -165,109 +166,114 @@ class _PhonePracticeState extends State<PhonePractice> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey.shade200),
                       ),
-                      child: isSmallScreen
-                          ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.account_balance_wallet,
-                                      color: Colors.blue.shade600,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    const Text(
-                                      "現在のトークン",
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      _availableTokens?.toString() ?? '未取得',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF1E293B),
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF10B981),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: const Text(
-                                        "20消費",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            )
-                          : Row(
-                              children: [
-                                Icon(
-                                  Icons.account_balance_wallet,
-                                  color: Colors.blue.shade600,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                      child:
+                          isSmallScreen
+                              ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
                                     children: [
+                                      Icon(
+                                        Icons.account_balance_wallet,
+                                        color: Colors.blue.shade600,
+                                      ),
+                                      const SizedBox(width: 8),
                                       const Text(
                                         "現在のトークン",
                                         style: TextStyle(
-                                          fontSize: 14,
+                                          fontSize: 12,
                                           color: Colors.grey,
-                                        ),
-                                      ),
-                                      Text(
-                                        _availableTokens?.toString() ?? '未取得',
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF1E293B),
                                         ),
                                       ),
                                     ],
                                   ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        _availableTokens?.toString() ?? '未取得',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1E293B),
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF10B981),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          "20消費",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF10B981),
-                                    borderRadius: BorderRadius.circular(20),
+                                ],
+                              )
+                              : Row(
+                                children: [
+                                  Icon(
+                                    Icons.account_balance_wallet,
+                                    color: Colors.blue.shade600,
                                   ),
-                                  child: const Text(
-                                    "20トークン消費",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          "現在のトークン",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        Text(
+                                          _availableTokens?.toString() ?? '未取得',
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF1E293B),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Text(
+                                      "20トークン消費",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                     ),
                     SizedBox(height: isSmallScreen ? 12 : 20),
 
@@ -409,8 +415,8 @@ class _PhonePracticeState extends State<PhonePractice> {
                           print("送信する内容: $_companyInfo");
 
                           final url = Uri.parse(
-                            'http://localhost:8080/api/phone/practice',
-                            // '${ApiConfig.baseUrl}/api/phone/practice',
+                            // 'http://localhost:8080/api/phone/practice',
+                            '${ApiConfig.baseUrl}/api/phone/practice',
                           );
                           final headers = {
                             'Content-Type': 'application/json; charset=UTF-8',
@@ -437,7 +443,8 @@ class _PhonePracticeState extends State<PhonePractice> {
 
                               // トークンを消費（プレミアムユーザーは除外）
                               if (user != null && user!['id'] != null) {
-                                final isPremium = (user?['planStatus'] ?? '無料') != '無料';
+                                final isPremium =
+                                    (user?['planStatus'] ?? '無料') != '無料';
                                 if (!isPremium) {
                                   final userId = user!['id'] as int;
                                   final tokensToDeduct = 20;
@@ -790,8 +797,8 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
       return;
     }
 
-    final url = Uri.parse('http://localhost:8080/api/phone/continue');
-    // final url = Uri.parse('${ApiConfig.baseUrl}/api/phone/continue');
+    // final url = Uri.parse('http://localhost:8080/api/phone/continue');
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/phone/continue');
     final headers = {'Content-Type': 'application/json; charset=UTF-8'};
     final payload = {"sessionId": widget.sessionId, "message": answer};
 
@@ -849,8 +856,8 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
   }
 
   void _endCallAndNavigateToResult() async {
-    final url = Uri.parse('http://localhost:8080/api/phone/end');
-    // final url = Uri.parse('${ApiConfig.baseUrl}/api/phone/end');
+    // final url = Uri.parse('http://localhost:8080/api/phone/end');
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/phone/end');
     final headers = {'Content-Type': 'application/json; charset=UTF-8'};
     final payload = {"sessionId": widget.sessionId};
 
