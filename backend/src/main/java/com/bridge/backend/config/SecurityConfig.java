@@ -14,7 +14,7 @@ import java.util.Arrays;
 @Configuration
 public class SecurityConfig {
 
-    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:8080}")
+    @Value("${app.cors.allowed-origins:https://bridge-915bd.web.app,https://api.bridge-tesg.com,http://localhost:3000,http://localhost:8080}")
     private String allowedOrigins;
 
     @Bean
