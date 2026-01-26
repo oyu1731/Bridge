@@ -23,49 +23,93 @@ class StudentWorkerHome extends StatefulWidget {
 }
 
 class _StudentWorkerHomeState extends State<StudentWorkerHome>
-  with SingleTickerProviderStateMixin {
-    List<Thread> officialThreads = [];
-    List<Thread> hotUnofficialThreads = [];
-    late TabController _tabController;
-    final GlobalActions _globalActions = GlobalActions(); // グローバルアクション利用
-    Map<String, dynamic>? _user;
-    // API呼び出し　並び替え　上位３件に絞り込み
-    Future<List<Thread>> fetchTop3UnofficialThreads() async {
-      final threads = await ThreadApiClient.getAllThreads();
-      final unofficial = threads.where((t) => t.type == 2 && (t.entryCriteria == userType || t.entryCriteria == 1)).toList();
-      unofficial.sort((a, b) {
-        final aTime = a.lastCommentDate ?? DateTime(2000);
-        final bTime = b.lastCommentDate ?? DateTime(2000);
-        return bTime.compareTo(aTime); // 新しい順
-      });
-      return unofficial.take(3).toList();
-    }
-     //ユーザ情報取得
-    int? userType;
-    Future<void> _loadUserData() async {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonString = prefs.getString('current_user');
-      if (jsonString == null) return;
-      final userData = jsonDecode(jsonString);
-      setState(() {
-        userType = userData['type']+1;
-      });
-    }
+    with SingleTickerProviderStateMixin {
+  List<Thread> officialThreads = [];
+  List<Thread> hotUnofficialThreads = [];
+  late TabController _tabController;
+  final GlobalActions _globalActions = GlobalActions(); // グローバルアクション利用
+  Map<String, dynamic>? _user;
+  // API呼び出し　並び替え　上位３件に絞り込み
+  Future<List<Thread>> fetchTop3UnofficialThreads() async {
+    final threads = await ThreadApiClient.getAllThreads();
+    final unofficial =
+        threads
+            .where(
+              (t) =>
+                  t.type == 2 &&
+                  (t.entryCriteria == userType || t.entryCriteria == 1),
+            )
+            .toList();
+    unofficial.sort((a, b) {
+      final aTime = a.lastCommentDate ?? DateTime(2000);
+      final bTime = b.lastCommentDate ?? DateTime(2000);
+      return bTime.compareTo(aTime); // 新しい順
+    });
+    return unofficial.take(3).toList();
+  }
 
-    Future<void> _init() async {
-      await _loadUserData();   //ユーザ取得
-      print("iiiiiiiiii");
-      print(userType);
-    }
+  //ユーザ情報取得
+  int? userType;
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('current_user');
+    if (jsonString == null) return;
+    final userData = jsonDecode(jsonString);
+    setState(() {
+      userType = userData['type'] + 1;
+    });
+  }
 
-    @override
-    void initState() {
-      super.initState();
-      _tabController = TabController(length: 5, vsync: this);
-      // ホーム表示時にリアルタイムで状態を更新する
-      _refreshUserStatus();
-      _init();
+  /// ログイン中のアカウントのサブスク確認・更新
+  Future<void> _checkAndUpdateSubscriptionStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('current_user');
+    if (jsonString == null) return;
+
+    final userData = jsonDecode(jsonString);
+    final userId = userData['id'];
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse(
+              "http://localhost:8080/api/users/$userId/check-subscription",
+            ),
+          )
+          .timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('サブスク確認完了: ${data['message']}');
+
+        // usersテーブルのplanStatusが更新されている場合、セッションも更新
+        if (data['planStatus'] != null) {
+          userData['planStatus'] = data['planStatus'];
+          await prefs.setString('current_user', jsonEncode(userData));
+        }
+      } else {
+        print('サブスク確認エラー: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('サブスク確認通信エラー: $e');
     }
+  }
+
+  Future<void> _init() async {
+    await _loadUserData(); //ユーザ取得
+    await _checkAndUpdateSubscriptionStatus(); // サブスク確認・更新
+    print("iiiiiiiiii");
+    print(userType);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 5, vsync: this);
+    // ホーム表示時にリアルタイムで状態を更新する
+    _refreshUserStatus();
+    _init();
+  }
 
   /// サーバーから最新のプラン状態を取得し、セッションを更新する
   Future<void> _refreshUserStatus() async {
@@ -132,13 +176,12 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
                 ),
               ),
             ),
-          Expanded(
-            child: _buildTopPageTab(context)
-          ),
+          Expanded(child: _buildTopPageTab(context)),
         ],
       ),
     );
   }
+
   // =====================
 // トップページタブ
 // =====================
@@ -172,186 +215,195 @@ Widget _buildTopPageTab(BuildContext context) {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => ThreadList()),
                         );
-                    },
-                    child: const Text(
-                      '>スレッド一覧',
+                      },
+                      child: const Text('>スレッド一覧'),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                children: [
-                  FutureBuilder<List<Thread>>(
-                    future: fetchTop3UnofficialThreads(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (snapshot.hasError) {
-                        return Text('スレッド取得エラー');
-                      }
-                      final threads = snapshot.data ?? [];
-                      if (threads.isEmpty) {
-                        return Text('表示できるスレッドがありません');
-                      }
-                      return Column(
-                        children: threads.map((t) {
-                          return Column(
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ThreadUnOfficialDetail(
-                                        thread: {'id': t.id, 'title': t.title},
-                                      ),
-                                    ),
-                                  );
-                                },
-                                //説明文の表示
-                                child: Card(
-                                  child: ListTile(
-                                    title: Text(
-                                      t.title,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      t.description,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(color: Colors.grey[700]),
-                                    ),
-                                    trailing: Text(
-                                      t.timeAgo,
-                                      style: const TextStyle(color: Colors.grey),
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                            ],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  children: [
+                    FutureBuilder<List<Thread>>(
+                      future: fetchTop3UnofficialThreads(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
                           );
-                        }).toList(),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // 注目記事
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    '注目記事',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => ArticleListPage()),
-                      );
-                    },
-                    child: const Text(
-                      '>記事一覧',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // スマホ: 横スクロール / PC: PageView＋ボタン（3枚ずつ）
-            SizedBox(
-              height: 260,
-              child:
-                  isMobile
-                      ? ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        itemCount: articles.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 16),
-                        itemBuilder: (context, i) {
-                          final a = articles[i];
-                          return _buildArticleCard(
-                            title: a.title,
-                            companyName: a.companyName ?? '',
-                            totalLikes: a.totalLikes ?? 0,
-                            link: '',
-                            onTitleTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (_) => ArticleDetailPage(
-                                        articleTitle: a.title,
-                                        articleId: a.id?.toString() ?? '',
-                                        companyName: a.companyName,
-                                        description: a.description,
-                                      ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      )
-                      : _ArticlePager(
-                        articles:
-                            articles
-                                .map(
-                                  (a) => {
-                                    "title": a.title,
-                                    "companyName": a.companyName ?? '',
-                                    "totalLikes": a.totalLikes ?? 0,
-                                    "link": '',
-                                    "onTitleTap": () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (_) => ArticleDetailPage(
-                                                articleTitle: a.title,
-                                                articleId:
-                                                    a.id?.toString() ?? '',
-                                                companyName: a.companyName,
-                                                description: a.description,
-                                              ),
+                        }
+                        if (snapshot.hasError) {
+                          return Text('スレッド取得エラー');
+                        }
+                        final threads = snapshot.data ?? [];
+                        if (threads.isEmpty) {
+                          return Text('表示できるスレッドがありません');
+                        }
+                        return Column(
+                          children:
+                              threads.map((t) {
+                                return Column(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) =>
+                                                    ThreadUnOfficialDetail(
+                                                      thread: {
+                                                        'id': t.id,
+                                                        'title': t.title,
+                                                      },
+                                                    ),
+                                          ),
+                                        );
+                                      },
+                                      //説明文の表示
+                                      child: Card(
+                                        child: ListTile(
+                                          title: Text(
+                                            t.title,
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          subtitle: Text(
+                                            t.description,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                          trailing: Text(
+                                            t.timeAgo,
+                                            style: const TextStyle(
+                                              color: Colors.grey,
+                                            ),
+                                          ),
                                         ),
-                                      );
-                                    },
-                                  },
-                                )
-                                .toList(),
-                      ),
-            ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }).toList(),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
 
-            const SizedBox(height: 24),
-          ],
-        ),
-      );
-    },
-  );
-}
+              // 注目記事
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '注目記事',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => ArticleListPage()),
+                        );
+                      },
+                      child: const Text('>記事一覧'),
+                    ),
+                  ],
+                ),
+              ),
+
+              // スマホ: 横スクロール / PC: PageView＋ボタン（3枚ずつ）
+              SizedBox(
+                height: 260,
+                child:
+                    isMobile
+                        ? ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          itemCount: articles.length,
+                          separatorBuilder:
+                              (_, __) => const SizedBox(width: 16),
+                          itemBuilder: (context, i) {
+                            final a = articles[i];
+                            return _buildArticleCard(
+                              title: a.title,
+                              companyName: a.companyName ?? '',
+                              totalLikes: a.totalLikes ?? 0,
+                              link: '',
+                              onTitleTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => ArticleDetailPage(
+                                          articleTitle: a.title,
+                                          articleId: a.id?.toString() ?? '',
+                                          companyName: a.companyName,
+                                          description: a.description,
+                                        ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        )
+                        : _ArticlePager(
+                          articles:
+                              articles
+                                  .map(
+                                    (a) => {
+                                      "title": a.title,
+                                      "companyName": a.companyName ?? '',
+                                      "totalLikes": a.totalLikes ?? 0,
+                                      "link": '',
+                                      "onTitleTap": () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (_) => ArticleDetailPage(
+                                                  articleTitle: a.title,
+                                                  articleId:
+                                                      a.id?.toString() ?? '',
+                                                  companyName: a.companyName,
+                                                  description: a.description,
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                    },
+                                  )
+                                  .toList(),
+                        ),
+              ),
+
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 // =====================
