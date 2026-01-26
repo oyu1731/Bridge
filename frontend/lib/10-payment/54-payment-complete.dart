@@ -84,7 +84,8 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
     while (attempt < maxAttempts && mounted) {
       try {
         final res = await http.get(
-          Uri.parse('http://localhost:8080/api/v1/payment/session/$sessionId'),
+          // Uri.parse('http://localhost:8080/api/v1/payment/session/$sessionId'),
+          Uri.parse('${ApiConfig.baseUrl}/api/v1/payment/session/$sessionId'),
         );
         if (res.statusCode == 200) {
           user = jsonDecode(res.body) as Map<String, dynamic>;
@@ -105,7 +106,8 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
     // ✅ バックエンド側でセッション保存
     try {
       final loginRes = await http.post(
-        Uri.parse('http://localhost:8080/api/auth/login-by-id/${user['id']}'),
+        // Uri.parse('http://localhost:8080/api/auth/login-by-id/${user['id']}'),
+        Uri.parse('${ApiConfig.baseUrl}/api/auth/login-by-id/${user['id']}'),
       );
       if (loginRes.statusCode == 200) {
         final sessionUser = jsonDecode(loginRes.body);

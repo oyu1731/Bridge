@@ -1,3 +1,4 @@
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'dart:convert';
@@ -48,7 +49,8 @@ class NoticeData {
       type: json['type'],
       threadId: json['threadId'],
       chatId: json['chatId'],
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       threadTitle: json['threadTitle'],
       chatContent: json['chatContent'],
       threadDeleted: json['threadDeleted'],
@@ -77,7 +79,10 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
   }
 
   Future<void> _fetchLogs() async {
-    final res = await http.get(Uri.parse("http://localhost:8080/api/notice/logs"));
+    final res = await http.get(
+      // Uri.parse("http://localhost:8080/api/notice/logs"),
+      Uri.parse("${ApiConfig.baseUrl}/api/notice/logs"),
+    );
     if (res.statusCode == 200) {
       final List data = jsonDecode(res.body);
       setState(() {
@@ -98,26 +103,40 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
   Future<void> _confirmDelete(NoticeData n) async {
     bool confirm = await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('削除確認'),
-        content: const Text('この投稿を削除しますか？'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('キャンセル')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('削除')),
-        ],
-      ),
+      builder:
+          (_) => AlertDialog(
+            title: const Text('削除確認'),
+            content: const Text('この投稿を削除しますか？'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('キャンセル'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('削除'),
+              ),
+            ],
+          ),
     );
 
     if (confirm == true) _delete(n.id);
   }
 
   Future<void> _delete(int id) async {
-    final res = await http.put(Uri.parse("http://localhost:8080/api/notice/admin/delete/$id"));
+    // final res = await http.put(Uri.parse("http://localhost:8080/api/notice/admin/delete/$id"));
+    final res = await http.put(
+      Uri.parse("${ApiConfig.baseUrl}/api/notice/admin/delete/$id"),
+    );
     if (res.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("削除しました")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("削除しました")));
       _fetchLogs();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("削除に失敗しました")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("削除に失敗しました")));
     }
   }
 
@@ -129,16 +148,20 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const Text('通報ログ', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+            const Text(
+              '通報ログ',
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             _buildHeader(),
             Expanded(
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      itemCount: _logs.length,
-                      itemBuilder: (context, i) => _buildRow(_logs[i]),
-                    ),
+              child:
+                  _loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : ListView.builder(
+                        itemCount: _logs.length,
+                        itemBuilder: (context, i) => _buildRow(_logs[i]),
+                      ),
             ),
           ],
         ),
@@ -165,14 +188,17 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
   }
 
   Widget _buildRow(NoticeData n) {
-    String date = n.createdAt != null
-        ? "${n.createdAt!.year}/${n.createdAt!.month.toString().padLeft(2, '0')}/${n.createdAt!.day.toString().padLeft(2, '0')} "
-          "${n.createdAt!.hour.toString().padLeft(2, '0')}:${n.createdAt!.minute.toString().padLeft(2, '0')}"
-        : "";
+    String date =
+        n.createdAt != null
+            ? "${n.createdAt!.year}/${n.createdAt!.month.toString().padLeft(2, '0')}/${n.createdAt!.day.toString().padLeft(2, '0')} "
+                "${n.createdAt!.hour.toString().padLeft(2, '0')}:${n.createdAt!.minute.toString().padLeft(2, '0')}"
+            : "";
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey.shade300))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+      ),
       child: Row(
         children: [
           Expanded(flex: 3, child: Center(child: Text(date))),
@@ -180,16 +206,20 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
           Expanded(flex: 2, child: _userLink(n.toUserId)),
           Expanded(flex: 3, child: _threadLink(n)),
           Expanded(flex: 4, child: _chatLink(n)),
-          Expanded(flex: 1, child: Center(child: Text(n.totalCount?.toString() ?? '0'))),
+          Expanded(
+            flex: 1,
+            child: Center(child: Text(n.totalCount?.toString() ?? '0')),
+          ),
           Expanded(
             flex: 1,
             child: Center(
-              child: _canDelete(n)
-                  ? IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.black),
-                      onPressed: () => _confirmDelete(n),
-                    )
-                  : _disabledDeleteIcon(),   // ← 完全無反応
+              child:
+                  _canDelete(n)
+                      ? IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.black),
+                        onPressed: () => _confirmDelete(n),
+                      )
+                      : _disabledDeleteIcon(), // ← 完全無反応
             ),
           ),
         ],
@@ -198,75 +228,98 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
   }
 
   Widget _userLink(int? id) => Center(
-    child: id == null ? const Text('—') : GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AdminAccountDetail(userId: id))),
-      child: Text(id.toString(), style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline)),
-    ),
+    child:
+        id == null
+            ? const Text('—')
+            : GestureDetector(
+              onTap:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AdminAccountDetail(userId: id),
+                    ),
+                  ),
+              child: Text(
+                id.toString(),
+                style: const TextStyle(
+                  color: Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
   );
 
   Widget _threadLink(NoticeData n) => Column(
     children: [
       n.threadId == null
-        ? const Text('—')
-        : GestureDetector(
-          onTap: () {
-            if (n.threadDeleted == true) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("このスレッドはすでに削除されています")),
-              );
-              return;
-            }
+          ? const Text('—')
+          : GestureDetector(
+            onTap: () {
+              if (n.threadDeleted == true) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("このスレッドはすでに削除されています")),
+                );
+                return;
+              }
 
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => AdminThreadDetail(
-                  threadId: n.threadId!,
-                  title: n.threadTitle ?? 'スレッド',
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (_) => AdminThreadDetail(
+                        threadId: n.threadId!,
+                        title: n.threadTitle ?? 'スレッド',
+                      ),
                 ),
+              );
+            },
+            child: Text(
+              n.threadTitle ?? '（削除済み）',
+              style: const TextStyle(
+                color: Colors.blue,
+                decoration: TextDecoration.underline,
               ),
-            );
-          },
-          child: Text(
-            n.threadTitle ?? '（削除済み）',
-            style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+            ),
           ),
-        ),
-        if (n.threadDeleted == true)
-          const Text("削除済み", style: TextStyle(color: Colors.red, fontSize: 12))
+      if (n.threadDeleted == true)
+        const Text("削除済み", style: TextStyle(color: Colors.red, fontSize: 12)),
     ],
   );
 
   Widget _chatLink(NoticeData n) => Column(
     children: [
       n.chatId == null
-        ? const Text('—')
-        : GestureDetector(
-          onTap: () {
-            if (n.chatDeleted == true || n.threadDeleted == true) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("このレスはすでに削除されています")),
-              );
-              return;
-            }
+          ? const Text('—')
+          : GestureDetector(
+            onTap: () {
+              if (n.chatDeleted == true || n.threadDeleted == true) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("このレスはすでに削除されています")),
+                );
+                return;
+              }
 
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => AdminThreadDetail(
-                  threadId: n.threadId!,
-                  title: n.threadTitle ?? 'スレッド',
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (_) => AdminThreadDetail(
+                        threadId: n.threadId!,
+                        title: n.threadTitle ?? 'スレッド',
+                      ),
                 ),
+              );
+            },
+            child: Text(
+              n.chatContent ?? '（削除済み）',
+              style: const TextStyle(
+                color: Colors.blue,
+                decoration: TextDecoration.underline,
               ),
-            );
-          },
-          child: Text(
-            n.chatContent ?? '（削除済み）',
-            style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+            ),
           ),
-        ),
-        if (n.chatDeleted == true)
-          const Text("削除済み", style: TextStyle(color: Colors.red, fontSize: 12))
+      if (n.chatDeleted == true)
+        const Text("削除済み", style: TextStyle(color: Colors.red, fontSize: 12)),
     ],
   );
 

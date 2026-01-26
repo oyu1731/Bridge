@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -115,7 +116,8 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
     print('🔍 プラン状態取得開始: userId=$userId');
     try {
       final response = await http.get(
-        Uri.parse("http://localhost:8080/api/users/$userId/plan-status"),
+        // Uri.parse("http://localhost:8080/api/users/$userId/plan-status"),
+        Uri.parse("${ApiConfig.baseUrl}/api/users/$userId/plan-status"),
       );
 
       print('📶 APIレスポンスコード: ${response.statusCode}');
@@ -746,7 +748,8 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
 
     try {
       final res = await http.get(
-        Uri.parse('http://localhost:8080/api/users/$userId'),
+        // Uri.parse('http://localhost:8080/api/users/$userId'),
+        Uri.parse('${ApiConfig.baseUrl}/api/users/$userId'),
       );
       if (res.statusCode == 200) {
         final api = jsonDecode(res.body);
@@ -891,7 +894,8 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
     if (accountType == '企業') type = 3;
 
     final res = await http.get(
-      Uri.parse('http://localhost:8080/api/notifications'),
+      // Uri.parse('http://localhost:8080/api/notifications'),
+      Uri.parse('${ApiConfig.baseUrl}/api/notifications'),
     );
     if (res.statusCode != 200) return;
 
