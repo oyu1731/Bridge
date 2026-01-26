@@ -3,7 +3,9 @@ package com.bridge.backend.service;
 import com.bridge.backend.entity.ForumThread;
 import com.bridge.backend.repository.ThreadRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -46,5 +48,27 @@ public class ThreadService {
         thread.setIndustry(null);
 
         return threadRepository.save(thread);
+    }
+
+    public List<Map<String, Object>> getThreadsOrderByLastReportedAt() {
+        List<Object[]> rows = threadRepository.findThreadsOrderByLastReportedAt();
+
+        return rows.stream().map(row -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", row[0]);
+            map.put("userId", row[1]);
+            map.put("title", row[2]);
+            map.put("type", row[3]);
+            map.put("description", row[4]);
+            map.put("entryCriteria", row[5]);
+            map.put("lastUpdateDate", row[6]);
+            map.put("lastReportedAt", row[7]);
+            return map;
+        }).toList();
+    }
+
+    @Transactional
+    public void deleteThread(Integer threadId) {
+        threadRepository.softDelete(threadId);
     }
 }

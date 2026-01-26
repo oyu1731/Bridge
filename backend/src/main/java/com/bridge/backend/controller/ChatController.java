@@ -1,11 +1,15 @@
 package com.bridge.backend.controller;
 // import com.bridge.backend.entity.User;
 import com.bridge.backend.entity.Chat;
+import com.bridge.backend.repository.ChatRepository;
 // import com.bridge.backend.entity.ForumThread;
 // import com.bridge.backend.repository.ThreadRepository;
 // import com.bridge.backend.repository.UserRepository;
 // import com.bridge.backend.repository.ChatRepository;
 import com.bridge.backend.service.ChatService;
+import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 // import org.slf4j.Logger;
 // import org.slf4j.LoggerFactory;
@@ -21,9 +25,11 @@ import java.util.HashMap;
 public class ChatController {
 
     private final ChatService chatService;
+    private final ChatRepository chatRepository;
 
-    public ChatController(ChatService chatService) {
+    public ChatController(ChatService chatService, ChatRepository chatRepository) {
         this.chatService = chatService;
+        this.chatRepository = chatRepository;
     }
 
     //全取得
@@ -48,6 +54,14 @@ public class ChatController {
     @GetMapping("/user/{userId}")
     public Map<String, String> getUser(@PathVariable Integer userId) {
         return chatService.getUserInfo(userId);
+    }
+
+    // 管理者用：チャット論理削除
+    @PutMapping("/{chatId}/delete")
+    @Transactional
+    public ResponseEntity<Void> deleteChat(@PathVariable Integer chatId) {
+        chatRepository.softDelete(chatId);
+        return ResponseEntity.ok().build();
     }
 }
 
