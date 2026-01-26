@@ -14,6 +14,9 @@ public class CompanyDTO {
     private String description;
     private Integer planStatus;
     private Boolean isWithdrawn;
+
+    private Integer userId;
+    private Integer iconId; // ユーザーのアイコンID
     
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -164,5 +167,21 @@ public class CompanyDTO {
     
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public Integer getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
+    
+    public Integer getIconId() {
+        return iconId;
+    }
+    
+    public void setIconId(Integer iconId) {
+        this.iconId = iconId;
     }
 }

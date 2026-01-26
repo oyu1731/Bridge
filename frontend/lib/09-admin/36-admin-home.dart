@@ -37,7 +37,9 @@ class _AdminHomeState extends State<AdminHome> {
                 _buildButton('通報一覧', buttonWidth, buttonHeight, () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => AdminReportLogList()),
+                    MaterialPageRoute(
+                      builder: (context) => AdminReportLogList(),
+                    ),
                   );
                 }),
               ],
@@ -67,7 +69,12 @@ class _AdminHomeState extends State<AdminHome> {
     );
   }
 
-  Widget _buildButton(String text, double width, double height, VoidCallback onPressed) {
+  Widget _buildButton(
+    String text,
+    double width,
+    double height,
+    VoidCallback onPressed,
+  ) {
     return SizedBox(
       width: width,
       height: height,
@@ -75,7 +82,7 @@ class _AdminHomeState extends State<AdminHome> {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white, // 背景白
-          foregroundColor: Colors.black,  // 文字黒
+          foregroundColor: Colors.black, // 文字黒
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8), // 少し角丸
           ),

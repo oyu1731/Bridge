@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "threads")
-public class Thread {
+public class ForumThread {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id; // スレッドID (主キー、自動生成)
@@ -45,7 +45,7 @@ public class Thread {
     /**
      * JPAが必要とする引数なしコンストラクタ
      */
-    public Thread() {
+    public ForumThread() {
     }
 
     /**
@@ -61,7 +61,7 @@ public class Thread {
      * @param isDeleted 削除済みフラグ
      * @param createdAt 作成日時
      */
-    public Thread(Integer id, Integer userId, String title, Integer type, String description, Integer entryCriteria, String industry, LocalDateTime lastUpdateDate, Boolean isDeleted, LocalDateTime createdAt) {
+    public ForumThread(Integer id, Integer userId, String title, Integer type, String description, Integer entryCriteria, String industry, LocalDateTime lastUpdateDate, Boolean isDeleted, LocalDateTime createdAt) {
         this.id = id;
         this.userId = userId;
         this.title = title;

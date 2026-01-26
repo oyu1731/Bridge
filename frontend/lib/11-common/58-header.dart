@@ -1,475 +1,453 @@
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+
+import 'package:bridge/main.dart';
+
+// AI・クイズ
+import 'package:bridge/07-ai-training/21-ai-training-list.dart';
+import 'package:bridge/07-ai-training/27-quiz-course-select.dart';
+
+// プラン
+import 'package:bridge/10-payment/55-plan-status.dart';
+
+// プロフィール
+import '../04-profile/11-student-profile-edit.dart';
+import '../04-profile/12-worker-profile-edit.dart';
+import '../04-profile/13-company-profile-edit.dart';
+
+// 認証
+import '../02-auth/50-password-update.dart';
+import '../02-auth/06-delete-account.dart';
+
+// 企業
 import '../06-company/14-company-info-list.dart';
 import '../06-company/17-company-article-list.dart';
 import '../06-company/19-article-post.dart';
+
+// スレッド
 import '../08-thread/31-thread-list.dart';
+
+// Home
+import '../03-home/08-student-worker-home.dart';
+import '../03-home/09-company-home.dart';
+
+// アイコン取得
+import '../06-company/photo_api_client.dart';
 
 class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
   const BridgeHeader({Key? key}) : super(key: key);
 
   @override
+  Size get preferredSize => const Size.fromHeight(120);
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            spreadRadius: 0,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _getUserInfo(),
+      builder: (context, snapshot) {
+        final userInfo = snapshot.data ?? {};
+        final accountType = userInfo['accountType'] ?? 'unknown';
+        final nickname = userInfo['nickname'] ?? '';
+        final iconPath = userInfo['iconPath'] ?? '';
+
+        final greetings = ['こんにちは', 'いらっしゃいませ', 'ようこそ', 'お帰りなさい'];
+        final greeting =
+            greetings[DateTime.now().millisecond % greetings.length];
+
+        return Container(
+          height: 120,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+            border: const Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
           ),
-        ],
-        border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0), width: 1)),
-      ),
-      child: Column(
-        children: [
-          // 上段: ロゴ、挨拶、プロフィール・お知らせアイコン
-          Container(
-            height: 58,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: [
-                // 左側: Bridgeロゴ（大きくして文字を削除）
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: Image.asset(
-                    'lib/01-images/bridge-logo.png',
-                    height: 55, // サイズを少し小さく
-                    width: 110, // 横幅も調整
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Row(
-                        children: [
-                          Icon(
-                            Icons.home_outlined,
-                            color: Colors.blue,
-                            size: 44,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Bridge',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1976D2),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-
-                const Spacer(),
-
-                // 右側: ユーザー情報とアイコン
-                Row(
+          child: Column(
+            children: [
+              // ===== 上段 =====
+              Container(
+                height: 58,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
                   children: [
-                    Text(
-                      'こんにちは、adminさん。',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF424242),
-                        fontWeight: FontWeight.w500,
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: Image.asset(
+                        'lib/01-images/bridge-logo.png',
+                        height: 55,
+                        width: 110,
+                        fit: BoxFit.contain,
+                        errorBuilder:
+                            (_, __, ___) => const Text(
+                              'Bridge',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1976D2),
+                              ),
+                            ),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    // プロフィールメニュー
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0xFFF5F5F5),
-                        border: Border.all(color: Color(0xFFE0E0E0)),
-                      ),
-                      child: PopupMenuButton<String>(
-                        onSelected: (String value) {
-                          _handleProfileMenuSelection(context, value);
-                        },
-                        offset: Offset(0, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 8,
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(shape: BoxShape.circle),
-                          child: Icon(
-                            Icons.account_circle_outlined,
-                            color: Color(0xFF616161),
-                            size: 22,
+                    const Spacer(),
+                    Row(
+                      children: [
+                        Text(
+                          '$greeting、$nicknameさん。',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF424242),
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        itemBuilder:
-                            (BuildContext context) => [
-                              PopupMenuItem<String>(
-                                value: 'profile_edit',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.edit,
-                                      size: 18,
+                        const SizedBox(width: 16),
+                        // プロフィール
+                        PopupMenuButton<String>(
+                          onSelected:
+                              (v) => _handleProfileMenuSelection(context, v),
+                          offset: const Offset(0, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: CircleAvatar(
+                            radius: 18,
+                            backgroundColor: const Color(0xFFF5F5F5),
+                            backgroundImage:
+                                iconPath.isNotEmpty
+                                    ? NetworkImage(iconPath)
+                                    : null,
+                            child:
+                                iconPath.isEmpty
+                                    ? const Icon(
+                                      Icons.account_circle_outlined,
                                       color: Color(0xFF616161),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text('プロフィール編集'),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuItem<String>(
-                                value: 'password_change',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.lock,
-                                      size: 18,
-                                      color: Color(0xFF616161),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text('パスワード変更'),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuItem<String>(
-                                value: 'post_article',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.article,
-                                      size: 18,
-                                      color: Color(0xFF616161),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text('記事投稿'),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuItem<String>(
-                                value: 'article_list',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.list_alt,
-                                      size: 18,
-                                      color: Color(0xFF616161),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text('投稿記事一覧'),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuItem<String>(
-                                value: 'plan_check',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.credit_card,
-                                      size: 18,
-                                      color: Color(0xFF616161),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text('プラン確認'),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuDivider(),
-                              PopupMenuItem<String>(
-                                value: 'withdraw',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.exit_to_app,
-                                      size: 18,
-                                      color: Color(0xFFD32F2F),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      '退会手続き',
-                                      style: TextStyle(
-                                        color: Color(0xFFD32F2F),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuItem<String>(
-                                value: 'logout',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.logout,
-                                      size: 18,
-                                      color: Color(0xFFD32F2F),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'ログアウト',
-                                      style: TextStyle(
-                                        color: Color(0xFFD32F2F),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0xFFF5F5F5),
-                        border: Border.all(color: Color(0xFFE0E0E0)),
-                      ),
-                      child: IconButton(
-                        onPressed: () {
-                          // お知らせページへの遷移
-                          print('お知らせページへ遷移');
-                        },
-                        icon: Icon(
-                          Icons.notifications_outlined,
-                          color: Color(0xFF616161),
-                          size: 24,
+                                    )
+                                    : null,
+                          ),
+                          itemBuilder: (_) => _buildProfileMenu(accountType),
                         ),
-                        padding: EdgeInsets.all(8),
-                        constraints: BoxConstraints(
-                          minWidth: 40,
-                          minHeight: 40,
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: () {
+                            print('お知らせ');
+                          },
+                          icon: const Icon(Icons.notifications_outlined),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+
+              Container(height: 1, color: const Color(0xFFF0F0F0)),
+
+              // ===== 下段ナビ =====
+              Container(
+                height: 51,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 6,
+                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isSmall = constraints.maxWidth <= 800;
+                    final space = isSmall ? 8.0 : 20.0;
+
+                    List<Widget> buttons = [];
+
+                    buttons.add(
+                      _nav('TOPページ', () {
+                        if (accountType == '企業') {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => CompanyHome()),
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StudentWorkerHome(),
+                            ),
+                          );
+                        }
+                      }, isSmall),
+                    );
+
+                    buttons.add(SizedBox(width: space));
+
+                    if (accountType == '学生' || accountType == '社会人') {
+                      buttons.add(
+                        _nav('AI練習', () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AiTrainingListPage(),
+                            ),
+                          );
+                        }, isSmall),
+                      );
+                      buttons.add(SizedBox(width: space));
+
+                      buttons.add(
+                        _nav('1問1答', () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CourseSelectionScreen(),
+                            ),
+                          );
+                        }, isSmall),
+                      );
+                      buttons.add(SizedBox(width: space));
+                    }
+
+                    buttons.add(
+                      _nav('スレッド', () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => ThreadList()),
+                        );
+                      }, isSmall),
+                    );
+
+                    buttons.add(SizedBox(width: space));
+
+                    buttons.add(
+                      _nav('企業情報', () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CompanySearchPage(),
+                          ),
+                        );
+                      }, isSmall),
+                    );
+
+                    return SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      scrollDirection: Axis.horizontal,
+                      child: Row(children: buttons),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
+        );
+      },
+    );
+  }
 
-          // 中央の区切り線
-          Container(height: 1, color: Color(0xFFF0F0F0)),
+  // ===== ナビボタン =====
+  Widget _nav(String text, VoidCallback onPressed, bool small) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        backgroundColor: const Color(0xFFF5F5F5),
+        padding: EdgeInsets.symmetric(
+          horizontal: small ? 12 : 18,
+          vertical: small ? 6 : 8,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: small ? 11 : 13,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF424242),
+        ),
+      ),
+    );
+  }
 
-          // 下段: ナビゲーションボタン
-          Container(
-            height: 51,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // スマートフォンサイズ（幅800px以下）かどうかを判定
-                bool isSmallScreen = constraints.maxWidth <= 800;
-                double buttonSpacing = isSmallScreen ? 8 : 20;
-                
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildNavButton('TOPページ', () {
-                        print('TOPページへ遷移');
-                      }, isSmallScreen),
-                      SizedBox(width: buttonSpacing),
-                      _buildNavButton('AI練習', () {
-                        print('AI練習ページへ遷移');
-                      }, isSmallScreen),
-                      SizedBox(width: buttonSpacing),
-                      _buildNavButton('1問1答', () {
-                        print('1問1答ページへ遷移');
-                      }, isSmallScreen),
-                      SizedBox(width: buttonSpacing),
-                      _buildNavButton('スレッド', () {
-                        // スレッドページへの遷移
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ThreadList(),
-                          ),
-                        );
-                      }, isSmallScreen),
-                      SizedBox(width: buttonSpacing),
-                      _buildNavButton('企業情報', () {
-                        // 企業情報ページへの遷移
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CompanySearchPage(),
-                          ),
-                        );
-                      }, isSmallScreen),
-                    ],
-                  ),
-                );
-              },
-            ),
+  // ===== プロフィールメニュー =====
+  List<PopupMenuEntry<String>> _buildProfileMenu(String accountType) {
+    final items = <PopupMenuEntry<String>>[
+      _menu('profile_edit', Icons.edit, 'プロフィール編集'),
+      _menu('password_change', Icons.lock, 'パスワード変更'),
+    ];
+
+    if (accountType == '企業') {
+      items.addAll([
+        _menu('post_article', Icons.article, '記事投稿'),
+        _menu('article_list', Icons.list_alt, '投稿記事一覧'),
+      ]);
+    }
+
+    items.addAll([
+      _menu('plan_check', Icons.credit_card, 'プラン確認'),
+      const PopupMenuDivider(),
+      _menu('withdraw', Icons.exit_to_app, '退会手続き', danger: true),
+      _menu('logout', Icons.logout, 'ログアウト', danger: true),
+    ]);
+
+    return items;
+  }
+
+  PopupMenuItem<String> _menu(
+    String v,
+    IconData i,
+    String t, {
+    bool danger = false,
+  }) {
+    return PopupMenuItem(
+      value: v,
+      child: Row(
+        children: [
+          Icon(i, size: 18, color: danger ? const Color(0xFFD32F2F) : null),
+          const SizedBox(width: 12),
+          Text(
+            t,
+            style: TextStyle(color: danger ? const Color(0xFFD32F2F) : null),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildNavButton(String text, VoidCallback onPressed, [bool isSmallScreen = false]) {
-    // スマートフォンサイズの場合のサイズ調整
-    double fontSize = isSmallScreen ? 11 : 13;
-    double horizontalPadding = isSmallScreen ? 12 : 18;
-    double verticalPadding = isSmallScreen ? 6 : 8;
-    Size minimumSize = isSmallScreen ? const Size(60, 32) : const Size(75, 36);
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: Color(0xFFF5F5F5), // より淡いグレー背景
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: Color(0xFFE0E0E0), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            spreadRadius: 0,
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: TextButton(
-        onPressed: onPressed,
-        style: TextButton.styleFrom(
-          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(25),
-          ),
-          minimumSize: minimumSize,
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: Color(0xFF424242), // ダークグレー
-            fontSize: fontSize,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.2,
-          ),
-        ),
-      ),
-    );
+  // ===== ユーザー情報 =====
+  Future<Map<String, dynamic>> _getUserInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('current_user');
+    if (userJson == null) {
+      return {'accountType': 'unknown', 'nickname': '', 'iconPath': ''};
+    }
+
+    final local = jsonDecode(userJson);
+    final userId = local['id'];
+    final nickname = local['nickname'] ?? '';
+
+    try {
+      final res = await http.get(
+        // Uri.parse('http://localhost:8080/api/users/$userId'),
+        Uri.parse('${ApiConfig.baseUrl}/api/users/$userId'),
+      );
+      if (res.statusCode == 200) {
+        final api = jsonDecode(res.body);
+        final type = api['type'];
+        String typeStr =
+            type == 1
+                ? '学生'
+                : type == 2
+                ? '社会人'
+                : type == 3
+                ? '企業'
+                : 'unknown';
+
+        String iconPath = '';
+        if (api['icon'] != null) {
+          final photo = await PhotoApiClient.getPhotoById(api['icon']);
+          if (photo?.photoPath?.isNotEmpty == true) {
+            iconPath = photo!.photoPath!;
+          }
+        }
+
+        return {
+          'accountType': typeStr,
+          'nickname': nickname,
+          'iconPath': iconPath,
+        };
+      }
+    } catch (_) {}
+
+    return {'accountType': 'unknown', 'nickname': nickname, 'iconPath': ''};
   }
 
-  // プロフィールメニューの選択処理
-  void _handleProfileMenuSelection(BuildContext context, String value) {
+  // ===== メニュー処理 =====
+  Future<void> _handleProfileMenuSelection(
+    BuildContext context,
+    String value,
+  ) async {
     switch (value) {
       case 'profile_edit':
-        // プロフィール編集ページへの遷移（張りぼて）
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('プロフィール編集ページに遷移します'),
-            backgroundColor: Color(0xFF1976D2),
-          ),
-        );
+        final type = (await _getUserInfo())['accountType'];
+        if (type == '学生') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => StudentProfileEditPage()),
+          );
+        } else if (type == '社会人') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => WorkerProfileEditPage()),
+          );
+        } else if (type == '企業') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => CompanyProfileEditPage()),
+          );
+        }
         break;
+
       case 'password_change':
-        // パスワード変更ページへの遷移（張りぼて）
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('パスワード変更ページに遷移します'),
-            backgroundColor: Color(0xFF1976D2),
-          ),
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => PasswordUpdatePage()),
         );
         break;
+
       case 'post_article':
-        // 記事投稿ページへの遷移
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => ArticlePostPage(),
-          ),
+          MaterialPageRoute(builder: (_) => ArticlePostPage()),
         );
         break;
+
       case 'article_list':
-        // 投稿記事一覧ページへの遷移
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => CompanyArticleListPage()),
+        );
+        break;
+
+      case 'plan_check':
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => CompanyArticleListPage(),
+            builder:
+                (_) => FutureBuilder<String>(
+                  future: _getUserInfo().then(
+                    (v) => v['accountType'] as String,
+                  ),
+                  builder: (c, s) {
+                    if (!s.hasData) {
+                      return const Scaffold(
+                        body: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    return PlanStatusScreen(userType: s.data!);
+                  },
+                ),
           ),
         );
         break;
-      case 'plan_check':
-        // プラン確認ページへの遷移（張りぼて）
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('プラン確認ページに遷移します'),
-            backgroundColor: Color(0xFF1976D2),
-          ),
-        );
-        break;
+
       case 'withdraw':
-        // 退会手続きの確認ダイアログ（張りぼて）
-        _showWithdrawDialog(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => DeleteAccountPage()),
+        );
         break;
+
       case 'logout':
-        // ログアウト確認ダイアログ（張りぼて）
-        _showLogoutDialog(context);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear();
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => MyHomePage(title: 'Bridge')),
+          (_) => false,
+        );
         break;
     }
   }
-
-  // 退会手続きの確認ダイアログ
-  void _showWithdrawDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('退会手続き'),
-          content: Text('本当に退会しますか？\nこの操作は取り消せません。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('キャンセル'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('退会手続きを開始します'),
-                    backgroundColor: Color(0xFFD32F2F),
-                  ),
-                );
-              },
-              child: Text('退会する', style: TextStyle(color: Color(0xFFD32F2F))),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // ログアウト確認ダイアログ
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('ログアウト'),
-          content: Text('ログアウトしますか？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('キャンセル'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('ログアウトしました'),
-                    backgroundColor: Color(0xFFD32F2F),
-                  ),
-                );
-              },
-              child: Text('ログアウト', style: TextStyle(color: Color(0xFFD32F2F))),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(120);
 }
