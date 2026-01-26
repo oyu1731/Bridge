@@ -12,8 +12,8 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/companies")
-@CrossOrigin(origins = "*") // Flutter アプリからのアクセスを許可
-public class CompanyController {
+//@CrossOrigin(origins = "*") // Flutter アプリからのアクセスを許可
+@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")public class CompanyController {
         /**
          * 企業写真IDを更新
          * PUT /api/companies/{id}/photo
