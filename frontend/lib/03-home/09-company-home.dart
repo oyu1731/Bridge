@@ -1,4 +1,5 @@
 import 'package:bridge/02-auth/06-delete-account.dart';
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import '../06-company/article_api_client.dart';
@@ -69,7 +70,8 @@ class _CompanyHomeState extends State<CompanyHome>
       final response = await http
           .post(
             Uri.parse(
-              "http://localhost:8080/api/users/$userId/check-subscription",
+              // "http://localhost:8080/api/users/$userId/check-subscription",
+              '${ApiConfig.baseUrl}/api/users/$userId/check-subscription',
             ),
           )
           .timeout(const Duration(seconds: 5));

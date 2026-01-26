@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:bridge/06-company/api_config.dart';
 import 'package:bridge/11-common/59-global-method.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -46,7 +47,8 @@ class _AnswerExplanationScreenState extends State<AnswerExplanationScreen> {
 
     if (!isCorrect) return;
 
-    final url = Uri.parse("http://localhost:8080/api/quiz/correct");
+    // final url = Uri.parse("http://localhost:8080/api/quiz/correct");
+    final url = Uri.parse("${ApiConfig.baseUrl}/api/quiz/correct");
 
     final int userId = session?['id'];
     final String nickname = session?['nickname'];

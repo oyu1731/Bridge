@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -42,7 +43,6 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
 
   bool _isSaving = false; // 保存中フラグ
 
-
   @override
   void initState() {
     super.initState();
@@ -67,7 +67,8 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
       final userData = jsonDecode(userJson);
       final userId = userData['id'];
 
-      final url = 'http://localhost:8080/api/users/$userId';
+      // final url = 'http://localhost:8080/api/users/$userId';
+      final url = '${ApiConfig.baseUrl}/api/users/$userId';
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
@@ -79,7 +80,8 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
           _nicknameController.text = userData['nickname'] ?? '';
           _emailController.text = userData['email'] ?? '';
           _phoneNumberController.text = userData['phoneNumber'] ?? '';
-          _societyHistoryController.text = userData['societyHistory'].toString() ?? '';
+          _societyHistoryController.text =
+              userData['societyHistory'].toString() ?? '';
           _iconPhotoId = userData['icon'];
         });
 
@@ -101,7 +103,10 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
   }
 
   Future<void> fetchData() async {
-    final industriesResponse = await http.get(Uri.parse('http://localhost:8080/api/industries'));
+    final industriesResponse = await http.get(
+      // Uri.parse('http://localhost:8080/api/industries'),
+      Uri.parse('${ApiConfig.baseUrl}/api/industries'),
+    );
     if (industriesResponse.statusCode == 200) {
       final List<dynamic> industriesData = jsonDecode(industriesResponse.body);
       if (!mounted) return;
@@ -111,10 +116,17 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
       if (userJson != null) {
         final userData = jsonDecode(userJson);
         final dynamic idValue = userData['id'];
-        final int userId = idValue is int ? idValue : int.parse(idValue.toString());
+        final int userId =
+            idValue is int ? idValue : int.parse(idValue.toString());
 
         setState(() {
-          industries = industriesData.map((e) => Industry(id: e['id'], name: e['industry'].toString())).toList();
+          industries =
+              industriesData
+                  .map(
+                    (e) =>
+                        Industry(id: e['id'], name: e['industry'].toString()),
+                  )
+                  .toList();
         });
 
         await fetchIndustryRelations(userId);
@@ -125,15 +137,17 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
   }
 
   Future<void> fetchIndustryRelations(int userId) async {
-    final url = 'http://localhost:8080/api/industries/user/$userId';
+    // final url = 'http://localhost:8080/api/industries/user/$userId';
+    final url = '${ApiConfig.baseUrl}/api/industries/user/$userId';
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
       final List<dynamic> selectedIndustriesData = jsonDecode(response.body);
 
-      final List<String> selectedIndustryNames = selectedIndustriesData.map((e) {
-        return e['industry'].toString();
-      }).toList();
+      final List<String> selectedIndustryNames =
+          selectedIndustriesData.map((e) {
+            return e['industry'].toString();
+          }).toList();
 
       if (!mounted) return;
       setState(() {
@@ -157,11 +171,9 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("プロフィールアイコン",
-              style: TextStyle(
-                fontSize: 16,
-                color: AppTheme.textCyanDark
-              ),
+            Text(
+              "プロフィールアイコン",
+              style: TextStyle(fontSize: 16, color: AppTheme.textCyanDark),
             ),
             Center(
               child: Column(
@@ -171,12 +183,17 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
                       CircleAvatar(
                         radius: 55,
                         backgroundColor: Colors.grey.shade200,
-                        child: _iconUrl != null
-                            ? CircleAvatar(
-                                radius: 52,
-                                backgroundImage: NetworkImage(_iconUrl!),
-                              )
-                            : Icon(Icons.person, size: 60, color: Colors.grey[600]),
+                        child:
+                            _iconUrl != null
+                                ? CircleAvatar(
+                                  radius: 52,
+                                  backgroundImage: NetworkImage(_iconUrl!),
+                                )
+                                : Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: Colors.grey[600],
+                                ),
                       ),
                       Positioned(
                         bottom: 0,
@@ -186,13 +203,21 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
                           child: CircleAvatar(
                             radius: 20,
                             backgroundColor: Colors.blueAccent,
-                            child: _uploadingIcon
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                  )
-                                : const Icon(Icons.camera_alt, size: 20, color: Colors.white),
+                            child:
+                                _uploadingIcon
+                                    ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                    : const Icon(
+                                      Icons.camera_alt,
+                                      size: 20,
+                                      color: Colors.white,
+                                    ),
                           ),
                         ),
                       ),
@@ -217,17 +242,18 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
             const SizedBox(height: 20),
             _buildLabel("現職業界"),
             Column(
-              children: industries.map((industry) {
-                return CheckboxListTile(
-                  title: Text(industry.name),
-                  value: industry.isSelected,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      industry.isSelected = value ?? false;
-                    });
-                  },
-                );
-              }).toList(),
+              children:
+                  industries.map((industry) {
+                    return CheckboxListTile(
+                      title: Text(industry.name),
+                      value: industry.isSelected,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          industry.isSelected = value ?? false;
+                        });
+                      },
+                    );
+                  }).toList(),
             ),
             const SizedBox(height: 30),
             Center(
@@ -236,19 +262,18 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
                   backgroundColor: Colors.orangeAccent[400],
                   foregroundColor: Colors.white,
                 ),
-                onPressed: _isSaving
-                    ? null
-                    : () async {
-                        setState(() => _isSaving = true);
-                        await _updateUserProfile();
-                        setState(() => _isSaving = false);
-                      },
-                child: _isSaving
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('編集',
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),),
+                onPressed:
+                    _isSaving
+                        ? null
+                        : () async {
+                          setState(() => _isSaving = true);
+                          await _updateUserProfile();
+                          setState(() => _isSaving = false);
+                        },
+                child:
+                    _isSaving
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('編集', style: TextStyle(fontSize: 16)),
               ),
             ),
           ],
@@ -308,10 +333,11 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
     final userData = jsonDecode(userJson);
     final int userId = userData['id'];
 
-    final selectedIndustryIds = industries
-        .where((industry) => industry.isSelected)
-        .map((industry) => industry.id)
-        .toList();
+    final selectedIndustryIds =
+        industries
+            .where((industry) => industry.isSelected)
+            .map((industry) => industry.id)
+            .toList();
 
     final Map<String, dynamic> updatedData = {
       'nickname': _nicknameController.text,
@@ -322,7 +348,8 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
       'icon': _iconPhotoId,
     };
 
-    final url = 'http://localhost:8080/api/users/$userId/profile';
+    // final url = 'http://localhost:8080/api/users/$userId/profile';
+    final url = '${ApiConfig.baseUrl}/api/users/$userId/profile';
     final response = await http.put(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -379,24 +406,34 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
     final userId = sessionUser['id'];
 
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 90,
+    );
     if (picked == null) return;
 
     final bytes = await picked.readAsBytes();
     if (!mounted) return;
-    
+
     final croppedBytes = await showDialog<Uint8List>(
       context: context,
       builder: (context) => ImageCropDialog(imageBytes: bytes),
     );
-    
+
     if (croppedBytes == null) return;
-    
+
     setState(() => _uploadingIcon = true);
     try {
       final tempPath = picked.name;
-      final pseudoFile = XFile.fromData(croppedBytes, name: tempPath, mimeType: 'image/jpeg');
-      final uploaded = await PhotoApiClient.uploadPhoto(pseudoFile, userId: userId);
+      final pseudoFile = XFile.fromData(
+        croppedBytes,
+        name: tempPath,
+        mimeType: 'image/jpeg',
+      );
+      final uploaded = await PhotoApiClient.uploadPhoto(
+        pseudoFile,
+        userId: userId,
+      );
       final photoId = uploaded.id;
       if (photoId != null) {
         await UserApiClient.updateIcon(userId, photoId);
@@ -406,9 +443,9 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('アイコンアップロード失敗: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('アイコンアップロード失敗: $e')));
     } finally {
       setState(() => _uploadingIcon = false);
     }
