@@ -111,13 +111,24 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
             ? '企業所属業界'
             : '';
 
+    String _buildIconUrl(String path) {
+      if (path.startsWith('http')) return path;
+      return 'http://localhost:8080$path';
+    }
+
+    final icon = _userData!['icon'];
+
     return Column(
       children: [
         Row(children: [
           CircleAvatar(
             radius: 40,
-            backgroundImage: _userData!['icon'] != '' ? NetworkImage(_userData!['icon']) : null,
-            child: _userData!['icon'] == '' ? const Icon(Icons.person, size: 40) : null,
+            backgroundImage: icon != null && icon.isNotEmpty
+                ? NetworkImage(_buildIconUrl(icon))
+                : null,
+            child: icon == null || icon.isEmpty
+                ? const Icon(Icons.person, size: 40)
+                : null,
           ),
           const SizedBox(width: 16),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -185,41 +196,83 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
       children: [
         const Text('コメント履歴'),
         const SizedBox(height: 12),
-        _commentHistory.isEmpty
-            ? const Text('コメント履歴はありません')
-            : DataTable(
-                border: TableBorder.all(color: Colors.grey.shade400),
-                headingRowColor: MaterialStateProperty.all(Colors.grey.shade200),
-                columns: const [
-                  DataColumn(label: Center(child: Text('スレッド名'))),
-                  DataColumn(label: Center(child: Text('コメント'))),
-                  DataColumn(label: Center(child: Text('日付'))),
+
+        if (_commentHistory.isEmpty)
+          const Text('コメント履歴はありません')
+        else
+          Table(
+            columnWidths: const {
+              0: FlexColumnWidth(3), // スレッド名 30%
+              1: FlexColumnWidth(4.5), // コメント 50%
+              2: FlexColumnWidth(2.5), // 日付 20%
+            },
+            border: TableBorder.all(color: Colors.grey.shade400),
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+            children: [
+              // ===== ヘッダー =====
+              TableRow(
+                decoration: BoxDecoration(color: Colors.grey.shade200),
+                children: const [
+                  Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Center(child: Text('スレッド名')),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Center(child: Text('コメント')),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Center(child: Text('日付')),
+                  ),
                 ],
-                rows: _commentHistory.map((c) => DataRow(cells: [
-                      DataCell(Center(child: Text(c['threadTitle']))),
-                      DataCell(
-                        Center(
-                          child: c['isDeleted'] == true
-                              ? Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(c['content'] ?? ''),
-                                    const SizedBox(height: 4),
-                                    const Text(
-                                      '削除済み',
-                                      style: TextStyle(
-                                        color: Colors.red,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : Text(c['content'] ?? ''),
+              ),
+
+              // ===== データ行 =====
+              ..._commentHistory.map((c) => TableRow(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Text(
+                          c['threadTitle'] ?? '',
+                          softWrap: true,
                         ),
                       ),
-                      DataCell(Center(child: Text(c['createdAt'].split('T')[0]))),
-                    ])).toList(),
-              ),
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: c['isDeleted'] == true
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    c['content'] ?? '',
+                                    softWrap: true,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    '削除済み',
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Text(
+                                c['content'] ?? '',
+                                softWrap: true,
+                              ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Text(
+                          c['createdAt'].split('T')[0],
+                        ),
+                      ),
+                    ],
+                  )),
+            ],
+          ),
       ],
     );
   }

@@ -1,6 +1,8 @@
 package com.bridge.backend.controller;
 
 import com.bridge.backend.entity.ForumThread;
+
+import org.springframework.http.ResponseEntity;
 // import com.bridge.backend.repository.ThreadRepository;
 import org.springframework.web.bind.annotation.*;
 // import org.slf4j.Logger;
@@ -30,6 +32,17 @@ public class ThreadController {
     @PostMapping("/unofficial")
     public ForumThread createUnofficialThread(@RequestBody Map<String, Object> payload) {
         return threadService.createUnofficialThread(payload);
+    }
+    
+    @GetMapping("/admin/threads/reported")
+    public List<Map<String, Object>> getReportedThreads() {
+        return threadService.getThreadsOrderByLastReportedAt();
+    }
+
+    @PutMapping("admin/delete/{id}")
+    public ResponseEntity<Void> deleteThread(@PathVariable Integer id) {
+        threadService.deleteThread(id);
+        return ResponseEntity.ok().build();
     }
 }
 

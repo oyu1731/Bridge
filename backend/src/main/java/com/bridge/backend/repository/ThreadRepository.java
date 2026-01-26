@@ -12,7 +12,33 @@ public interface ThreadRepository extends JpaRepository<ForumThread, Integer> {
     // 削除されていないスレッドを取得
     List<ForumThread> findByIsDeletedFalse();
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE ForumThread t SET t.isDeleted = true WHERE t.id = :id")
     void softDelete(Integer id);
+
+    @Query(value = """
+        SELECT
+            t.id,
+            t.user_id,
+            t.title,
+            t.type,
+            t.description,
+            t.entry_criteria,
+            t.last_update_date,
+            MAX(n.created_at) AS lastReportedAt
+        FROM threads t
+        INNER JOIN notices n
+            ON n.thread_id = t.id
+        WHERE t.is_deleted = FALSE
+        GROUP BY
+            t.id,
+            t.user_id,
+            t.title,
+            t.type,
+            t.description,
+            t.entry_criteria,
+            t.last_update_date
+        ORDER BY lastReportedAt DESC
+        """, nativeQuery = true)
+    List<Object[]> findThreadsOrderByLastReportedAt();
 }

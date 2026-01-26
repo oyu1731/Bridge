@@ -38,6 +38,39 @@ import '../03-home/09-company-home.dart';
 // アイコン取得
 import '../06-company/photo_api_client.dart';
 
+class SimpleNotification {
+  final int id;
+  final String title;
+  final String content;
+  final int type;
+  final int category;
+  final DateTime? sendFlag;
+  final int? userId;
+
+  SimpleNotification({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.type,
+    required this.category,
+    this.sendFlag,
+    this.userId,
+  });
+
+  factory SimpleNotification.fromJson(Map<String, dynamic> json) {
+    return SimpleNotification(
+      id: json['id'],
+      title: json['title'],
+      content: json['content'],
+      type: json['type'],
+      category: json['category'],
+      userId: json['userId'],
+      sendFlag:
+          json['sendFlag'] != null ? DateTime.parse(json['sendFlag']) : null,
+    );
+  }
+}
+
 class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
   const BridgeHeader({Key? key}) : super(key: key);
 
@@ -137,7 +170,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                         const SizedBox(width: 8),
                         IconButton(
                           onPressed: () {
-                            print('お知らせ');
+                            _showNotificationDialog(context);
                           },
                           icon: const Icon(Icons.notifications_outlined),
                         ),
@@ -446,5 +479,118 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         );
         break;
     }
+  }
+
+  Future<void> _showNotificationDialog(BuildContext context) async {
+    final userInfo = await _getUserInfo();
+    final accountType = userInfo['accountType'];
+
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = jsonDecode(prefs.getString('current_user')!);
+    final userId = userJson['id'];
+
+    int? type;
+    if (accountType == '学生') type = 1;
+    if (accountType == '社会人') type = 2;
+    if (accountType == '企業') type = 3;
+
+    final res =
+        await http.get(Uri.parse('http://localhost:8080/api/notifications'));
+    if (res.statusCode != 200) return;
+
+    final List list = jsonDecode(res.body);
+
+    final notifications = list.map((e) => SimpleNotification.fromJson(e)).where((n) {
+
+      // 全員
+      if (n.type == 7) return true;
+
+      // 個人宛
+      if (n.type == 8 && n.userId == userId) return true;
+
+      // 学生
+      if (type == 1) {
+        return n.type == 1 || n.type == 4 || n.type == 5;
+      }
+
+      // 社会人
+      if (type == 2) {
+        return n.type == 2 || n.type == 4 || n.type == 6;
+      }
+
+      // 企業
+      if (type == 3) {
+        return n.type == 3 || n.type == 5 || n.type == 6;
+      }
+
+      return false;
+    }).toList();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('お知らせ'),
+        content: SizedBox(
+          width: 420,
+          child: notifications.isEmpty
+              ? const Center(child: Text('お知らせはありません'))
+              : ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: notifications.length,
+                  separatorBuilder: (_, __) => const Divider(),
+                  itemBuilder: (_, i) {
+                    final n = notifications[i];
+                    return ListTile(
+                      title: Text(n.title),
+                      subtitle: Text(n.category == 1 ? '運営情報' : '重要'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showNotificationDetail(context, n);
+                      },
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('閉じる'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showNotificationDetail(
+    BuildContext context,
+    SimpleNotification n,
+  ) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(n.title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(n.content),
+            const SizedBox(height: 12),
+            Text(
+              '送信日：${n.sendFlag != null
+                  ? '${n.sendFlag!.year}/${n.sendFlag!.month.toString().padLeft(2, '0')}/${n.sendFlag!.day.toString().padLeft(2, '0')} '
+                    '${n.sendFlag!.hour.toString().padLeft(2, '0')}:${n.sendFlag!.minute.toString().padLeft(2, '0')}'
+                  : '-'}',
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('閉じる'),
+          ),
+        ],
+      ),
+    );
   }
 }
