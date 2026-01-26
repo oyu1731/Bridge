@@ -220,7 +220,10 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => AdminThreadDetail(threadId: n.threadId!),
+                builder: (_) => AdminThreadDetail(
+                  threadId: n.threadId!,
+                  title: n.threadTitle ?? 'スレッド',
+                ),
               ),
             );
           },
@@ -250,7 +253,10 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => AdminThreadDetail(threadId: n.threadId!),
+                builder: (_) => AdminThreadDetail(
+                  threadId: n.threadId!,
+                  title: n.threadTitle ?? 'スレッド',
+                ),
               ),
             );
           },
