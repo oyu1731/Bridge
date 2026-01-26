@@ -382,13 +382,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                               child: IconButton(
                                 tooltip: 'メール一覧',
                                 onPressed: () {
-                                  if (isAdmin) {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => AdminMailList(),
-                                      ),
-                                    );
-                                  }
+                                  _showNotificationDialog(context);
                                 },
                                 icon: const Icon(
                                   Icons.notifications_outlined,
@@ -486,13 +480,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                               IconButton(
                                 tooltip: 'メール一覧',
                                 onPressed: () {
-                                  if (isAdmin) {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => AdminMailList(),
-                                      ),
-                                    );
-                                  }
+                                  _showNotificationDialog(context);
                                 },
                                 icon: const Icon(
                                   Icons.notifications_none_outlined,
