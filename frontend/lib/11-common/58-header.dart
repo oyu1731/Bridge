@@ -45,7 +45,6 @@ import '../09-admin/37-admin-report-log-list.dart';
 import '../09-admin/38-admin-thread-list.dart';
 import '../09-admin/40-admin-company-column-list.dart';
 import '../09-admin/42-admin-account-list.dart';
-import '../05-notice/45-admin-mail-send.dart';
 
 // アイコン取得
 import '../06-company/photo_api_client.dart';
@@ -372,22 +371,23 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                                     (_) => _buildProfileMenu(accountType),
                               ),
                             ),
-                            SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: IconButton(
-                                tooltip: 'メール一覧',
-                                onPressed: () {
-                                  _showNotificationDialog(context);
-                                },
-                                icon: const Icon(
-                                  Icons.notifications_outlined,
-                                  size: 16,
-                                  color: Color(0xFF1976D2),
+                            if (!isAdmin)
+                              SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: IconButton(
+                                  tooltip: 'メール一覧',
+                                  onPressed: () {
+                                    _showNotificationDialog(context);
+                                  },
+                                  icon: const Icon(
+                                    Icons.notifications_outlined,
+                                    size: 16,
+                                    color: Color(0xFF1976D2),
+                                  ),
+                                  padding: EdgeInsets.zero,
                                 ),
-                                padding: EdgeInsets.zero,
                               ),
-                            ),
                           ],
                         ),
                       );
@@ -473,16 +473,17 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                                     (_) => _buildProfileMenu(accountType),
                               ),
                               const SizedBox(width: 8),
-                              IconButton(
-                                tooltip: 'メール一覧',
-                                onPressed: () {
-                                  _showNotificationDialog(context);
-                                },
-                                icon: const Icon(
-                                  Icons.notifications_none_outlined,
-                                  color: Color(0xFF1976D2),
+                              if (!isAdmin)
+                                IconButton(
+                                  tooltip: 'メール一覧',
+                                  onPressed: () {
+                                    _showNotificationDialog(context);
+                                  },
+                                  icon: const Icon(
+                                    Icons.notifications_none_outlined,
+                                    color: Color(0xFF1976D2),
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
                         ],
@@ -583,10 +584,10 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                       );
                       buttons.add(SizedBox(width: space));
                       buttons.add(
-                        _nav('メール送信', () {
+                        _nav('メール一覧', () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => AdminMailSend()),
+                            MaterialPageRoute(builder: (_) => AdminMailList()),
                           );
                         }, isSmall),
                       );
