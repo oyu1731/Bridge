@@ -243,7 +243,12 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
         ? const Text('—')
         : GestureDetector(
           onTap: () {
-            if (n.chatDeleted == true || n.threadDeleted == true) {
+            if (n.chatDeleted == false && n.threadDeleted == true) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("スレッドが削除されています")),
+              );
+              return;
+            } else if (n.chatDeleted == true) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("このレスはすでに削除されています")),
               );
