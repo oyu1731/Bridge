@@ -21,7 +21,6 @@ import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/chat")
-@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
 public class ChatController {
 
     private final ChatService chatService;
