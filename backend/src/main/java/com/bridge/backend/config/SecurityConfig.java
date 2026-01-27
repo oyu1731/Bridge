@@ -25,16 +25,19 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // 許可するオリジンを明示的に指定
+        // 許可するオリジン（開発・本番環境対応）
         configuration.setAllowedOriginPatterns(Arrays.asList(
-            "https://bridge-915bd.web.app",
-            "https://bridge-tesg.com",
-            "https://api.bridge-tesg.com",
-            "http://localhost:*"
+            "https://bridge-915bd.web.app",    // Firebase Hosting
+            "https://bridge-tesg.com",         // 本番ドメイン
+            "https://api.bridge-tesg.com",     // API ドメイン
+            "http://localhost:3000",           // Flutter Web ローカル開発
+            "http://localhost:5000",           // 別ポート対応
+            "http://localhost:8080"            // バックエンド自体
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true); // Cookieや認証ヘッダーを許可
+        configuration.setMaxAge(3600L); // キャッシュ時間（秒）
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
