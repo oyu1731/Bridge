@@ -65,7 +65,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
   Future<void> _fetchMessages() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/chat/${widget.threadId}/active'),
+        Uri.parse(ApiConfig.chatThreadActiveUrl(widget.threadId)),
       );
 
       if (response.statusCode == 200) {
@@ -172,7 +172,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
     }
 
     try {
-      final response = await http.get(Uri.parse('$baseUrl/chat/user/$userId'));
+      final response = await http.get(Uri.parse(ApiConfig.chatUserUrl(userId)));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -224,7 +224,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
   }
 
   Future<void> _deleteChat(int chatId) async {
-    final response = await http.put(Uri.parse('$baseUrl/chat/$chatId/delete'));
+    final response = await http.put(Uri.parse(ApiConfig.chatDeleteUrl(chatId)));
 
     if (response.statusCode == 200) {
       setState(() {

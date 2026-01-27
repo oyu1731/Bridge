@@ -39,7 +39,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   Future<void> _loadUserInfo(String userId) async {
     if (_nicknameCache.containsKey(userId)) return;
 
-    final res = await http.get(Uri.parse('$baseUrl/chat/user/$userId'));
+    final res = await http.get(Uri.parse(ApiConfig.chatUserUrl(userId)));
     if (res.statusCode != 200) return;
 
     final data = json.decode(res.body);
@@ -92,7 +92,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     if (jsonString == null) return;
     final userData = jsonDecode(jsonString);
     currentUserId = userData['id'].toString();
-    final res = await http.get(Uri.parse('$baseUrl/chat/user/$currentUserId'));
+    final res = await http.get(Uri.parse(ApiConfig.chatUserUrl(currentUserId)));
     if (res.statusCode == 200) {
       final iconId = json.decode(res.body)['icon'];
       if (iconId != null) {
@@ -274,7 +274,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   Future<void> _fetchMessages() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/chat/${widget.thread['id']}/active'),
+        Uri.parse(ApiConfig.chatThreadActiveUrl(widget.thread['id'])),
       );
       // ⭐ ここが超重要
       if (response.statusCode == 410) {
@@ -475,7 +475,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
 
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/chat/${widget.thread['id']}'),
+        Uri.parse(ApiConfig.chatThreadUrl(widget.thread['id'])),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(payload),
       );
@@ -510,10 +510,12 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
 
         //自動スクロール
         _scrollToBottom();
-      } else if (response.statusCode == 404 || response.statusCode == 410) {
+      } else if (response.statusCode == 410) {
         _showThreadDeletedDialog();
-      } else {
-        print("Send failed: ${response.statusCode}");
+      } else if (response.statusCode == 404) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('スレッドが見つかりません')));
       }
     } catch (e) {
       print("Send error: $e");
@@ -563,7 +565,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     if (_userNicknames.containsKey(userId)) return _userNicknames[userId]!;
 
     try {
-      final response = await http.get(Uri.parse('$baseUrl/chat/user/$userId'));
+      final response = await http.get(Uri.parse(ApiConfig.chatUserUrl(userId)));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final nickname = data['nickname'] ?? 'Unknown';

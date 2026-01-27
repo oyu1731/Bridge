@@ -41,7 +41,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
   Future<void> _loadUserInfo(String userId) async {
     if (_nicknameCache.containsKey(userId)) return;
 
-    final res = await http.get(Uri.parse('$baseUrl/chat/user/$userId'));
+    final res = await http.get(Uri.parse(ApiConfig.chatUserUrl(userId)));
     if (res.statusCode != 200) return;
 
     final data = json.decode(res.body);
@@ -93,7 +93,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
     if (jsonString == null) return;
     final userData = jsonDecode(jsonString);
     currentUserId = userData['id'].toString();
-    final res = await http.get(Uri.parse('$baseUrl/chat/user/$currentUserId'));
+    final res = await http.get(Uri.parse(ApiConfig.chatUserUrl(currentUserId)));
     if (res.statusCode == 200) {
       final iconId = json.decode(res.body)['icon'];
       if (iconId != null) {
@@ -269,7 +269,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
   Future<void> _fetchMessages() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/chat/${widget.thread['id']}/active'),
+        Uri.parse(ApiConfig.chatThreadActiveUrl(widget.thread['id'])),
       );
       if (response.statusCode == 410) {
         _showThreadDeletedDialog();
@@ -284,7 +284,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
           String? userIconUrl;
           //ユーザーidを指定してアイコンidを取得する
           final response = await http.get(
-            Uri.parse('$baseUrl/chat/user/$userId'),
+            Uri.parse(ApiConfig.chatUserUrl(userId)),
           );
           //名前、アイコンidが取得
           print(json.decode(response.body)['icon']);
@@ -434,7 +434,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
 
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/chat/${widget.thread['id']}'),
+        Uri.parse(ApiConfig.chatThreadUrl(widget.thread['id'])),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(payload),
       );
@@ -524,7 +524,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
     }
 
     try {
-      final response = await http.get(Uri.parse('$baseUrl/chat/user/$userId'));
+      final response = await http.get(Uri.parse(ApiConfig.chatUserUrl(userId)));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

@@ -25,4 +25,10 @@ class ApiConfig {
   static String get photosUrl => '$baseUrl/api/photos';
   static String get notificationsUrl => '$baseUrl/api/notifications'; // ←追加
   static String get reportUrl => '$baseUrl/api/notice/report'; // ←追加
+  static String get chatUrl => '$baseUrl/api/chat';
+  static String chatUserUrl(String userId) => '$chatUrl/user/$userId';
+  static String chatThreadUrl(int threadId) => '$chatUrl/$threadId';
+  static String chatThreadActiveUrl(int threadId) =>
+      '$chatUrl/$threadId/active';
+  static String chatDeleteUrl(int chatId) => '$chatUrl/$chatId/delete';
 }

@@ -40,7 +40,7 @@ public class ChatService {
         //スレッドが存在するか
         ForumThread thread = threadRepository.findById(threadId)
             .orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.GONE, "THREAD_DELETED")
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "スレッドは存在しません")
             );
         //スレッドが論理削除されていないか
         if (Boolean.TRUE.equals(thread.getIsDeleted())) {
