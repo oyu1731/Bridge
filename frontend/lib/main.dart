@@ -14,8 +14,39 @@ import 'package:bridge/10-payment/54-payment-complete.dart';
 
 import 'package:flutter/foundation.dart' show kIsWeb; // Web判定
 import 'dart:html' as html; // WebのURL取得用
+import 'bridge_error_widget.dart';
+import '11-common/common_error_page.dart';
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+// グローバルエラー遷移用のタイマー・フラグ変数
+DateTime? _firstGlobalErrorTime;
+bool _isGlobalErrorActive = false;
+bool _hasNavigatedToErrorPage = false;
 
 void main() async {
+    // グローバルエラーハンドリング: 画面ビルドエラー時は共通エラーページ
+    ErrorWidget.builder = (FlutterErrorDetails details) => BridgeErrorWidget(details);
+    FlutterError.onError = (FlutterErrorDetails details) {
+      int errorCode = 500;
+      final errorMsg = details.exceptionAsString().toLowerCase();
+      if (errorMsg.contains('404')) {
+        errorCode = 404;
+      } else if (errorMsg.contains('400')) {
+        errorCode = 400;
+      }
+      if (_firstGlobalErrorTime == null) {
+        _firstGlobalErrorTime = DateTime.now();
+        _isGlobalErrorActive = true;
+      }
+      if (_isGlobalErrorActive &&
+          DateTime.now().difference(_firstGlobalErrorTime!).inMilliseconds >= 1000 &&
+          !_hasNavigatedToErrorPage) {
+        _hasNavigatedToErrorPage = true;
+        navigatorKey.currentState?.pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => CommonErrorPage(errorCode: errorCode)),
+          (route) => false,
+        );
+      }
+    };
   WidgetsFlutterBinding.ensureInitialized();
 
   Widget initialPage;
@@ -102,10 +133,11 @@ void main() async {
 class MyApp extends StatelessWidget {
   final Widget initialPage;
   const MyApp({super.key, required this.initialPage});
-
+  
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(

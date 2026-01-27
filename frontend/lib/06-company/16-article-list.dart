@@ -89,18 +89,15 @@ class _ArticleListPageState extends State<ArticleListPage> {
         _isLoading = true;
         _error = null;
       });
-      
       final articles = await ArticleApiClient.getAllArticles();
+      // 削除済み記事のみ除外（退会企業の判定は現状不可）
+      final filtered = articles.where((a) => (a.isDeleted != true)).toList();
       setState(() {
-        _allArticles = articles;
-        _filteredArticles = articles;
+        _allArticles = filtered;
+        _filteredArticles = filtered;
         _isLoading = false;
       });
-      
-      // 初期ロード時もソートを適用
       _applySorting();
-      
-      // 企業名が指定されている場合は検索を実行
       if (widget.companyName != null && widget.companyName!.isNotEmpty) {
         _searchArticlesFromAPI();
       }
