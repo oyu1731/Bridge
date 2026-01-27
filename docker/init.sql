@@ -176,6 +176,7 @@ CREATE TABLE quiz_scores (
     user_id INT(20) NOT NULL,
     score INT(2) NOT NULL,
     created_at DATETIME NOT NULL,
+    nickname VARCHAR(50) NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
