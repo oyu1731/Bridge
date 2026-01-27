@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:bridge/06-company/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:html' as html;
+import 'package:bridge/06-company/api_config.dart';
 
 /// Web版 Stripe Checkout
 Future<void> startWebCheckout({
@@ -10,8 +11,9 @@ Future<void> startWebCheckout({
   required String planType,
   required String userType,
   required int userId,
-  String successUrl = "http://localhost:5000/#/payment-success",
-  String cancelUrl = "http://localhost:5000/#/payment-cancel",
+  // String successUrl = "http://localhost:5000/#/payment-success",
+  String successUrl = "https://bridge-915bd.web.app//#/payment-success",
+  String cancelUrl = "https://bridge-915bd.web.app//#/payment-cancel",
 }) async {
   // 注: DB更新は Webhook の handleSuccessfulPayment() で処理されるため、ここでは不要
 

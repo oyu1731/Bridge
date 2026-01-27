@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:bridge/06-company/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:html' as html;
+import 'package:bridge/06-company/api_config.dart';
 
 Future<void> startWebCheckout({
   required int amount,
@@ -8,8 +10,10 @@ Future<void> startWebCheckout({
   required String companyName,
   required String companyEmail,
   required int? tempId,
-  String successUrl = "http://localhost:5000/#/payment-success",
-  String cancelUrl = "http://localhost:5000/#/payment-cancel",
+  // String successUrl = "http://localhost:5000/#/payment-success",
+  String successUrl = "https://bridge-915bd.web.app//#/payment-success",
+  // String cancelUrl = "http://localhost:5000/#/payment-cancel",
+  String cancelUrl = "https://bridge-915bd.web.app//#/payment-cancel",
 }) async {
   final payload = {
     "amount": amount,
@@ -34,7 +38,8 @@ Future<void> startWebCheckout({
 
   try {
     final response = await http.post(
-      Uri.parse("http://localhost:8080/api/v1/payment/checkout-session"),
+      // Uri.parse("http://localhost:8080/api/v1/payment/checkout-session"),
+      Uri.parse("${ApiConfig.baseUrl}/api/v1/payment/checkout-session"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(payload),
     );

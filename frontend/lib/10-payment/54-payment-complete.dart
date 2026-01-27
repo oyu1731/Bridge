@@ -169,14 +169,14 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
   }
 
   // ===============================
-  // 🔥 URLを確実に http://localhost:5000/ にしてトップへ
+  // 🔥 URLを確実に https://bridge-915bd.web.app/ にしてトップへ
   // （自動遷移・ボタン両対応 / Flutter Web完全対応）
   // ===============================
   void _resetUrlAndNavigateHome() {
     if (kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.microtask(() {
-          html.window.location.replace('http://localhost:5000/');
+          html.window.location.replace('https://bridge-915bd.web.app/');
         });
       });
     } else {
