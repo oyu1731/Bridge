@@ -426,10 +426,10 @@ INSERT INTO chats (user_id, content, thread_id, is_deleted, deleted_at, created_
 -- quiz_scores
 INSERT INTO quiz_scores (user_id, score, created_at, nickname) VALUES
 (1, 15, NOW(), '佐々木一郎'),
-(8, 23, NOW(), '残業三昧くん');
-(3, 18, NOW(), '理系くん');
-(4, 12, NOW(), '文系ちゃん');
-(6, 20, NOW(), '松井二郎');
+(8, 23, NOW(), '残業三昧くん'),
+(3, 18, NOW(), '理系くん'),
+(4, 12, NOW(), '文系ちゃん'),
+(6, 20, NOW(), '松井二郎'),
 
 
 -- interviews 初期データ挿入
