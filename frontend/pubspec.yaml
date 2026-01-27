@@ -41,7 +41,11 @@ flutter:
   assets:
     - lib/01-images/
     - lib/07-ai-training/quiz_data.json
-
+    
+fonts:
+  - family: NotoSansJP
+    fonts:
+      - asset: assets/fonts/NotoSansJP-Regular.otf
  
   # fonts:
   #   - family: CustomFont

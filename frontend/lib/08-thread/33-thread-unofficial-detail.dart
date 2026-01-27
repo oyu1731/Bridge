@@ -136,7 +136,8 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
     _fetchMessages();
 
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://localhost:8080/ws/chat/${widget.thread['id']}'),
+      // Uri.parse('ws://localhost:8080/ws/chat/${widget.thread['id']}'),
+      Uri.parse('ws://${ApiConfig.baseUrl}/ws/chat/${widget.thread['id']}'),
     );
 
     _channel.stream.listen((data) {
