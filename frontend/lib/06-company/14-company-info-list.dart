@@ -66,16 +66,17 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
 
     try {
       final companies = await CompanyApiClient.getAllCompanies();
+      // 削除済み・退会済み企業を除外
+      final filtered = companies.where((c) => c.isWithdrawn != true).toList();
       // 最終更新日時順にソート（注目企業として表示）
-      companies.sort((a, b) {
+      filtered.sort((a, b) {
         if (a.createdAt == null && b.createdAt == null) return 0;
         if (a.createdAt == null) return 1;
         if (b.createdAt == null) return -1;
         return b.createdAt!.compareTo(a.createdAt!);
       });
-
       setState(() {
-        _filteredCompanies = companies;
+        _filteredCompanies = filtered;
         _isLoading = false;
         _hasSearched = false; // 初期データは注目企業として表示
       });
