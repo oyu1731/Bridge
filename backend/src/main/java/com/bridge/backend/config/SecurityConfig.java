@@ -1,6 +1,5 @@
 package com.bridge.backend.config;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,13 +13,10 @@ import java.util.Arrays;
 @Configuration
 public class SecurityConfig {
 
-    @Value("${app.cors.allowed-origins:https://bridge-915bd.web.app,https://api.bridge-tesg.com,http://localhost:3000,http://localhost:8080}")
-    private String allowedOrigins;
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors().configurationSource(corsConfigurationSource()).and()
+            .cors().configurationSource(corsConfigurationSource()).and() // CORS設定を適用
             .csrf().disable()
             .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
@@ -29,15 +25,16 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
-        // 環境変数から許可するオリジンを取得
-        String[] origins = allowedOrigins.split(",");
-        configuration.setAllowedOriginPatterns(Arrays.asList(origins));
-        
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        // 許可するオリジンを明示的に指定
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+            "https://bridge-915bd.web.app",
+            "https://bridge-tesg.com",
+            "https://api.bridge-tesg.com",
+            "http://localhost:*"
+        ));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+        configuration.setAllowCredentials(true); // Cookieや認証ヘッダーを許可
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
