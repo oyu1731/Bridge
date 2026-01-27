@@ -37,8 +37,8 @@ void main() async {
         _firstGlobalErrorTime = DateTime.now();
         _isGlobalErrorActive = true;
       }
-      if (_isGlobalErrorActive &&
-          DateTime.now().difference(_firstGlobalErrorTime!).inMilliseconds >= 1000 &&
+        if (_isGlobalErrorActive &&
+          DateTime.now().difference(_firstGlobalErrorTime!).inMilliseconds >= 10 &&
           !_hasNavigatedToErrorPage) {
         _hasNavigatedToErrorPage = true;
         navigatorKey.currentState?.pushAndRemoveUntil(
