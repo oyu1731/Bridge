@@ -321,8 +321,32 @@ class _AutoStoryPageState extends State<AutoStoryPage>
                         top: Radius.circular(16),
                       ),
                       child: Image.asset(
-                        '../lib/01-images/$imagePath',
+                        'lib/01-images/$imagePath',
                         fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.black,
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.image_not_supported,
+                                    color: Colors.white54,
+                                    size: 48,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    '画像を読み込めません: $imagePath',
+                                    style: const TextStyle(
+                                      color: Colors.white54,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -471,34 +495,37 @@ class _AutoStoryPageState extends State<AutoStoryPage>
   Future<void> _scrollLineToCursorPosition(int index) async {
     if (!_scrollController.hasClients || !mounted) return;
 
-    // デバイスに応じてカーソル位置を調整
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // スマホではより中央寄りに、PCでは少し上部に
-    if (screenWidth < 600) {
-      // スマホの場合：画面の中央（0.5）かやや下（0.45）
-      _cursorPositionRatio = 0.45;
-    } else {
-      // PCの場合：従来の位置（0.4）かやや上（0.35）
-      _cursorPositionRatio = 0.4;
-    }
-
-    // 縦長のスマホではさらに調整
-    if (screenHeight > screenWidth * 1.8) {
-      _cursorPositionRatio = 0.5; // 縦長画面では中央
-    }
+    // スマホでは画面中央に配置
+    final isMobile = screenWidth < 600;
+    _cursorPositionRatio = isMobile ? 0.5 : 0.45;
 
     double cursorPositionY = screenHeight * _cursorPositionRatio;
     double cumulativeHeight = 0;
+
+    // 目標行までの累積高さを計算
     for (int i = 0; i < index; i++) {
       cumulativeHeight += _calculateLineHeight(i);
     }
+
+    final currentLineHeight = _calculateLineHeight(index);
     final double targetOffset =
-        cumulativeHeight - cursorPositionY + (_calculateLineHeight(index) / 2);
+        cumulativeHeight - cursorPositionY + (currentLineHeight / 2);
+
+    // スクロール可能範囲内にクリップ
+    final maxOffset = _scrollController.position.maxScrollExtent;
+    final clampedOffset = targetOffset.clamp(0.0, maxOffset);
+
+    // 既に目標位置の場合はスキップして精度を確保
+    if ((clampedOffset - _scrollController.offset).abs() < 5.0) {
+      return;
+    }
+
     await _scrollController.animateTo(
-      targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
-      duration: const Duration(milliseconds: 600),
+      clampedOffset,
+      duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOutCubic,
     );
   }
@@ -583,11 +610,24 @@ class _AutoStoryPageState extends State<AutoStoryPage>
 
   double _calculateLineHeight(int index) {
     final line = _fullStory[index];
-    if (line.startsWith("第") || line.startsWith("終") && line.contains("章"))
-      return 160.0;
-    if (line == "完") return 180.0;
-    if (index == 0 || line.contains("〜")) return 200.0;
-    return 120.0;
+
+    // 画像行はスキップ
+    if (line.startsWith("<<IMAGE:")) return 0.0;
+
+    // 章タイトル
+    if (line.startsWith("第") || (line.startsWith("終") && line.contains("章")))
+      return 240.0; // 上下のパディング40 + テキスト + ボーダー
+
+    // 「完」
+    if (line == "完") return 280.0; // より大きなパディング
+
+    // タイトル行
+    if (index == 0 || line.contains("〜")) return 240.0;
+
+    // 通常のテキスト行：テキストの行数に応じて計算
+    final lineCount = '\n'.allMatches(line).length + 1;
+    final baseHeight = 32.0 + (lineCount - 1) * 20.0; // 1行目32px + 追加行20px
+    return baseHeight + 24.0; // 上下パディング12px × 2
   }
 
   Widget _buildStoryLine(String line, int index) {
