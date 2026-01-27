@@ -47,7 +47,18 @@ public class ChatController {
     //チャットを保存
     @PostMapping("/{threadId}")
     public Chat postMessage(@PathVariable Integer threadId, @RequestBody Chat chat) {
-        return chatService.postMessage(threadId, chat);
+        System.out.println("========== ChatController.postMessage START ==========");
+        System.out.println("Request received - threadId: " + threadId);
+        System.out.println("Chat payload: userId=" + chat.getUserId() + ", content=" + chat.getContent());
+        try {
+            Chat result = chatService.postMessage(threadId, chat);
+            System.out.println("========== ChatController.postMessage SUCCESS ==========");
+            return result;
+        } catch (Exception e) {
+            System.out.println("❌ Exception in postMessage: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     //チャットのユーザー情報の取得（名前とか）

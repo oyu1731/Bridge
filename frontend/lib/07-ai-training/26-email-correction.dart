@@ -185,29 +185,32 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
 
     return ScreenWrapper(
       appBar: BridgeHeader(),
-      child: Padding(
-        padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
-        child:
-            isSmallScreen
-                ? Column(
+      child:
+          isSmallScreen
+              ? SingleChildScrollView(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // スマホ：縦積みレイアウト
-                    Flexible(flex: 2, child: _buildInputSection()),
+                    // スマホ：スクロール可能なレイアウト
+                    _buildInputSection(),
                     const SizedBox(height: 12),
                     _buildCorrectionButtonSmall(),
                     const SizedBox(height: 12),
-                    Flexible(flex: 2, child: _buildCorrectedSection()),
+                    _buildCorrectedSection(),
                     const SizedBox(height: 12),
-                    Flexible(flex: 1, child: _buildCorrectionDetails()),
+                    _buildCorrectionDetails(),
                   ],
-                )
-                : Column(
+                ),
+              )
+              : SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // PC：横並びレイアウト
-                    Flexible(
-                      flex: 3,
+                    SizedBox(
+                      height: 400,
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -225,10 +228,10 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
                     const SizedBox(height: 16),
 
                     // 下部：編集内容説明
-                    Flexible(flex: 2, child: _buildCorrectionDetails()),
+                    SizedBox(height: 200, child: _buildCorrectionDetails()),
                   ],
                 ),
-      ),
+              ),
     );
   }
 
@@ -259,7 +262,8 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Flexible(
+            SizedBox(
+              height: isSmallScreen ? 150 : 250,
               child: Container(
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade400),
@@ -389,7 +393,8 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Flexible(
+            SizedBox(
+              height: isSmallScreen ? 150 : 250,
               child: Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(isSmallScreen ? 8.0 : 12.0),
@@ -453,12 +458,10 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Flexible(
+            SizedBox(
+              height: isSmallScreen ? 150 : 120,
               child: Container(
                 width: double.infinity,
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.3,
-                ),
                 padding: EdgeInsets.all(isSmallScreen ? 8.0 : 12.0),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),

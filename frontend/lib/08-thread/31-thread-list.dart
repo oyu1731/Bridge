@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:bridge/11-common/58-header.dart';
@@ -9,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'thread_api_client.dart';
 import 'thread_model.dart';
 import 'thread-unofficial-list.dart';
-import 'package:bridge/10-payment/55-plan-status.dart';
 
 class ThreadList extends StatefulWidget {
   @override
@@ -27,7 +25,7 @@ class _ThreadListState extends State<ThreadList> {
     if (jsonString == null) return;
     final userData = jsonDecode(jsonString);
     setState(() {
-      userType = userData['type'] + 1;
+      userType = userData['type'];
     });
   }
 
@@ -39,111 +37,37 @@ class _ThreadListState extends State<ThreadList> {
 
   Future<void> _init() async {
     await _loadUserData(); //ユーザ取得
-    await _checkAndUpdateSubscriptionStatus(); // 無料プランチェック
     await _fetchThreads(); //userType を使う処理
-  }
-
-  /// ログイン中のアカウントのサブスク確認・更新
-  Future<void> _checkAndUpdateSubscriptionStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString('current_user');
-    if (jsonString == null) return;
-
-    final userData = jsonDecode(jsonString);
-    final userId = userData['id'];
-    final accountType =
-        userData['accountType'] ?? (userData['type'] == 3 ? '企業' : 'other');
-
-    // 企業アカウントのみチェック
-    if (accountType != '企業') {
-      return;
-    }
-
-    try {
-      final response = await http
-          .post(
-            Uri.parse(
-              // "http://localhost:8080/api/users/$userId/check-subscription",
-              "${ApiConfig.baseUrl}/api/users/$userId/check-subscription",
-            ),
-          )
-          .timeout(const Duration(seconds: 5));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        print('📋 スレッド画面: サブスク確認完了: ${data['message']}');
-
-        // usersテーブルのplanStatusが更新されている場合、セッションも更新
-        if (data['planStatus'] != null) {
-          print('🔄 セッション更新: planStatus=${data['planStatus']}');
-          userData['planStatus'] = data['planStatus'];
-          await prefs.setString('current_user', jsonEncode(userData));
-
-          // 無料に変わった場合
-          if (data['planStatus'] == '無料') {
-            print('⚠️ 無料プランを検出 - アラート表示');
-            // ヘッダーのキャッシュとアラート履歴をリセット
-            BridgeHeader.clearPlanStatusCache();
-            BridgeHeader.resetAlertHistory(userId);
-
-            if (mounted) {
-              // アラートを表示してからプラン確認画面に遷移
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder:
-                    (_) => AlertDialog(
-                      title: const Text('プランのご案内'),
-                      content: const Text(
-                        '現在のプランは「無料」です。\n\n'
-                        '企業機能をすべて利用するには有料プランへのアップグレードが必要です。',
-                      ),
-                      actions: [
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) =>
-                                        const PlanStatusScreen(userType: '企業'),
-                              ),
-                              (route) => false,
-                            );
-                          },
-                          child: const Text('プランを確認'),
-                        ),
-                      ],
-                    ),
-              );
-            }
-          }
-        }
-      } else {
-        print('❌ サブスク確認エラー: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('❌ サブスク確認通信エラー: $e');
-    }
   }
 
   Future<void> _fetchThreads() async {
     try {
       final threads = await ThreadApiClient.getAllThreads();
+      // ★★★★★ ここに入れる ★★★★★
+      print('=== THREAD DEBUG START ===');
+      print('userType=$userType');
+      for (final t in threads) {
+        print(
+          'threadId=${t.id},threadtitle=${t.title}, type=${t.type}, entry=${t.entryCriteria}, lastComment=${t.lastCommentDate}',
+        );
+      }
+      print('=== THREAD DEBUG END ===');
 
       // ---- 公式スレッド ----
       final official = threads.where((t) => t.type == 1).toList();
 
       // ---- 非公式フィルタ ----
       final filtered =
-          threads
-              .where(
-                (t) =>
-                    t.type == 2 &&
-                    (t.entryCriteria == userType || t.entryCriteria == 1),
-              )
-              .toList();
+          threads.where((t) {
+            if (t.type != 2) return false;
+            // 全員OK
+            if (t.entryCriteria == 1) return true;
+            // 学生
+            if (userType == 1 && t.entryCriteria == 2) return true;
+            // 社会人
+            if (userType == 2 && t.entryCriteria == 3) return true;
+            return false;
+          }).toList();
 
       // 並び替え（新しい順）
       filtered.sort((a, b) {

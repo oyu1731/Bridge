@@ -11,6 +11,14 @@ class ApiConfig {
     }
   }
 
+  static String get baseWsUrl {
+    if (kReleaseMode) {
+      return 'wss://api.bridge-tesg.com';
+    } else {
+      return 'ws://localhost:8080';
+    }
+  }
+
   // 各APIのエンドポイント（ここに必要なものを追加していく）
   static String get articlesUrl => '$baseUrl/api/articles';
   static String get companiesUrl => '$baseUrl/api/companies';

@@ -53,27 +53,44 @@ public class ChatService {
     // スレッドにメッセージ投稿
     public Chat postMessage(Integer threadId, Chat chat) {
         //単体テストの時にここが発揮される
+        System.out.println("========== postMessage START ==========");
+        System.out.println("threadId: " + threadId);
+        System.out.println("userId: " + chat.getUserId());
+        System.out.println("content: " + chat.getContent());
+        
         ForumThread thread = threadRepository.findById(threadId)
-            .orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.GONE, "THREAD_DELETED")
-            );
+            .orElseThrow(() -> {
+                System.out.println("❌ Thread NOT FOUND: threadId=" + threadId);
+                return new ResponseStatusException(HttpStatus.GONE, "THREAD_DELETED");
+            });
+        
+        System.out.println("✅ Thread FOUND: " + thread.getTitle());
+        System.out.println("is_deleted: " + thread.getIsDeleted());
 
         if (chat.getUserId() == null) {
+            System.out.println("❌ userId is null");
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "LOGIN_REQUIRED");
         }
 
         User user = userRepository.findById(chat.getUserId())
-            .orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND")
-            );
+            .orElseThrow(() -> {
+                System.out.println("❌ User NOT FOUND: userId=" + chat.getUserId());
+                return new ResponseStatusException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND");
+            });
+        
+        System.out.println("✅ User FOUND: " + user.getNickname());
+        
         chat.setThreadId(threadId);
         chat.setCreatedAt(LocalDateTime.now());
         Chat saved = chatRepository.save(chat);
+        
+        System.out.println("✅ Chat SAVED: chatId=" + saved.getId());
 
         //最終更新時間を変更
         thread.setLastUpdateDate(LocalDateTime.now());
         threadRepository.save(thread);
-
+        
+        System.out.println("========== postMessage END ==========");
         return saved;
     }
 
