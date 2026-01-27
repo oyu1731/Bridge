@@ -17,6 +17,7 @@ class _AdminHomeState extends State<AdminHome> {
     // 画面サイズ取得
     final screenWidth = MediaQuery.of(context).size.width;
     final buttonWidth = (screenWidth - 80) / 2; // 2列で左右マージン
+    final buttonWidth2 = screenWidth -60;
     final buttonHeight = 100.0;
 
     return Scaffold(
@@ -64,6 +65,13 @@ class _AdminHomeState extends State<AdminHome> {
                 }),
               ],
             ),
+            SizedBox(height: 20),
+            _buildButton('企業情報一覧', buttonWidth2, buttonHeight, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AdminCompanyColumnList()),
+              );
+            })
           ],
         ),
       ),
