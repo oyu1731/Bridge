@@ -266,42 +266,77 @@ ADD CONSTRAINT fk_articles_tag_tag_id FOREIGN KEY (tag_id) REFERENCES tag(id);
 -- 画像
 -- photos
 INSERT INTO photos (photo_path, user_id) VALUES
-('/path/to/photo1.jpg', 1),
-('/path/to/photo2.jpg', 2),
-('/path/to/photo3.jpg', 3);
+-- 企業写真（10枚）- user_idはNULL
+('/uploads/photos/Yamashita_Sangyo_Co_Ltd_photo.jpg', NULL),      -- ID: 1
+('/uploads/photos/Biden_Wind_Co_Ltd_photo.jpg', NULL),           -- ID: 2
+('/uploads/photos/Withdrawn_Company_photo.jpg', NULL),           -- ID: 3
+('/uploads/photos/Tech_Innovation_Co_Ltd_photo.jpg', NULL),      -- ID: 4
+('/uploads/photos/Global_Human_Resources_Services_Co_Ltd_photo.jpg', NULL), -- ID: 5
+('/uploads/photos/Environmental_Solution_Co_Ltd_photo.jpg', NULL), -- ID: 6
+('/uploads/photos/Education_Plus_Co_Ltd_photo.jpg', NULL),       -- ID: 7
+('/uploads/photos/Fintech_Partners_Co_Ltd_photo.jpg', NULL),     -- ID: 8
+('/uploads/photos/Medical_Tech_Co_Ltd_photo.jpg', NULL),         -- ID: 9
+('/uploads/photos/Smart_City_Solution_Co_Ltd_photo.jpg', NULL),  -- ID: 10
+-- 記事写真（16枚）- user_idはNULL
+-- 記事ID 1（3枚）
+('/uploads/photos/Yamashita_Sangyo_Co_Ltd_post1_no1.jpg', NULL), -- ID: 11
+('/uploads/photos/Yamashita_Sangyo_Co_Ltd_post1_no2.jpg', NULL), -- ID: 12
+('/uploads/photos/Yamashita_Sangyo_Co_Ltd_post1_no3.jpg', NULL), -- ID: 13
+-- 記事ID 2（1枚）
+('/uploads/photos/Biden_Wind_Co_Ltd_post2_no1.jpg', NULL),      -- ID: 14
+-- 記事ID 3（1枚）
+('/uploads/photos/Tech_Innovation_Co_Ltd_post3_no1.jpg', NULL), -- ID: 15
+-- 記事ID 4（1枚）
+('/uploads/photos/Global_Human_Resources_Services_Co_Ltd_post4_no1.jpg', NULL), -- ID: 16
+-- 記事ID 5（3枚）
+('/uploads/photos/Environmental_Solution_Co_Ltd_post5_no1.jpg', NULL), -- ID: 17
+('/uploads/photos/Environmental_Solution_Co_Ltd_post5_no2.jpg', NULL), -- ID: 18
+('/uploads/photos/Environmental_Solution_Co_Ltd_post5_no3.jpg', NULL), -- ID: 19
+-- 記事ID 6（3枚）
+('/uploads/photos/Education_Plus_Co_Ltd_post6_no1.jpg', NULL),  -- ID: 20
+('/uploads/photos/Education_Plus_Co_Ltd_post6_no2.jpg', NULL),  -- ID: 21
+('/uploads/photos/Education_Plus_Co_Ltd_post6_no3.jpg', NULL),  -- ID: 22
+-- 記事ID 7（1枚）
+('/uploads/photos/Fintech_Partners_Co_Ltd_post7_no1.jpg', NULL), -- ID: 23
+-- 記事ID 8（1枚）
+('/uploads/photos/Medical_Tech_Co_Ltd_post8_no1.jpg', NULL),    -- ID: 24
+-- 記事ID 9（1枚）
+('/uploads/photos/Smart_City_Solution_Co_Ltd_post9_no1.jpg', NULL), -- ID: 25
+-- 記事ID 10（1枚）
+('/uploads/photos/Yamashita_Sangyo_Co_Ltd_post10_no1.jpg', NULL); -- ID: 26
 
 -- 企業
 -- companies
 INSERT INTO companies (name, address, phone_number, description, plan_status, is_withdrawn, created_at, photo_id) VALUES
 ('株式会社ヤマシタ産業', '東京都渋谷区', '070-5555-5555', '株式会社ヤマシタ産業 は、1978年（昭和53年）創業の総合商社・製造サポート企業です。\n\n創業以来、地域の産業発展とお客様のビジネス成功を第一に考え、物流・資材・機械設備の供給から、製造現場の改善提案まで幅広いサービスを提供しています。\n\n当社は主に以下の事業を展開しています：\n・産業資材の販売\n・物流・在庫管理サービス\n・機械装備の導入支援・保守サービス\n\n私たちは「信頼」「品質」「スピード」を行動指針として、長年培ってきたノウハウとネットワークを生かし、地域社会と企業の成長に貢献しています。', 1, FALSE, NOW(), 1),
-('バイデンウィンド株式会社', '大阪府大阪市', '070-6666-6666', 'バイデンウィンド株式会社は、再生可能エネルギー分野に特化した企業です。\n\n主に風力発電事業を展開しており、環境に優しいエネルギーソリューションを提供しています。\n当社の主な事業内容は以下の通りです：\n・風力発電所の企画、設計、建設、運営\n・再生可能エネルギーに関するコンサルティングサービス\n・地域社会との連携による環境保護活動\n\n私たちは、持続可能な社会の実現に向けて、革新的な技術とサービスを提供し、クリーンエネルギーの普及に貢献しています。',1, FALSE, NOW(), 1),
-('退会済み企業', '愛知県名古屋市', '070-5555-6666', '退会済み企業の説明文です。企業一覧に表示され、投稿されていた記事も残ります。', 1, TRUE, NOW(), NULL),
-('テック・イノベーション株式会社', '東京都千代田区', '070-7777-7777', 'テック・イノベーション株式会社は、最先端のAI・機械学習技術を活用したソリューション企業です。\n\nクラウド、ビッグデータ、IoTなど、デジタル変革に必要な技術を提供し、企業のデジタル化を支援しています。\n\n主な事業：\n・AI・機械学習ソリューション開発\n・クラウドインフラ構築\n・データ分析・活用支援', 1, FALSE, NOW(), 1),
-('グローバル人材サービス株式会社', '京都府京都市', '070-8888-8888', 'グローバル人材サービス株式会社は、国際的な人材育成・派遣事業を展開する企業です。\n\n多言語対応、文化交流、キャリア開発支援を通じて、グローバル人材の育成と雇用創出に貢献しています。\n\n主な事業：\n・グローバル人材育成\n・人材派遣サービス\n・言語研修・コンサルティング', 1, FALSE, NOW(), 1),
-('環境ソリューション株式会社', '福岡県福岡市', '070-9999-9999', '環境ソリューション株式会社は、環境問題への取組みとサステナビリティ実現を目指す企業です。\n\n廃棄物管理、リサイクル事業、環境コンサルティングを通じて、企業のカーボンニュートラル化を支援しています。\n\n主な事業：\n・廃棄物処理・リサイクル\n・環境監査\n・サステナビリティコンサルティング', 1, FALSE, NOW(), 1),
-('エデュケーション・プラス株式会社', '大阪府大阪市', '070-1010-1010', 'エデュケーション・プラス株式会社は、教育技術（EdTech）を活用した学習支援企業です。\n\nオンライン教育プラットフォーム、AI学習システム、企業研修サービスを提供し、人材育成を支援しています。\n\n主な事業：\n・オンライン教育プラットフォーム運営\n・AI学習システム開発\n・企業向け研修プログラム', 1, FALSE, NOW(), 1),
-('フィンテック・パートナーズ株式会社', '東京都中央区', '070-1111-1111', 'フィンテック・パートナーズ株式会社は、金融テクノロジー分野のリーディング企業です。\n\nデジタル決済、ブロックチェーン技術、金融アナリティクスソリューションを提供し、金融サービスの革新を推進しています。\n\n主な事業：\n・デジタル決済システム\n・ブロックチェーン技術\n・金融データ分析', 1, FALSE, NOW(), 1),
-('メディカル・テック株式会社', '名古屋市中区', '070-1212-1212', 'メディカル・テック株式会社は、医療とテクノロジーの融合で、医療の質と効率を向上させる企業です。\n\n医療用ソフトウェア、遠隔診療システム、健康管理アプリを開発し、より良い医療環境の実現に貢献しています。\n\n主な事業：\n・医療用ソフトウェア開発\n・遠隔医療システム\n・健康管理プラットフォーム', 1, FALSE, NOW(), 1),
-('スマートシティ・ソリューション株式会社', '東京都港区', '070-1313-1313', 'スマートシティ・ソリューション株式会社は、スマートシティ実現に向けたIoT・AI技術を提供する企業です。\n\nスマートトラフィック、スマート照明、統合管理システムなど、都市の持続可能な発展を支援しています。\n\n主な事業：\n・スマートシティプラットフォーム\n・IoTセンサーソリューション\n・都市データ分析', 1, FALSE, NOW(), 1);
+('バイデンウィンド株式会社', '大阪府大阪市', '070-6666-6666', 'バイデンウィンド株式会社は、再生可能エネルギー分野に特化した企業です。\n\n主に風力発電事業を展開しており、環境に優しいエネルギーソリューションを提供しています。\n当社の主な事業内容は以下の通りです：\n・風力発電所の企画、設計、建設、運営\n・再生可能エネルギーに関するコンサルティングサービス\n・地域社会との連携による環境保護活動\n\n私たちは、持続可能な社会の実現に向けて、革新的な技術とサービスを提供し、クリーンエネルギーの普及に貢献しています。',1, FALSE, NOW(), 2),
+('退会済み企業', '愛知県名古屋市', '070-5555-6666', '退会済み企業の説明文です。企業一覧に表示され、投稿されていた記事も残ります。', 1, TRUE, NOW(), 3),
+('テック・イノベーション株式会社', '東京都千代田区', '070-7777-7777', 'テック・イノベーション株式会社は、最先端のAI・機械学習技術を活用したソリューション企業です。\n\nクラウド、ビッグデータ、IoTなど、デジタル変革に必要な技術を提供し、企業のデジタル化を支援しています。\n\n主な事業：\n・AI・機械学習ソリューション開発\n・クラウドインフラ構築\n・データ分析・活用支援', 1, FALSE, NOW(), 4),
+('グローバル人材サービス株式会社', '京都府京都市', '070-8888-8888', 'グローバル人材サービス株式会社は、国際的な人材育成・派遣事業を展開する企業です。\n\n多言語対応、文化交流、キャリア開発支援を通じて、グローバル人材の育成と雇用創出に貢献しています。\n\n主な事業：\n・グローバル人材育成\n・人材派遣サービス\n・言語研修・コンサルティング', 1, FALSE, NOW(), 5),
+('環境ソリューション株式会社', '福岡県福岡市', '070-9999-9999', '環境ソリューション株式会社は、環境問題への取組みとサステナビリティ実現を目指す企業です。\n\n廃棄物管理、リサイクル事業、環境コンサルティングを通じて、企業のカーボンニュートラル化を支援しています。\n\n主な事業：\n・廃棄物処理・リサイクル\n・環境監査\n・サステナビリティコンサルティング', 1, FALSE, NOW(), 6),
+('エデュケーション・プラス株式会社', '大阪府大阪市', '070-1010-1010', 'エデュケーション・プラス株式会社は、教育技術（EdTech）を活用した学習支援企業です。\n\nオンライン教育プラットフォーム、AI学習システム、企業研修サービスを提供し、人材育成を支援しています。\n\n主な事業：\n・オンライン教育プラットフォーム運営\n・AI学習システム開発\n・企業向け研修プログラム', 1, FALSE, NOW(), 7),
+('フィンテック・パートナーズ株式会社', '東京都中央区', '070-1111-1111', 'フィンテック・パートナーズ株式会社は、金融テクノロジー分野のリーディング企業です。\n\nデジタル決済、ブロックチェーン技術、金融アナリティクスソリューションを提供し、金融サービスの革新を推進しています。\n\n主な事業：\n・デジタル決済システム\n・ブロックチェーン技術\n・金融データ分析', 1, FALSE, NOW(), 8),
+('メディカル・テック株式会社', '名古屋市中区', '070-1212-1212', 'メディカル・テック株式会社は、医療とテクノロジーの融合で、医療の質と効率を向上させる企業です。\n\n医療用ソフトウェア、遠隔診療システム、健康管理アプリを開発し、より良い医療環境の実現に貢献しています。\n\n主な事業：\n・医療用ソフトウェア開発\n・遠隔医療システム\n・健康管理プラットフォーム', 1, FALSE, NOW(), 9),
+('スマートシティ・ソリューション株式会社', '東京都港区', '070-1313-1313', 'スマートシティ・ソリューション株式会社は、スマートシティ実現に向けたIoT・AI技術を提供する企業です。\n\nスマートトラフィック、スマート照明、統合管理システムなど、都市の持続可能な発展を支援しています。\n\n主な事業：\n・スマートシティプラットフォーム\n・IoTセンサーソリューション\n・都市データ分析', 1, FALSE, NOW(), 10);
 
 -- ユーザー
 -- users
 INSERT INTO users (nickname, type, password, phone_number, email, company_id, report_count, plan_status, is_withdrawn, created_at, society_history, icon, announcement_deletion, token) VALUES
 -- 学生:type=1
-('佐々木一郎', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-1111-1111', 'sasaki@mail.com', NULL, 0, '学生プレミアム', FALSE, NOW(), NULL, 1, 1, 50),
-('安藤花子', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-2222-2222', 'andou@mail.com', NULL, 0, '無料', FALSE, NOW(), NULL, 2, 1, 50),
+('佐々木一郎', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-1111-1111', 'sasaki@mail.com', NULL, 0, '学生プレミアム', FALSE, NOW(), NULL, NULL, 1, 50),
+('安藤花子', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-2222-2222', 'andou@mail.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50),
 ('理系くん', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-2222-3333', 'rikei@mail.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50),
 ('文系ちゃん', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-1111-2222', 'bunkei@mail.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50),
 ('退会済み学生', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-1234-5678', 'stu.delete@mail.com', NULL, 0, '無料', TRUE, NOW(), NULL, NULL, 1, 50),
 -- 社会人:type=2
-('松井二郎', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-3333-3333', 'matsui@mail.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 5, 3, 1, 50),
-('高田鳥子', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-4444-4444', 'takada@mail.com', NULL, 0, '無料', FALSE, NOW(), 3, 4, 1, 50),
+('松井二郎', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-3333-3333', 'matsui@mail.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 5, NULL, 1, 50),
+('高田鳥子', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-4444-4444', 'takada@mail.com', NULL, 0, '無料', FALSE, NOW(), 3, NULL, 1, 50),
 ('残業三昧くん', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-3333-4444', 'zangyou@mail.com', NULL, 0, '無料', FALSE, NOW(), 2, NULL, 1, 50),
 ('新卒ちゃん', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-3333-4444', 'shinsotsu@mail.com', NULL, 0, '無料', FALSE, NOW(), 1, NULL, 1, 50),
 ('退会済み社会人', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-4444-5555', 'wor.delete@mail.com', NULL, 0, '無料', TRUE, NOW(), 6, NULL, 1, 50),
 -- 企業:type=3
-('株式会社ヤマシタ産業', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-5555-5555', 'yamashita@mail.com', 1, 0, '企業プレミアム', FALSE, NOW(), NULL, 5, 1, 50),
-('バイデンウィンド株式会社', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-6666-6666', 'umeda@mail.com', 2, 0, '企業プレミアム', FALSE, NOW(), NULL, 6, 1, 50),
+('株式会社ヤマシタ産業', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-5555-5555', 'yamashita@mail.com', 1, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50),
+('バイデンウィンド株式会社', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-6666-6666', 'umeda@mail.com', 2, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50),
 ('退会済み企業', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-5555-6666', 'com.delete@mail.com', 3, 0, '企業プレミアム', TRUE, NOW(), NULL, NULL, 1, 50),
 -- 管理者:type=4
 ('管理者-森本四郎', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-7777-7777', 'morimoto@mail.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50),
@@ -343,17 +378,17 @@ INSERT INTO subscriptions (user_id, plan_name, start_date, end_date, is_plan_sta
 -- 記事
 -- articles
 INSERT INTO articles (title, description, company_id, is_deleted, total_likes, created_at, photo1_id, photo2_id, photo3_id) VALUES
-('会社説明会のお知らせ', 'みなさんこんにちは！当社ではオンライン会社説明会を随時開催中です。\n-----２月のスケジュール-----\n・５日（月）11:00～12:30\n・７日（水）10:00～11:30\n・１５日（木）11:00～12:30\n・２０日（火）13:00～14:30\n・２３日（金）10:00～11:30\n\n本社採用サイトからエントリーをお願いいたします。\nurl=httqs://www.yamashita_sangyou.recruit \n\n\n皆様のご参加お待ちしています！', 1, FALSE, 10, NOW(), NULL, NULL, NULL),
-('スレッドを開設しました', 'みなさんこんにちは。本日「バイデンウィンド（株）」のスレッドを開設しました。\n\n就職活動に関する質問等、採用担当の者がお答えします！\n採用には一切影響いたしませんので、お気軽にご参加ください。\nみなさんの投稿お待ちしています！', 2, FALSE, 5, NOW(), NULL, NULL, NULL),
-('AI・機械学習技術セミナーのご案内', 'テック・イノベーション株式会社では、最先端のAI・機械学習技術に関するセミナーを開催いたします。\n業界の第一線の専門家による講演会を予定しており、参加者には特別な情報をお得にご提供いたします。\nご興味のある方は、ぜひお気軽にお申し込みください。', 4, FALSE, 0, NOW(), NULL, NULL, NULL),
-('国際人材育成プログラム2026年開始', 'グローバル人材サービス株式会社では、2026年度の国際人材育成プログラムの参加者を募集しています。\n多言語対応・文化交流・キャリア形成支援など、充実した研修内容を用意しております。\nこのプログラムを通じてグローバルに活躍できる人材へとステップアップしませんか？', 5, FALSE, 0, NOW(), NULL, NULL, NULL),
-('環境配慮型製品ラインアップ拡充', '環境ソリューション株式会社では、持続可能な社会実現に向けた新製品をリリースいたします。\n廃棄物処理・リサイクル・環境監査を統合したソリューションで、企業のカーボンニュートラル化を支援します。\n環境への取り組みを始めたい企業様との協力をお待ちしています。', 6, FALSE, 0, NOW(), NULL, NULL, NULL),
+('会社説明会のお知らせ', 'みなさんこんにちは！当社ではオンライン会社説明会を随時開催中です。\n-----２月のスケジュール-----\n・５日（月）11:00～12:30\n・７日（水）10:00～11:30\n・１５日（木）11:00～12:30\n・２０日（火）13:00～14:30\n・２３日（金）10:00～11:30\n\n本社採用サイトからエントリーをお願いいたします。\nurl=httqs://www.yamashita_sangyou.recruit \n\n\n皆様のご参加お待ちしています！', 1, FALSE, 10, NOW(), 11, 12, 13),  -- photo1_id=11, photo2_id=12, photo3_id=13
+('スレッドを開設しました', 'みなさんこんにちは。本日「バイデンウィンド（株）」のスレッドを開設しました。\n\n就職活動に関する質問等、採用担当の者がお答えします！\n採用には一切影響いたしませんので、お気軽にご参加ください。\nみなさんの投稿お待ちしています！', 2, FALSE, 5, NOW(), 14, NULL, NULL),  -- photo1_id=14
+('AI・機械学習技術セミナーのご案内', 'テック・イノベーション株式会社では、最先端のAI・機械学習技術に関するセミナーを開催いたします。\n業界の第一線の専門家による講演会を予定しており、参加者には特別な情報をお得にご提供いたします。\nご興味のある方は、ぜひお気軽にお申し込みください。', 4, FALSE, 0, NOW(), 15, NULL, NULL),  -- photo1_id=15
+('国際人材育成プログラム2026年開始', 'グローバル人材サービス株式会社では、2026年度の国際人材育成プログラムの参加者を募集しています。\n多言語対応・文化交流・キャリア形成支援など、充実した研修内容を用意しております。\nこのプログラムを通じてグローバルに活躍できる人材へとステップアップしませんか？', 5, FALSE, 0, NOW(), 16, NULL, NULL),  -- photo1_id=16
+('環境配慮型製品ラインアップ拡充', '環境ソリューション株式会社では、持続可能な社会実現に向けた新製品をリリースいたします。\n廃棄物処理・リサイクル・環境監査を統合したソリューションで、企業のカーボンニュートラル化を支援します。\n環境への取り組みを始めたい企業様との協力をお待ちしています。', 6, FALSE, 0, NOW(), 17, 18, 19),  -- photo1_id=17, photo2_id=18, photo3_id=19
 
-('EdTech新サービス「AI学習サポート」ベータ版開始', 'エデュケーション・プラス株式会社が新しいAI学習支援システムのベータ版を公開いたします。\nタブレットやPCで利用可能な本システムは、個人の学習進度に合わせた最適なカリキュラムを提供します。\n無料トライアルもご用意しておりますので、ぜひお試しください。', 7, FALSE, 0, NOW(), NULL, NULL, NULL),
-('フィンテック・パートナーズ新規事業説明会', 'デジタル決済・ブロックチェーン技術を活用したフィンテック・パートナーズより、新規事業についての説明会を開催いたします。\n金融DXに興味のある学生・社会人の皆様ご参加ください。\n企業説明・選考対策セッションも同時開催予定です。', 8, FALSE, 0, NOW(), NULL, NULL, NULL),
-('メディカル・テック医療従事者向けセミナー開催', 'メディカル・テック株式会社では、医療現場でのデジタル化について学ぶセミナーを開催いたします。\n遠隔診療・患者データ管理・医療AIなど、最新の医療テクノロジーについてのお話となります。\n医療業界への就職を検討されている方もぜひご参加ください。', 9, FALSE, 0, NOW(), NULL, NULL, NULL),
-('スマートシティ技術説明会・インターン募集', 'スマートシティ・ソリューション株式会社は、IoT・AI技術を活用した都市構想についての説明会を実施いたします。\nあわせて、2026年夏期インターンシップの参加者も募集中です。\nスマートシティの実現に携わりたい皆様のご応募をお待ちしています。', 10, FALSE, 0, NOW(), NULL, NULL, NULL),
-('株式会社ヤマシタ産業 新卒採用開始のお知らせ', '株式会社ヤマシタ産業では、2026年度新卒採用を開始いたしました。\n製造業界に興味のある学生の皆様、ぜひ当社の採用情報をご覧ください。\nエントリーは当社採用サイトからお願いいたします。', 1, FALSE, 0, NOW(), NULL, NULL, NULL);
+('EdTech新サービス「AI学習サポート」ベータ版開始', 'エデュケーション・プラス株式会社が新しいAI学習支援システムのベータ版を公開いたします。\nタブレットやPCで利用可能な本システムは、個人の学習進度に合わせた最適なカリキュラムを提供します。\n無料トライアルもご用意しておりますので、ぜひお試しください。', 7, FALSE, 0, NOW(), 20, 21, 22),  -- photo1_id=20, photo2_id=21, photo3_id=22
+('フィンテック・パートナーズ新規事業説明会', 'デジタル決済・ブロックチェーン技術を活用したフィンテック・パートナーズより、新規事業についての説明会を開催いたします。\n金融DXに興味のある学生・社会人の皆様ご参加ください。\n企業説明・選考対策セッションも同時開催予定です。', 8, FALSE, 0, NOW(), 23, NULL, NULL),  -- photo1_id=23
+('メディカル・テック医療従事者向けセミナー開催', 'メディカル・テック株式会社では、医療現場でのデジタル化について学ぶセミナーを開催いたします。\n遠隔診療・患者データ管理・医療AIなど、最新の医療テクノロジーについてのお話となります。\n医療業界への就職を検討されている方もぜひご参加ください。', 9, FALSE, 0, NOW(), 24, NULL, NULL),  -- photo1_id=24
+('スマートシティ技術説明会・インターン募集', 'スマートシティ・ソリューション株式会社は、IoT・AI技術を活用した都市構想についての説明会を実施いたします。\nあわせて、2026年夏期インターンシップの参加者も募集中です。\nスマートシティの実現に携わりたい皆様のご応募をお待ちしています。', 10, FALSE, 0, NOW(), 25, NULL, NULL),  -- photo1_id=25
+('株式会社ヤマシタ産業 新卒採用開始のお知らせ', '株式会社ヤマシタ産業では、2026年度新卒採用を開始いたしました。\n製造業界に興味のある学生の皆様、ぜひ当社の採用情報をご覧ください。\nエントリーは当社採用サイトからお願いいたします。', 1, FALSE, 0, NOW(), 26, NULL, NULL);  -- photo1_id=26
 
 -- スレッド
 -- threads
