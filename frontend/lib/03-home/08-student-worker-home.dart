@@ -186,37 +186,38 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
   }
 
   // =====================
-  // トップページタブ
-  // =====================
-  Widget _buildTopPageTab(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-    return FutureBuilder<List<ArticleDTO>>(
-      future: ArticleApiClient.getAllArticles(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text('記事の取得に失敗しました'));
-        }
-        final articles = snapshot.data ?? [];
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 最新スレッド
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      '最新スレッド',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+// トップページタブ
+// =====================
+Widget _buildTopPageTab(BuildContext context) {
+  final isMobile = MediaQuery.of(context).size.width < 600;
+  return FutureBuilder<List<ArticleDTO>>(
+    future: ArticleApiClient.getAllArticles(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (snapshot.hasError) {
+        return Center(child: Text('記事の取得に失敗しました'));
+      }
+      // 取得した記事のうち最大10件のみ表示
+      final articles = (snapshot.data ?? []).take(10).toList();
+      return SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 最新スレッド
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '最新スレッド',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
+                  ),
                     TextButton(
                       onPressed: () {
                         Navigator.push(
@@ -548,20 +549,25 @@ class _ArticlePagerState extends State<_ArticlePager> {
               final end = (start + 3).clamp(0, widget.articles.length);
               final pageArticles = widget.articles.sublist(start, end);
 
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children:
-                    pageArticles
-                        .map(
-                          (a) => _buildArticleCard(
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: pageArticles
+                      .map(
+                        (a) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: _buildArticleCard(
                             title: a["title"] ?? '',
                             companyName: a["companyName"] ?? '',
                             totalLikes: a["totalLikes"] ?? 0,
                             link: a["link"] ?? '',
                             onTitleTap: a["onTitleTap"],
                           ),
-                        )
-                        .toList(),
+                        ),
+                      )
+                      .toList(),
+                ),
               );
             },
           ),

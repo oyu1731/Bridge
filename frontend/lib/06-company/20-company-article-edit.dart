@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import '../11-common/58-header.dart';
 import '17-company-article-list.dart';
@@ -51,12 +52,22 @@ class _ArticleEditPageState extends State<ArticleEditPage> {
   @override
   void initState() {
     super.initState();
+    _checkLoginStatus();
     _titleController.text = widget.initialTitle;
     _contentController.text = widget.initialContent;
     _selectedTags = List.from(widget.initialTags);
-    
     _loadAvailableTags();
     _loadArticleIfNeeded();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('current_user');
+    if (userJson == null) {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/signin');
+      }
+    }
   }
 
   Future<void> _loadArticleIfNeeded() async {

@@ -1,5 +1,6 @@
 import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 import 'dart:html' as html show window;
@@ -23,6 +24,17 @@ class CompanySearchPage extends StatefulWidget {
 }
 
 class _CompanySearchPageState extends State<CompanySearchPage> {
+
+
+    Future<void> _checkLoginStatus() async {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString('current_user');
+      if (userJson == null) {
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/signin');
+        }
+      }
+    }
   final TextEditingController _searchController = TextEditingController();
   String _selectedIndustry = '業界';
   String _selectedArea = 'エリア';
@@ -39,6 +51,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
   @override
   void initState() {
     super.initState();
+    _checkLoginStatus();
     _loadCompanies();
     _loadArticles();
     _loadIndustries();
@@ -54,16 +67,17 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
 
     try {
       final companies = await CompanyApiClient.getAllCompanies();
+      // 削除済み・退会済み企業を除外
+      final filtered = companies.where((c) => c.isWithdrawn != true).toList();
       // 最終更新日時順にソート（注目企業として表示）
-      companies.sort((a, b) {
+      filtered.sort((a, b) {
         if (a.createdAt == null && b.createdAt == null) return 0;
         if (a.createdAt == null) return 1;
         if (b.createdAt == null) return -1;
         return b.createdAt!.compareTo(a.createdAt!);
       });
-
       setState(() {
-        _filteredCompanies = companies;
+        _filteredCompanies = filtered;
         _isLoading = false;
         _hasSearched = false; // 初期データは注目企業として表示
       });

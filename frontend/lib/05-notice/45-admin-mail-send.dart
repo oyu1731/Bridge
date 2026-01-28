@@ -185,9 +185,10 @@ class _AdminMailSendState extends State<AdminMailSend> {
         ).showSnackBar(SnackBar(content: Text('送信が完了しました')));
         _clearForm();
       } else {
+        final msg = utf8.decode(response.bodyBytes);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('送信失敗: ${response.statusCode}')));
+        ).showSnackBar(SnackBar(content: Text('送信失敗: $msg')));
       }
     } catch (e) {
       ScaffoldMessenger.of(
