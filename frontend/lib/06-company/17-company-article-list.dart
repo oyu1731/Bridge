@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '18-article-detail.dart';
 import '20-company-article-edit.dart';
@@ -25,7 +26,18 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
   @override
   void initState() {
     super.initState();
+    _checkLoginStatus();
     _loadCompanyId();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('current_user');
+    if (userJson == null) {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/signin');
+      }
+    }
   }
 
   Future<void> _loadCompanyId() async {
