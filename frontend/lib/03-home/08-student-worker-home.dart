@@ -1,5 +1,5 @@
 import 'package:bridge/02-auth/06-delete-account.dart';
-import 'package:bridge/06-company/api_config.dart';
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/59-global-method.dart'; // loadUserSession 等のため
@@ -186,38 +186,38 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
   }
 
   // =====================
-// トップページタブ
-// =====================
-Widget _buildTopPageTab(BuildContext context) {
-  final isMobile = MediaQuery.of(context).size.width < 600;
-  return FutureBuilder<List<ArticleDTO>>(
-    future: ArticleApiClient.getAllArticles(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      if (snapshot.hasError) {
-        return Center(child: Text('記事の取得に失敗しました'));
-      }
-      // 取得した記事のうち最大10件のみ表示
-      final articles = (snapshot.data ?? []).take(10).toList();
-      return SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 最新スレッド
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    '最新スレッド',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+  // トップページタブ
+  // =====================
+  Widget _buildTopPageTab(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    return FutureBuilder<List<ArticleDTO>>(
+      future: ArticleApiClient.getAllArticles(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('記事の取得に失敗しました'));
+        }
+        // 取得した記事のうち最大10件のみ表示
+        final articles = (snapshot.data ?? []).take(10).toList();
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 最新スレッド
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '最新スレッド',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
                     TextButton(
                       onPressed: () {
                         Navigator.push(
@@ -553,20 +553,23 @@ class _ArticlePagerState extends State<_ArticlePager> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.start,
-                  children: pageArticles
-                      .map(
-                        (a) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: _buildArticleCard(
-                            title: a["title"] ?? '',
-                            companyName: a["companyName"] ?? '',
-                            totalLikes: a["totalLikes"] ?? 0,
-                            link: a["link"] ?? '',
-                            onTitleTap: a["onTitleTap"],
-                          ),
-                        ),
-                      )
-                      .toList(),
+                  children:
+                      pageArticles
+                          .map(
+                            (a) => Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8.0,
+                              ),
+                              child: _buildArticleCard(
+                                title: a["title"] ?? '',
+                                companyName: a["companyName"] ?? '',
+                                totalLikes: a["totalLikes"] ?? 0,
+                                link: a["link"] ?? '',
+                                onTitleTap: a["onTitleTap"],
+                              ),
+                            ),
+                          )
+                          .toList(),
                 ),
               );
             },

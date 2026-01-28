@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
-import 'package:bridge/06-company/api_config.dart';
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Clipboardを使用するために追加
 import 'package:http/http.dart' as http;
