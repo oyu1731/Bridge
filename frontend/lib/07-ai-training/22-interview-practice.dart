@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:bridge/06-company/api_config.dart';
+import 'package:bridge/11-common/api_config.dart';
 import 'package:bridge/11-common/60-ScreenWrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';

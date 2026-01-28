@@ -1,4 +1,4 @@
-import 'package:bridge/06-company/api_config.dart';
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -24,17 +24,16 @@ class CompanySearchPage extends StatefulWidget {
 }
 
 class _CompanySearchPageState extends State<CompanySearchPage> {
-
-
-    Future<void> _checkLoginStatus() async {
-      final prefs = await SharedPreferences.getInstance();
-      final userJson = prefs.getString('current_user');
-      if (userJson == null) {
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed('/signin');
-        }
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('current_user');
+    if (userJson == null) {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/signin');
       }
     }
+  }
+
   final TextEditingController _searchController = TextEditingController();
   String _selectedIndustry = '業界';
   String _selectedArea = 'エリア';

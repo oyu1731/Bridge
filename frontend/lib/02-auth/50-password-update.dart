@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:bridge/06-company/api_config.dart';
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/03-home/08-student-worker-home.dart';

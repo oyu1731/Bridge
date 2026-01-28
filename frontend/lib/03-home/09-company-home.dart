@@ -1,5 +1,5 @@
 import 'package:bridge/02-auth/06-delete-account.dart';
-import 'package:bridge/06-company/api_config.dart';
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import '../06-company/article_api_client.dart';
@@ -558,20 +558,23 @@ class _ArticlePagerState extends State<_ArticlePager> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.start,
-                  children: pageArticles
-                      .map(
-                        (a) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: _buildArticleCard(
-                            title: a["title"] ?? '',
-                            companyName: a["companyName"] ?? '',
-                            totalLikes: a["totalLikes"] ?? 0,
-                            link: a["link"] ?? '',
-                            onTitleTap: a["onTitleTap"],
-                          ),
-                        ),
-                      )
-                      .toList(),
+                  children:
+                      pageArticles
+                          .map(
+                            (a) => Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8.0,
+                              ),
+                              child: _buildArticleCard(
+                                title: a["title"] ?? '',
+                                companyName: a["companyName"] ?? '',
+                                totalLikes: a["totalLikes"] ?? 0,
+                                link: a["link"] ?? '',
+                                onTitleTap: a["onTitleTap"],
+                              ),
+                            ),
+                          )
+                          .toList(),
                 ),
               );
             },
