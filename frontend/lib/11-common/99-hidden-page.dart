@@ -228,6 +228,10 @@ class _AutoStoryPageState extends State<AutoStoryPage>
   // レスポンシブなカーソル位置（デフォルトは中央）
   double _cursorPositionRatio = 0.4;
 
+  // 各行のキーと高さのマッピング
+  final Map<int, GlobalKey> _lineKeys = {};
+  final Map<int, double> _lineHeights = {};
+
   int _calculateChapterIndexFromLine(int lineIndex) {
     int chapter = 0;
     for (int i = 0; i <= lineIndex && i < _fullStory.length; i++) {
@@ -321,7 +325,9 @@ class _AutoStoryPageState extends State<AutoStoryPage>
                         top: Radius.circular(16),
                       ),
                       child: Image.asset(
-                        'lib/01-images/$imagePath',
+                        imagePath.startsWith('lib/')
+                            ? imagePath
+                            : 'lib/01-images/$imagePath',
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
@@ -432,14 +438,14 @@ class _AutoStoryPageState extends State<AutoStoryPage>
 
       // --- IMAGEトリガー ---
       if (line.startsWith("<<IMAGE:")) {
-        final fileName = line.replaceAll("<<IMAGE:", "").replaceAll(">>", "");
-        final bool isFinal = fileName == "story_last.jpg";
+        final imagePath = line.replaceAll("<<IMAGE:", "").replaceAll(">>", "");
+        final bool isFinal = imagePath.contains("story_last.jpg");
 
         // 次に読むべき行を保存
         _pendingResumeIndex = i + 1;
 
         await Future.delayed(const Duration(milliseconds: 400));
-        _showStoryImage(fileName, isFinal);
+        _showStoryImage(imagePath, isFinal);
         break;
       }
 
@@ -496,21 +502,24 @@ class _AutoStoryPageState extends State<AutoStoryPage>
     if (!_scrollController.hasClients || !mounted) return;
 
     final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
 
-    // スマホでは画面中央に配置
-    final isMobile = screenWidth < 600;
-    _cursorPositionRatio = isMobile ? 0.5 : 0.45;
+    // 読み上げ位置を画面上から20%の位置に固定
+    final cursorPositionRatio = 0.2;
+    double cursorPositionY = screenHeight * cursorPositionRatio;
 
-    double cursorPositionY = screenHeight * _cursorPositionRatio;
+    // 実際の高さを計算（測定されたものか、計算値を使用）
     double cumulativeHeight = 0;
-
-    // 目標行までの累積高さを計算
     for (int i = 0; i < index; i++) {
-      cumulativeHeight += _calculateLineHeight(i);
+      if (_lineHeights.containsKey(i)) {
+        cumulativeHeight += _lineHeights[i]!;
+      } else {
+        // 測定されていない場合は計算値を使用
+        cumulativeHeight += _calculateLineHeight(i);
+      }
     }
 
-    final currentLineHeight = _calculateLineHeight(index);
+    final currentLineHeight =
+        _lineHeights[index] ?? _calculateLineHeight(index);
     final double targetOffset =
         cumulativeHeight - cursorPositionY + (currentLineHeight / 2);
 
@@ -528,6 +537,25 @@ class _AutoStoryPageState extends State<AutoStoryPage>
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOutCubic,
     );
+  }
+
+  void _measureLineHeight(int index) {
+    if (!_lineKeys.containsKey(index)) {
+      _lineKeys[index] = GlobalKey();
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final key = _lineKeys[index];
+      if (key != null) {
+        final RenderBox? renderBox =
+            key.currentContext?.findRenderObject() as RenderBox?;
+        if (renderBox != null && renderBox.hasSize) {
+          setState(() {
+            _lineHeights[index] = renderBox.size.height;
+          });
+        }
+      }
+    });
   }
 
   void _onLineTapped(int index) async {
@@ -758,6 +786,7 @@ class _AutoStoryPageState extends State<AutoStoryPage>
       lineContent = Padding(
         padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
         child: Container(
+          key: _lineKeys[index],
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: backgroundColor,
@@ -789,6 +818,11 @@ class _AutoStoryPageState extends State<AutoStoryPage>
           ),
         ),
       );
+
+      // このフレームの後で高さを測定
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _measureLineHeight(index);
+      });
     }
 
     return GestureDetector(
