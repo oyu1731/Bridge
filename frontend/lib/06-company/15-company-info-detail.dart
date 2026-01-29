@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
@@ -11,7 +10,11 @@ import 'article_api_client.dart';
 class CompanyDetailPage extends StatefulWidget {
   final String companyName;
   final int companyId;
-  const CompanyDetailPage({Key? key, required this.companyName, required this.companyId}) : super(key: key);
+  const CompanyDetailPage({
+    Key? key,
+    required this.companyName,
+    required this.companyId,
+  }) : super(key: key);
   @override
   State<CompanyDetailPage> createState() => _CompanyDetailPageState();
 }
@@ -24,34 +27,72 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
     _fetchData();
   }
 
-    Future<void> _checkLoginStatus() async {
-      final prefs = await SharedPreferences.getInstance();
-      final userJson = prefs.getString('current_user');
-      if (userJson == null) {
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed('/signin');
-        }
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('current_user');
+    if (userJson == null) {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/signin');
       }
     }
+  }
+
   CompanyDTO? _company;
   List<ArticleDTO> _featuredArticles = [];
   bool _isLoading = true;
   String? _error;
 
+  // 自動ループ用コントローラ/タイマー
+  PageController? _featuredPageController;
+  Timer? _featuredTimer;
+  int _currentFeaturedPage = 0;
+
   Future<void> _fetchData() async {
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final company = await CompanyApiClient.getCompanyById(widget.companyId);
-      final articles = await ArticleApiClient.getArticlesByCompanyId(widget.companyId);
+      final articles = await ArticleApiClient.getArticlesByCompanyId(
+        widget.companyId,
+      );
       articles.sort((a, b) => (b.totalLikes ?? 0).compareTo(a.totalLikes ?? 0));
       setState(() {
         _company = company;
         _featuredArticles = articles.take(5).toList();
         _isLoading = false;
       });
+      // 記事取得後に自動スクロールをセットアップ
+      _setupFeaturedAutoScroll();
     } catch (e) {
-      setState(() { _error = e.toString(); _isLoading = false; });
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
     }
+  }
+
+  void _setupFeaturedAutoScroll() {
+    // 既存のタイマーをクリア
+    _featuredTimer?.cancel();
+    _featuredPageController ??= PageController(
+      initialPage: _currentFeaturedPage,
+    );
+
+    if ((_featuredArticles.length) <= 1) return;
+
+    _featuredTimer = Timer.periodic(Duration(seconds: 4), (timer) {
+      if (!mounted) return;
+      if (_featuredArticles.isEmpty) return;
+      _currentFeaturedPage =
+          (_currentFeaturedPage + 1) % _featuredArticles.length;
+      _featuredPageController?.animateToPage(
+        _currentFeaturedPage,
+        duration: Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    });
   }
 
   String _formatDate(String? dateString) {
@@ -70,7 +111,10 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
       children: [
         Icon(Icons.favorite, size: 12, color: Colors.red),
         SizedBox(width: 4),
-        Text('$count', style: TextStyle(fontSize: 11, color: Color(0xFF757575))),
+        Text(
+          '$count',
+          style: TextStyle(fontSize: 11, color: Color(0xFF757575)),
+        ),
       ],
     );
   }
@@ -78,15 +122,29 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
   Widget _buildCompanyImage(double maxHeight) {
     final photoPath = _company?.photoPath;
     if (photoPath != null && photoPath.isNotEmpty) {
-      return AspectRatioImage(imageUrl: photoPath, maxHeight: maxHeight, onTap: () => _showImageModal(photoPath));
+      return AspectRatioImage(
+        imageUrl: photoPath,
+        maxHeight: maxHeight,
+        onTap: () => _showImageModal(photoPath),
+      );
     } else {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.business, size: maxHeight * 0.3, color: Color(0xFF757575)),
+            Icon(
+              Icons.business,
+              size: maxHeight * 0.3,
+              color: Color(0xFF757575),
+            ),
             SizedBox(height: 8),
-            Text('企業画像', style: TextStyle(fontSize: maxHeight > 200 ? 20 : 16, color: Color(0xFF757575))),
+            Text(
+              '企業画像',
+              style: TextStyle(
+                fontSize: maxHeight > 200 ? 20 : 16,
+                color: Color(0xFF757575),
+              ),
+            ),
           ],
         ),
       );
@@ -97,47 +155,71 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
     showDialog(
       context: context,
       barrierColor: Colors.black87,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: EdgeInsets.all(16),
-        child: Stack(
-          children: [
-            Center(
-              child: InteractiveViewer(
-                minScale: 0.5,
-                maxScale: 4.0,
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Center(child: CircularProgressIndicator(value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null, color: Colors.white));
-                  },
-                  errorBuilder: (context, error, stackTrace) => Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.broken_image, color: Colors.white, size: 64),
-                        SizedBox(height: 16),
-                        Text('画像を読み込めませんでした', style: TextStyle(color: Colors.white, fontSize: 16)),
-                      ],
+      builder:
+          (context) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.all(16),
+            child: Stack(
+              children: [
+                Center(
+                  child: InteractiveViewer(
+                    minScale: 0.5,
+                    maxScale: 4.0,
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value:
+                                loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                            color: Colors.white,
+                          ),
+                        );
+                      },
+                      errorBuilder:
+                          (context, error, stackTrace) => Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.broken_image,
+                                  color: Colors.white,
+                                  size: 64,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  '画像を読み込めませんでした',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                     ),
                   ),
                 ),
-              ),
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: IconButton(
+                    icon: Icon(Icons.close, color: Colors.white, size: 32),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black54,
+                      padding: EdgeInsets.all(8),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ],
             ),
-            Positioned(
-              top: 16,
-              right: 16,
-              child: IconButton(
-                icon: Icon(Icons.close, color: Colors.white, size: 32),
-                style: IconButton.styleFrom(backgroundColor: Colors.black54, padding: EdgeInsets.all(8)),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -147,26 +229,40 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
     final info = [
       {
         'label': '業界',
-        'value': (c.industries != null && c.industries!.isNotEmpty)
-            ? c.industries!.join(', ')
-            : (c.industry ?? '情報がありません')
+        'value':
+            (c.industries != null && c.industries!.isNotEmpty)
+                ? c.industries!.join(', ')
+                : (c.industry ?? '情報がありません'),
       },
       {'label': 'プロフィール', 'value': c.description ?? '情報がありません'},
-      {'label': '電話番号', 'value': (c.phoneNumber.isNotEmpty) ? c.phoneNumber : '情報がありません'},
+      {
+        'label': '電話番号',
+        'value': (c.phoneNumber.isNotEmpty) ? c.phoneNumber : '情報がありません',
+      },
       {'label': 'email', 'value': c.email ?? '情報がありません'},
-      {'label': '所在地', 'value': (c.address.isNotEmpty) ? c.address : '情報がありません'},
+      {
+        'label': '所在地',
+        'value': (c.address.isNotEmpty) ? c.address : '情報がありません',
+      },
     ];
     return Container(
-      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Color(0xFFE0E0E0)), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Color(0xFFE0E0E0)),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Column(
-        children: info.map((e) => _buildInfoRow(e['label']!, e['value']!)).toList(),
+        children:
+            info.map((e) => _buildInfoRow(e['label']!, e['value']!)).toList(),
       ),
     );
   }
 
   Widget _buildInfoRow(String label, String value) {
     return Container(
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0), width: 1))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0), width: 1)),
+      ),
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -174,13 +270,32 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
             Container(
               width: 120,
               padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Color(0xFFF8F9FA), border: Border(right: BorderSide(color: Color(0xFFE0E0E0), width: 1))),
-              child: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF424242))),
+              decoration: BoxDecoration(
+                color: Color(0xFFF8F9FA),
+                border: Border(
+                  right: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                ),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF424242),
+                ),
+              ),
             ),
             Expanded(
               child: Container(
                 padding: EdgeInsets.all(16),
-                child: Text(value, style: TextStyle(fontSize: 14, color: Color(0xFF616161), height: 1.5)),
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF616161),
+                    height: 1.5,
+                  ),
+                ),
               ),
             ),
           ],
@@ -191,59 +306,151 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
 
   Widget _buildFeaturedArticles({bool isMobile = false}) {
     final articles = _featuredArticles;
+    final containerHeight = isMobile ? 180.0 : 320.0;
+
     return Container(
       padding: EdgeInsets.all(20),
       height: isMobile ? null : 400,
-      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Color(0xFFE0E0E0)), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Color(0xFFE0E0E0)),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('注目記事', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF424242))),
-          SizedBox(height: 16),
-          articles.isEmpty
-              ? Center(child: Text('記事がありません', style: TextStyle(fontSize: 14, color: Color(0xFF757575))))
-              : Column(
-                  children: articles.map((article) => Container(
-                    margin: EdgeInsets.only(bottom: 16),
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => ArticleDetailPage(
-                          articleTitle: article.title,
-                          articleId: article.id.toString(),
-                          companyName: widget.companyName,
-                          description: article.description,
-                        )));
-                      },
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(article.title, style: TextStyle(fontSize: 13, color: Color(0xFF1976D2), decoration: TextDecoration.underline, height: 1.4)),
-                          _buildLikeRow(article.totalLikes),
-                        ],
-                      ),
-                    ),
-                  )).toList(),
-                ),
-          SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: InkWell(
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ArticleListPage(companyName: widget.companyName)));
-              },
-              child: Text('もっと見る', style: TextStyle(fontSize: 12, color: Color(0xFF1976D2), decoration: TextDecoration.underline)),
+          Text(
+            '注目記事',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF424242),
             ),
           ),
+          SizedBox(height: 16),
+          articles.isEmpty
+              ? Center(
+                child: Text(
+                  '記事がありません',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF757575)),
+                ),
+              )
+              : Column(
+                children: [
+                  SizedBox(
+                    height: containerHeight,
+                    child: PageView.builder(
+                      controller: _featuredPageController,
+                      itemCount: articles.length,
+                      onPageChanged: (i) => _currentFeaturedPage = i,
+                      itemBuilder: (context, index) {
+                        final article = articles[index];
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => ArticleDetailPage(
+                                      articleTitle: article.title,
+                                      articleId: article.id.toString(),
+                                      companyName: widget.companyName,
+                                      description: article.description,
+                                    ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            margin: EdgeInsets.symmetric(
+                              horizontal: 8.0,
+                              vertical: 4.0,
+                            ),
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Color(0xFFF9F9F9),
+                              border: Border.all(color: Color(0xFFECEFF1)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  article.title,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF1976D2),
+                                    decoration: TextDecoration.underline,
+                                    height: 1.4,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                _buildLikeRow(article.totalLikes),
+                                SizedBox(height: 8),
+                                Expanded(
+                                  child: Text(
+                                    article.description ?? '',
+                                    maxLines: 4,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF616161),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => ArticleListPage(
+                                  companyName: widget.companyName,
+                                ),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'もっと見る',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF1976D2),
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
         ],
       ),
     );
   }
 
   @override
+  @override
+  void dispose() {
+    _featuredTimer?.cancel();
+    _featuredPageController?.dispose();
+    super.dispose();
+  }
+
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(appBar: BridgeHeader(), body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        appBar: BridgeHeader(),
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
     if (_error != null) {
       return Scaffold(
@@ -252,7 +459,10 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('エラーが発生しました', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(
+                'エラーが発生しました',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               SizedBox(height: 8),
               Text(_error!),
               SizedBox(height: 16),
@@ -263,7 +473,10 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
       );
     }
     if (_company == null) {
-      return Scaffold(appBar: BridgeHeader(), body: Center(child: Text('企業情報が見つかりません')));
+      return Scaffold(
+        appBar: BridgeHeader(),
+        body: Center(child: Text('企業情報が見つかりません')),
+      );
     }
     return Scaffold(
       appBar: BridgeHeader(),
@@ -279,17 +492,45 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(_company!.name, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF424242))),
+                      Text(
+                        _company!.name,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF424242),
+                        ),
+                      ),
                       SizedBox(height: 8),
-                      Text('最終更新：${_formatDate(_company!.createdAt)}', style: TextStyle(fontSize: 12, color: Color(0xFF757575))),
+                      Text(
+                        '最終更新：${_formatDate(_company!.createdAt)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF757575),
+                        ),
+                      ),
                     ],
                   );
                 } else {
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: Text(_company!.name, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF424242)))),
-                      Text('最終更新：${_formatDate(_company!.createdAt)}', style: TextStyle(fontSize: 12, color: Color(0xFF757575))),
+                      Expanded(
+                        child: Text(
+                          _company!.name,
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF424242),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '最終更新：${_formatDate(_company!.createdAt)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF757575),
+                        ),
+                      ),
                     ],
                   );
                 }
@@ -313,11 +554,22 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
                               Container(
                                 width: double.infinity,
                                 height: 200,
-                                decoration: BoxDecoration(color: Color(0xFFF5F5F5), border: Border.all(color: Color(0xFFE0E0E0)), borderRadius: BorderRadius.circular(8)),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFFF5F5F5),
+                                  border: Border.all(color: Color(0xFFE0E0E0)),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                                 child: _buildCompanyImage(200),
                               ),
                               SizedBox(height: 24),
-                              Text('企業概要', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF424242))),
+                              Text(
+                                '企業概要',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF424242),
+                                ),
+                              ),
                               SizedBox(height: 16),
                               _buildCompanyInfoTable(),
                               SizedBox(height: 32),
@@ -328,7 +580,11 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
                           width: double.infinity,
                           margin: EdgeInsets.symmetric(horizontal: 24),
                           padding: EdgeInsets.all(20),
-                          decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Color(0xFFE0E0E0)), borderRadius: BorderRadius.circular(12)),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(color: Color(0xFFE0E0E0)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           child: _buildFeaturedArticles(isMobile: true),
                         ),
                         SizedBox(height: 24),
@@ -350,11 +606,24 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
                                 Container(
                                   width: double.infinity,
                                   height: 250,
-                                  decoration: BoxDecoration(color: Color(0xFFF5F5F5), border: Border.all(color: Color(0xFFE0E0E0)), borderRadius: BorderRadius.circular(8)),
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFFF5F5F5),
+                                    border: Border.all(
+                                      color: Color(0xFFE0E0E0),
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                   child: _buildCompanyImage(250),
                                 ),
                                 SizedBox(height: 32),
-                                Text('企業概要', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF424242))),
+                                Text(
+                                  '企業概要',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF424242),
+                                  ),
+                                ),
                                 SizedBox(height: 24),
                                 _buildCompanyInfoTable(),
                                 SizedBox(height: 24),
@@ -384,7 +653,12 @@ class AspectRatioImage extends StatefulWidget {
   final String imageUrl;
   final double maxHeight;
   final VoidCallback? onTap;
-  const AspectRatioImage({required this.imageUrl, required this.maxHeight, this.onTap, Key? key}) : super(key: key);
+  const AspectRatioImage({
+    required this.imageUrl,
+    required this.maxHeight,
+    this.onTap,
+    Key? key,
+  }) : super(key: key);
   @override
   State<AspectRatioImage> createState() => _AspectRatioImageState();
 }
@@ -402,11 +676,13 @@ class _AspectRatioImageState extends State<AspectRatioImage> {
   void _getImageAspectRatio() async {
     final image = Image.network(widget.imageUrl);
     final completer = Completer<ImageInfo>();
-    image.image.resolve(ImageConfiguration()).addListener(
-      ImageStreamListener((info, _) {
-        completer.complete(info);
-      })
-    );
+    image.image
+        .resolve(ImageConfiguration())
+        .addListener(
+          ImageStreamListener((info, _) {
+            completer.complete(info);
+          }),
+        );
     final info = await completer.future;
     setState(() {
       _aspectRatio = info.image.width / info.image.height;
