@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'thread_model.dart';
 import 'thread_api_config.dart';
+import 'package:bridge/09-admin/admin_reported_thread.dart';
 
 class ThreadApiClient {
   static Future<List<Thread>> getAllThreads() async {
@@ -16,7 +17,7 @@ class ThreadApiClient {
     }
   }
 
-  static Future<List<Thread>> getReportedThreads() async {
+  static Future<List<AdminReportedThread>> getReportedThreads() async {
     final url = Uri.parse(
       '${ThreadApiConfig.threadsUrl}/admin/threads/reported',
     );
@@ -25,7 +26,9 @@ class ThreadApiClient {
 
     if (response.statusCode == 200) {
       final List data = json.decode(response.body);
-      return data.map((e) => Thread.fromJson(e)).toList();
+      return data
+          .map((e) => AdminReportedThread.fromJson(e))
+          .toList();
     } else {
       throw Exception('通報スレッド取得失敗');
     }
