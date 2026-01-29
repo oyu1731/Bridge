@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class CompanyDTO {
+    // テスト用デフォルトコンストラクタ
+    public CompanyDTO() {}
     private Integer id;
     private String name;
     private String address;
