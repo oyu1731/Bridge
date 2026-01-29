@@ -47,6 +47,10 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
   String? _errorMessage;
   bool _hasSearched = false; // 検索が実行されたかどうかを管理
 
+  // PC用横スクロールのコントローラと設定（ループ用）
+  final ScrollController _companyScrollController = ScrollController();
+  static const double _companyScrollDelta = 200.0;
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +59,13 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     _loadArticles();
     _loadIndustries();
     _checkAndUpdateSubscriptionStatus(); // 無料プランチェック
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _companyScrollController.dispose();
+    super.dispose();
   }
 
   // 企業データを読み込む
@@ -629,7 +640,6 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
   }
 
   Widget _buildPCHorizontalScroll([bool isSmallScreen = false]) {
-    final ScrollController _scrollController = ScrollController();
     double containerHeight = isSmallScreen ? 180 : 200;
     double buttonSize = isSmallScreen ? 36 : 40; // 最小サイズを36に
     double iconSize = isSmallScreen ? 18 : 20; // アイコンサイズも調整
@@ -644,11 +654,26 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
             child: Center(
               child: IconButton(
                 onPressed: () {
-                  _scrollController.animateTo(
-                    _scrollController.offset - 200,
-                    duration: Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
+                  if (!_companyScrollController.hasClients) return;
+                  final max = _companyScrollController.position.maxScrollExtent;
+                  final pos = _companyScrollController.offset;
+                  if (max <= 0) return; // ループ不要
+
+                  final double target = pos - _companyScrollDelta;
+                  if (target <= 0) {
+                    // 先頭より前に行こうとしたら末尾にループ
+                    _companyScrollController.animateTo(
+                      max,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  } else {
+                    _companyScrollController.animateTo(
+                      target,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  }
                 },
                 icon: Icon(
                   Icons.arrow_back_ios,
@@ -669,7 +694,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
           // スクロール可能なカードリスト
           Expanded(
             child: ListView.builder(
-              controller: _scrollController,
+              controller: _companyScrollController,
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.symmetric(horizontal: 8),
               itemCount: _filteredCompanies.length,
@@ -688,11 +713,26 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
             child: Center(
               child: IconButton(
                 onPressed: () {
-                  _scrollController.animateTo(
-                    _scrollController.offset + 200,
-                    duration: Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
+                  if (!_companyScrollController.hasClients) return;
+                  final max = _companyScrollController.position.maxScrollExtent;
+                  final pos = _companyScrollController.offset;
+                  if (max <= 0) return; // ループ不要
+
+                  final double target = pos + _companyScrollDelta;
+                  if (target >= max) {
+                    // 末尾を超える場合は先頭にループ
+                    _companyScrollController.animateTo(
+                      0,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  } else {
+                    _companyScrollController.animateTo(
+                      target,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  }
                 },
                 icon: Icon(
                   Icons.arrow_forward_ios,
