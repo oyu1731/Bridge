@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -64,7 +65,8 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
       final userData = jsonDecode(userJson);
       final userId = userData['id'];
 
-      final url = 'http://localhost:8080/api/users/$userId';
+      // final url = 'http://localhost:8080/api/users/$userId';
+      final url = '${ApiConfig.baseUrl}/api/users/$userId';
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
@@ -97,7 +99,10 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
   }
 
   Future<void> fetchData() async {
-    final industriesResponse = await http.get(Uri.parse('http://localhost:8080/api/industries'));
+    final industriesResponse = await http.get(
+      // Uri.parse('http://localhost:8080/api/industries'),
+      Uri.parse('${ApiConfig.baseUrl}/api/industries'),
+    );
     if (industriesResponse.statusCode == 200) {
       final List<dynamic> industriesData = jsonDecode(industriesResponse.body);
       if (!mounted) return;
@@ -107,10 +112,17 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
       if (userJson != null) {
         final userData = jsonDecode(userJson);
         final dynamic idValue = userData['id'];
-        final int userId = idValue is int ? idValue : int.parse(idValue.toString());
+        final int userId =
+            idValue is int ? idValue : int.parse(idValue.toString());
 
         setState(() {
-          industries = industriesData.map((e) => Industry(id: e['id'], name: e['industry'].toString())).toList();
+          industries =
+              industriesData
+                  .map(
+                    (e) =>
+                        Industry(id: e['id'], name: e['industry'].toString()),
+                  )
+                  .toList();
         });
 
         await fetchIndustryRelations(userId);
@@ -121,16 +133,18 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
   }
 
   Future<void> fetchIndustryRelations(int userId) async {
-    final url = 'http://localhost:8080/api/industries/user/$userId';
+    // final url = 'http://localhost:8080/api/industries/user/$userId';
+    final url = '${ApiConfig.baseUrl}/api/industries/user/$userId';
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
       final List<dynamic> selectedIndustriesData = jsonDecode(response.body);
 
       // 修正ポイント: industry は文字列で返るのでシンプルに取得
-      final List<String> selectedIndustryNames = selectedIndustriesData.map((e) {
-        return e['industry'].toString();
-      }).toList();
+      final List<String> selectedIndustryNames =
+          selectedIndustriesData.map((e) {
+            return e['industry'].toString();
+          }).toList();
 
       if (!mounted) return;
       setState(() {
@@ -154,11 +168,9 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("プロフィールアイコン",
-              style: TextStyle(
-                fontSize: 16,
-                color: AppTheme.textCyanDark
-              ),
+            Text(
+              "プロフィールアイコン",
+              style: TextStyle(fontSize: 16, color: AppTheme.textCyanDark),
             ),
             Center(
               child: Column(
@@ -168,12 +180,17 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
                       CircleAvatar(
                         radius: 55,
                         backgroundColor: Colors.grey.shade200,
-                        child: _iconUrl != null
-                            ? CircleAvatar(
-                                radius: 52,
-                                backgroundImage: NetworkImage(_iconUrl!),
-                              )
-                            : Icon(Icons.person, size: 60, color: Colors.grey[600]),
+                        child:
+                            _iconUrl != null
+                                ? CircleAvatar(
+                                  radius: 52,
+                                  backgroundImage: NetworkImage(_iconUrl!),
+                                )
+                                : Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: Colors.grey[600],
+                                ),
                       ),
                       Positioned(
                         bottom: 0,
@@ -183,13 +200,21 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
                           child: CircleAvatar(
                             radius: 20,
                             backgroundColor: Colors.blueAccent,
-                            child: _uploadingIcon
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                  )
-                                : const Icon(Icons.camera_alt, size: 20, color: Colors.white),
+                            child:
+                                _uploadingIcon
+                                    ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                    : const Icon(
+                                      Icons.camera_alt,
+                                      size: 20,
+                                      color: Colors.white,
+                                    ),
                           ),
                         ),
                       ),
@@ -211,17 +236,18 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
             const SizedBox(height: 20),
             _buildLabel("希望業界"),
             Column(
-              children: industries.map((industry) {
-                return CheckboxListTile(
-                  title: Text(industry.name),
-                  value: industry.isSelected,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      industry.isSelected = value ?? false;
-                    });
-                  },
-                );
-              }).toList(),
+              children:
+                  industries.map((industry) {
+                    return CheckboxListTile(
+                      title: Text(industry.name),
+                      value: industry.isSelected,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          industry.isSelected = value ?? false;
+                        });
+                      },
+                    );
+                  }).toList(),
             ),
             const SizedBox(height: 30),
             Center(
@@ -230,20 +256,18 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
                   backgroundColor: Colors.orangeAccent[400],
                   foregroundColor: Colors.white,
                 ),
-                onPressed: _isSaving
-                    ? null
-                    : () async {
-                        setState(() => _isSaving = true);
-                        await _updateUserProfile();
-                        setState(() => _isSaving = false);
-                      },
-                child: _isSaving
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('編集',
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
-                    ),
+                onPressed:
+                    _isSaving
+                        ? null
+                        : () async {
+                          setState(() => _isSaving = true);
+                          await _updateUserProfile();
+                          setState(() => _isSaving = false);
+                        },
+                child:
+                    _isSaving
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('編集', style: TextStyle(fontSize: 16)),
               ),
             ),
           ],
@@ -303,10 +327,11 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
     final userData = jsonDecode(userJson);
     final int userId = userData['id'];
 
-    final selectedIndustryIds = industries
-        .where((industry) => industry.isSelected)
-        .map((industry) => industry.id)
-        .toList();
+    final selectedIndustryIds =
+        industries
+            .where((industry) => industry.isSelected)
+            .map((industry) => industry.id)
+            .toList();
 
     final Map<String, dynamic> updatedData = {
       'nickname': _nicknameController.text,
@@ -316,7 +341,8 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
       'icon': _iconPhotoId,
     };
 
-    final url = 'http://localhost:8080/api/users/$userId/profile';
+    // final url = 'http://localhost:8080/api/users/$userId/profile';
+    final url = '${ApiConfig.baseUrl}/api/users/$userId/profile';
     final response = await http.put(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -373,25 +399,35 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
     final userId = sessionUser['id'];
 
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 90,
+    );
     if (picked == null) return;
 
     // クロップダイアログを表示
     final bytes = await picked.readAsBytes();
     if (!mounted) return;
-    
+
     final croppedBytes = await showDialog<Uint8List>(
       context: context,
       builder: (context) => ImageCropDialog(imageBytes: bytes),
     );
-    
+
     if (croppedBytes == null) return;
-    
+
     setState(() => _uploadingIcon = true);
     try {
       final tempPath = picked.name;
-      final pseudoFile = XFile.fromData(croppedBytes, name: tempPath, mimeType: 'image/jpeg');
-      final uploaded = await PhotoApiClient.uploadPhoto(pseudoFile, userId: userId);
+      final pseudoFile = XFile.fromData(
+        croppedBytes,
+        name: tempPath,
+        mimeType: 'image/jpeg',
+      );
+      final uploaded = await PhotoApiClient.uploadPhoto(
+        pseudoFile,
+        userId: userId,
+      );
       final photoId = uploaded.id;
       if (photoId != null) {
         await UserApiClient.updateIcon(userId, photoId);
@@ -401,9 +437,9 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('アイコンアップロード失敗: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('アイコンアップロード失敗: $e')));
     } finally {
       setState(() => _uploadingIcon = false);
     }

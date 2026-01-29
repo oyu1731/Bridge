@@ -1,12 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../06-company/api_config.dart';
+import '../11-common/api_config.dart';
 
 class UserApiClient {
   static String get baseUrl => ApiConfig.baseUrl + '/api/users';
 
-  static Future<Map<String, dynamic>?> updateIcon(int userId, int photoId) async {
+  static Future<Map<String, dynamic>?> updateIcon(
+    int userId,
+    int photoId,
+  ) async {
     final response = await http.put(
       Uri.parse('$baseUrl/$userId/icon'),
       headers: {'Content-Type': 'application/json'},
