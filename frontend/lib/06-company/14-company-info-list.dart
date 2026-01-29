@@ -282,7 +282,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
       setState(() {
         _errorMessage = '検索エラー: $e';
         _isLoading = false;
-      });
+              });
     }
   }
 
