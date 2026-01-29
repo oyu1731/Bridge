@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Clipboardを使用するために追加
 import 'package:http/http.dart' as http;
@@ -56,7 +57,8 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:8080/api/email-correction'),
+        // Uri.parse('http://localhost:8080/api/email-correction'),
+        Uri.parse('${ApiConfig.baseUrl}/api/email-correction'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'originalEmail': _originalEmailController.text}),
       );
