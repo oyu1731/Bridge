@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -23,7 +24,8 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
 
-  late final StreamController<List<Map<String, dynamic>>> _messageStreamController;
+  late final StreamController<List<Map<String, dynamic>>>
+  _messageStreamController;
   late final WebSocketChannel _channel;
 
   final List<Map<String, dynamic>> _messages = [];
@@ -32,7 +34,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
   String _searchText = '';
   bool _showNewBadge = false;
 
-  final String baseUrl = 'http://localhost:8080/api';
+  final String baseUrl = '${ApiConfig.baseUrl}/api';
 
   @override
   void initState() {
@@ -61,8 +63,9 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
   // -------------------------
   Future<void> _fetchMessages() async {
     try {
-      final response =
-          await http.get(Uri.parse('$baseUrl/chat/${widget.threadId}/active'));
+      final response = await http.get(
+        Uri.parse('$baseUrl/chat/${widget.threadId}/active'),
+      );
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -77,9 +80,11 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
           });
         }
 
-        _messages.sort((a, b) =>
-            DateTime.parse(a['created_at'])
-                .compareTo(DateTime.parse(b['created_at'])));
+        _messages.sort(
+          (a, b) => DateTime.parse(
+            a['created_at'],
+          ).compareTo(DateTime.parse(b['created_at'])),
+        );
 
         _messageStreamController.add(List.from(_messages));
         _scrollToBottom();
@@ -94,7 +99,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
   // -------------------------
   void _connectWebSocket() {
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://localhost:8080/ws/chat/${widget.threadId}'),
+      Uri.parse(ApiConfig.chatWebSocketUrl(widget.threadId)),
     );
 
     _channel.stream.listen((data) {
@@ -111,9 +116,11 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
           'photoId': msg['photoId'],
         });
 
-        _messages.sort((a, b) =>
-            DateTime.parse(a['created_at'])
-                .compareTo(DateTime.parse(b['created_at'])));
+        _messages.sort(
+          (a, b) => DateTime.parse(
+            a['created_at'],
+          ).compareTo(DateTime.parse(b['created_at'])),
+        );
 
         _messageStreamController.add(List.from(_messages));
 
@@ -163,8 +170,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
     }
 
     try {
-      final response =
-          await http.get(Uri.parse('$baseUrl/chat/user/$userId'));
+      final response = await http.get(Uri.parse('$baseUrl/chat/user/$userId'));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -177,13 +183,11 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
     return 'Unknown';
   }
 
-
   // -------------------------
   // 画像データ取得
   // -------------------------
   Future<String?> fetchPhotoUrl(int photoId) async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/photos/$photoId'));
+    final response = await http.get(Uri.parse('$baseUrl/photos/$photoId'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return "http://localhost:8080${data['photoPath']}";
@@ -194,20 +198,21 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
   Future<void> _confirmDeleteChat(int chatId) async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('コメント削除'),
-        content: const Text('このコメントを削除しますか？'),
-        actions: [
-          TextButton(
-            child: const Text('キャンセル'),
-            onPressed: () => Navigator.pop(context, false),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('コメント削除'),
+            content: const Text('このコメントを削除しますか？'),
+            actions: [
+              TextButton(
+                child: const Text('キャンセル'),
+                onPressed: () => Navigator.pop(context, false),
+              ),
+              TextButton(
+                child: const Text('削除'),
+                onPressed: () => Navigator.pop(context, true),
+              ),
+            ],
           ),
-          TextButton(
-            child: const Text('削除',),
-            onPressed: () => Navigator.pop(context, true),
-          ),
-        ],
-      ),
     );
 
     if (result == true) {
@@ -216,9 +221,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
   }
 
   Future<void> _deleteChat(int chatId) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/chat/$chatId/delete'),
-    );
+    final response = await http.put(Uri.parse('$baseUrl/chat/$chatId/delete'));
 
     if (response.statusCode == 200) {
       setState(() {
@@ -226,9 +229,9 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
       });
       _messageStreamController.add(List.from(_messages));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('コメントの削除に失敗しました')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('コメントの削除に失敗しました')));
     }
   }
 
@@ -271,8 +274,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
                       hintText: 'コメント検索',
                       prefixIcon: Icon(Icons.search),
                     ),
-                    onChanged: (v) =>
-                        setState(() => _searchText = v.trim()),
+                    onChanged: (v) => setState(() => _searchText = v.trim()),
                   ),
                 ),
               ],
@@ -287,8 +289,10 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
               },
               child: Container(
                 margin: const EdgeInsets.symmetric(vertical: 6),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.blueAccent,
                   borderRadius: BorderRadius.circular(16),
@@ -306,11 +310,14 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
               stream: _messageStreamController.stream,
               initialData: _messages,
               builder: (context, snapshot) {
-                final messages = snapshot.data!
-                    .where((m) =>
-                        _searchText.isEmpty ||
-                        m['text'].contains(_searchText))
-                    .toList();
+                final messages =
+                    snapshot.data!
+                        .where(
+                          (m) =>
+                              _searchText.isEmpty ||
+                              m['text'].contains(_searchText),
+                        )
+                        .toList();
 
                 return ListView.builder(
                   controller: _scrollController,
@@ -318,8 +325,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final msg = messages[index];
-                    final createdAt =
-                        DateTime.parse(msg['created_at']);
+                    final createdAt = DateTime.parse(msg['created_at']);
                     final time =
                         '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
 
@@ -339,22 +345,28 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
                                   // ニックネーム
                                   FutureBuilder<String>(
                                     future: _getNickname(msg['user_id']),
-                                    builder: (_, snap) => Text(
-                                      snap.data ?? '...',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                    builder:
+                                        (_, snap) => Text(
+                                          snap.data ?? '...',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                   ),
 
                                   // 吹き出し（横幅制限が超重要）
                                   ConstrainedBox(
                                     constraints: BoxConstraints(
-                                      maxWidth: MediaQuery.of(context).size.width * 0.65,
+                                      maxWidth:
+                                          MediaQuery.of(context).size.width *
+                                          0.65,
                                     ),
                                     child: Container(
-                                      margin: const EdgeInsets.only(top: 4, right: 28),
+                                      margin: const EdgeInsets.only(
+                                        top: 4,
+                                        right: 28,
+                                      ),
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 12,
                                         vertical: 8,
@@ -365,11 +377,14 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
                                         color: Colors.grey[200],
                                       ),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           if (msg['photoId'] != null)
                                             FutureBuilder<String?>(
-                                              future: fetchPhotoUrl(msg['photoId']),
+                                              future: fetchPhotoUrl(
+                                                msg['photoId'],
+                                              ),
                                               builder: (context, snapshot) {
                                                 if (!snapshot.hasData) {
                                                   return const SizedBox(
@@ -378,9 +393,15 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
                                                   );
                                                 }
                                                 return Padding(
-                                                  padding: const EdgeInsets.only(bottom: 8),
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        bottom: 8,
+                                                      ),
                                                   child: ClipRRect(
-                                                    borderRadius: BorderRadius.circular(12),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
                                                     child: Image.network(
                                                       snapshot.data!,
                                                       width: 200,
@@ -416,7 +437,8 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
                                 bottom: 18,
                                 child: IconButton(
                                   icon: const Icon(Icons.delete, size: 20),
-                                  onPressed: () => _confirmDeleteChat(msg['id']),
+                                  onPressed:
+                                      () => _confirmDeleteChat(msg['id']),
                                 ),
                               ),
                             ],

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:html' as html;
+import '../11-common/api_config.dart';
 
 /// Web版 Stripe Checkout
 Future<void> startWebCheckout({
@@ -37,7 +38,7 @@ Future<void> startWebCheckout({
 
   try {
     final response = await http.post(
-      Uri.parse("http://localhost:8080/api/v1/payment/checkout-session"),
+      Uri.parse("${ApiConfig.baseUrl}/api/v1/payment/checkout-session"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(payload),
     );

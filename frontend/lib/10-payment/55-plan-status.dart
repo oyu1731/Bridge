@@ -84,7 +84,7 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
   Future<void> _fetchSubscription(int userId) async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:8080/api/subscriptions/user/$userId'),
+        Uri.parse('${ApiConfig.baseUrl}/api/subscriptions/user/$userId'),
       );
 
       if (response.statusCode == 200) {
