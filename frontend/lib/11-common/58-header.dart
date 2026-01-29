@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -114,7 +115,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
     print('🔍 プラン状態取得開始: userId=$userId');
     try {
       final response = await http.get(
-        Uri.parse("http://localhost:8080/api/users/$userId/plan-status"),
+        Uri.parse("${ApiConfig.baseUrl}/api/users/$userId/plan-status"),
       );
 
       print('📶 APIレスポンスコード: ${response.statusCode}');
@@ -878,103 +879,102 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
     if (accountType == '社会人') type = 2;
     if (accountType == '企業') type = 3;
 
-    final res =
-        await http.get(Uri.parse('http://localhost:8080/api/notifications'));
+    final res = await http.get(
+      Uri.parse('http://localhost:8080/api/notifications'),
+    );
     if (res.statusCode != 200) return;
 
     final List list = jsonDecode(res.body);
 
-    final notifications = list.map((e) => SimpleNotification.fromJson(e)).where((n) {
+    final notifications =
+        list.map((e) => SimpleNotification.fromJson(e)).where((n) {
+          // 全員
+          if (n.type == 7) return true;
 
-      // 全員
-      if (n.type == 7) return true;
+          // 個人宛
+          if (n.type == 8 && n.userId == userId) return true;
 
-      // 個人宛
-      if (n.type == 8 && n.userId == userId) return true;
+          // 学生
+          if (type == 1) {
+            return n.type == 1 || n.type == 4 || n.type == 5;
+          }
 
-      // 学生
-      if (type == 1) {
-        return n.type == 1 || n.type == 4 || n.type == 5;
-      }
+          // 社会人
+          if (type == 2) {
+            return n.type == 2 || n.type == 4 || n.type == 6;
+          }
 
-      // 社会人
-      if (type == 2) {
-        return n.type == 2 || n.type == 4 || n.type == 6;
-      }
+          // 企業
+          if (type == 3) {
+            return n.type == 3 || n.type == 5 || n.type == 6;
+          }
 
-      // 企業
-      if (type == 3) {
-        return n.type == 3 || n.type == 5 || n.type == 6;
-      }
-
-      return false;
-    }).toList();
+          return false;
+        }).toList();
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('お知らせ'),
-        content: SizedBox(
-          width: 420,
-          child: notifications.isEmpty
-              ? const Center(child: Text('お知らせはありません'))
-              : ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: notifications.length,
-                  separatorBuilder: (_, __) => const Divider(),
-                  itemBuilder: (_, i) {
-                    final n = notifications[i];
-                    return ListTile(
-                      title: Text(n.title),
-                      subtitle: Text(n.category == 1 ? '運営情報' : '重要'),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _showNotificationDetail(context, n);
-                      },
-                    );
-                  },
-                ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('閉じる'),
+      builder:
+          (_) => AlertDialog(
+            title: const Text('お知らせ'),
+            content: SizedBox(
+              width: 420,
+              child:
+                  notifications.isEmpty
+                      ? const Center(child: Text('お知らせはありません'))
+                      : ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: notifications.length,
+                        separatorBuilder: (_, __) => const Divider(),
+                        itemBuilder: (_, i) {
+                          final n = notifications[i];
+                          return ListTile(
+                            title: Text(n.title),
+                            subtitle: Text(n.category == 1 ? '運営情報' : '重要'),
+                            onTap: () {
+                              Navigator.pop(context);
+                              _showNotificationDetail(context, n);
+                            },
+                          );
+                        },
+                      ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('閉じる'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
-  void _showNotificationDetail(
-    BuildContext context,
-    SimpleNotification n,
-  ) {
+  void _showNotificationDetail(BuildContext context, SimpleNotification n) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(n.title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(n.content),
-            const SizedBox(height: 12),
-            Text(
-              '送信日：${n.sendFlag != null
-                  ? '${n.sendFlag!.year}/${n.sendFlag!.month.toString().padLeft(2, '0')}/${n.sendFlag!.day.toString().padLeft(2, '0')} '
-                    '${n.sendFlag!.hour.toString().padLeft(2, '0')}:${n.sendFlag!.minute.toString().padLeft(2, '0')}'
-                  : '-'}',
-              style: const TextStyle(color: Colors.grey),
+      builder:
+          (_) => AlertDialog(
+            title: Text(n.title),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(n.content),
+                const SizedBox(height: 12),
+                Text(
+                  '送信日：${n.sendFlag != null ? '${n.sendFlag!.year}/${n.sendFlag!.month.toString().padLeft(2, '0')}/${n.sendFlag!.day.toString().padLeft(2, '0')} '
+                          '${n.sendFlag!.hour.toString().padLeft(2, '0')}:${n.sendFlag!.minute.toString().padLeft(2, '0')}' : '-'}',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('閉じる'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('閉じる'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }

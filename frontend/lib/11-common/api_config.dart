@@ -3,17 +3,11 @@ import 'package:flutter/foundation.dart';
 class ApiConfig {
   // 環境に応じてベースURLを切り替え
   static String get baseUrl {
-    // 優先順: 1) ビルド時の --dart-define=API_BASE_URL  2) リリース時は実行中のオリジン 3) 開発時は localhost
-    // これにより、本番ビルドで localhost を参照してしまう誤動作を防ぎます。
-    const env = String.fromEnvironment('API_BASE_URL', defaultValue: '');
-    if (env.isNotEmpty) return env;
-
+    // kReleaseMode は Flutter がビルド（flutter build web）された時に自動で true になります
     if (kReleaseMode) {
-      // フロントエンドと同一オリジンで API を提供している構成に対応
-      final origin = '${Uri.base.scheme}://${Uri.base.authority}';
-      return origin;
+      return 'https://api.bridge-tesg.com'; // ★本番（独自ドメイン）
     } else {
-      return 'http://localhost:8080'; // 開発環境向けのデフォルト
+      return 'http://localhost:8080'; // ★開発（自分のPC）
     }
   }
 
@@ -23,4 +17,9 @@ class ApiConfig {
   static String get photosUrl => '$baseUrl/api/photos';
   static String get notificationsUrl => '$baseUrl/api/notifications'; // ←追加
   static String get reportUrl => '$baseUrl/api/notice/report'; // ←追加
+  static String chatWebSocketUrl(dynamic threadId) {
+    // 必要に応じて ws:// or wss:// に変更
+    final wsBase = baseUrl.replaceFirst('http', 'ws');
+    return '$wsBase/chat/$threadId/ws';
+  }
 }

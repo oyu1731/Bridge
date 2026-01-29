@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:bridge/11-common/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:html' as html;
 
@@ -34,7 +35,7 @@ Future<void> startWebCheckout({
 
   try {
     final response = await http.post(
-      Uri.parse("http://localhost:8080/api/v1/payment/checkout-session"),
+      Uri.parse("${ApiConfig.baseUrl}/api/v1/payment/checkout-session"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(payload),
     );
