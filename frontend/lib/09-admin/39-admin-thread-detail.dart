@@ -7,7 +7,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:bridge/11-common/58-header.dart';
 
 class AdminThreadDetail extends StatefulWidget {
-  final int threadId;
+  final String threadId;
   final String title;
 
   const AdminThreadDetail({
