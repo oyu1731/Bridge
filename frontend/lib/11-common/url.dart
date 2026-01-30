@@ -7,7 +7,7 @@ class ApiConfig {
     if (kReleaseMode) {
       return 'https://api.bridge-tesg.com'; // ★本番（独自ドメイン）
     } else {
-      return 'http://localhost:8080'; // ★開発（自分のPC）
+      return 'https://api.bridge-tesg.com'; // ★開発（自分のPC）
     }
   }
 
@@ -16,7 +16,7 @@ class ApiConfig {
     if (kReleaseMode) {
       return 'https://bridge-tesg.com';
     } else {
-      return 'http://localhost:5000';
+      return 'https://api.bridge-tesg.com';
     }
   }
 

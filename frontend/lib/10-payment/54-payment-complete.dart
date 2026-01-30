@@ -174,7 +174,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
     if (kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.microtask(() {
-          html.window.location.replace('http://localhost:5000/');
+          html.window.location.replace('${ApiConfig.baseUrl}');
         });
       });
     } else {
@@ -358,7 +358,7 @@ class PaymentCancelScreen extends StatelessWidget {
     if (kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.microtask(() {
-          html.window.location.replace('http://localhost:5000/');
+          html.window.location.replace('${ApiConfig.baseUrl}');
         });
       });
     } else {

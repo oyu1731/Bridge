@@ -7,7 +7,7 @@ class ApiConfig {
     if (kReleaseMode) {
       return 'https://api.bridge-tesg.com'; // ★本番（独自ドメイン）
     } else {
-      return 'http://localhost:8080'; // ★開発（自分のPC）
+      return 'https://api.bridge-tesg.com'; // ★開発（自分のPC）
     }
   }
 
@@ -20,6 +20,6 @@ class ApiConfig {
   static String chatWebSocketUrl(dynamic threadId) {
     // 必要に応じて ws:// or wss:// に変更
     final wsBase = baseUrl.replaceFirst('http', 'ws');
-    return '$wsBase/chat/$threadId/ws';
+    return '$wsBase/ws/chat/$threadId';
   }
 }

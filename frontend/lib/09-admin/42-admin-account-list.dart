@@ -129,7 +129,7 @@ class _AdminAccountListState extends State<AdminAccountList> {
 
   String _buildIconUrl(String path) {
     if (path.startsWith('http')) return path;
-    return 'http://localhost:8080$path';
+    return '${ApiConfig.baseUrl}$path';
   }
 
   @override
