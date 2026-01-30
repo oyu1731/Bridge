@@ -61,6 +61,7 @@ class SimpleNotification {
   final int category;
   final DateTime? sendFlag;
   final int? userId;
+  final int sendFlagInt;
 
   SimpleNotification({
     required this.id,
@@ -68,6 +69,7 @@ class SimpleNotification {
     required this.content,
     required this.type,
     required this.category,
+    required this.sendFlagInt,
     this.sendFlag,
     this.userId,
   });
@@ -80,6 +82,7 @@ class SimpleNotification {
       type: json['type'],
       category: json['category'],
       userId: json['userId'],
+      sendFlagInt: json['sendFlagInt'],
       sendFlag:
           json['sendFlag'] != null ? DateTime.parse(json['sendFlag']) : null,
     );
@@ -888,6 +891,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
 
     final notifications =
         list.map((e) => SimpleNotification.fromJson(e)).where((n) {
+          if (n.sendFlagInt != 2) return false;
           // 全員
           if (n.type == 7) return true;
 
