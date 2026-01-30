@@ -111,7 +111,7 @@ public class UserService {
         
         // 【追加】初期値を設定: トークン、アイコン、報告数、削除フラグ
         user.setToken(50); // 新規ユーザーの初期トークンを50に設定
-        user.setIcon(1);
+        user.setIcon(null);
         user.setReportCount(0);
         user.setAnnouncementDeletion(1);
         

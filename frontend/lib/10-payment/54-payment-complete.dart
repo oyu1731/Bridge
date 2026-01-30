@@ -1,3 +1,4 @@
+import 'package:bridge/11-common/url.dart' as url;
 import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -84,7 +85,9 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
     while (attempt < maxAttempts && mounted) {
       try {
         final res = await http.get(
-          Uri.parse('${ApiConfig.baseUrl}/api/v1/payment/session/$sessionId'),
+          Uri.parse(
+            '${url.ApiConfig.frontendUrl}/api/v1/payment/session/$sessionId',
+          ),
         );
         if (res.statusCode == 200) {
           user = jsonDecode(res.body) as Map<String, dynamic>;

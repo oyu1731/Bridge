@@ -14,9 +14,9 @@ class ApiConfig {
   // フロントエンド自身のベースURL（リダイレクト用）
   static String get frontendUrl {
     if (kReleaseMode) {
-      return 'https://api.bridge-tesg.com';
+      return 'https://bridge-915bd.web.app';
     } else {
-      return 'https://api.bridge-tesg.com';
+      return 'localhost:5000';
     }
   }
 
