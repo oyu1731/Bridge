@@ -190,7 +190,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
     final response = await http.get(Uri.parse('$baseUrl/photos/$photoId'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      return "http://localhost:8080${data['photoPath']}";
+      return "$baseUrl${data['photoPath']}";
     }
     return null;
   }

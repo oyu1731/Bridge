@@ -173,7 +173,6 @@ class _AdminMailSendState extends State<AdminMailSend> {
       'reservationTime': reservationTime,
     });
 
-    // final url = Uri.parse('http://localhost:8080/api/notifications/send');
     final url = Uri.parse('${ApiConfig.baseUrl}/api/notifications/send');
     final headers = {'Content-Type': 'application/json; charset=UTF-8'};
 

@@ -74,7 +74,6 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
       final response = await http
           .post(
             Uri.parse(
-              // "http://localhost:8080/api/users/$userId/check-subscription",
               '${ApiConfig.baseUrl}/api/users/$userId/check-subscription',
             ),
           )
@@ -126,7 +125,6 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
         final response = await http
             .get(
               Uri.parse(
-                // "http://localhost:8080/api/subscriptions/status/$userId",
                 '${ApiConfig.baseUrl}/api/subscriptions/status/$userId',
               ),
             )

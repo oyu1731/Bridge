@@ -7,14 +7,14 @@ class ApiConfig {
     if (kReleaseMode) {
       return 'https://api.bridge-tesg.com'; // ★本番（独自ドメイン）
     } else {
-      return 'https://api.bridge-tesg.com'; // ★開発（自分のPC）
+      return 'localhost:8080'; // ★開発（自分のPC）
     }
   }
 
   // フロントエンド自身のベースURL（リダイレクト用）
   static String get frontendUrl {
     if (kReleaseMode) {
-      return 'https://bridge-tesg.com';
+      return 'https://api.bridge-tesg.com';
     } else {
       return 'https://api.bridge-tesg.com';
     }
@@ -82,9 +82,10 @@ class ApiConfig {
   static String chatWebSocketUrl(int threadId) {
     String wsBaseUrl;
     if (kReleaseMode) {
-      wsBaseUrl = 'wss://api.bridge-tesg.com';
+      wsBaseUrl = 'wss://api.bridge-tesg.com'; // 本番は wss (SSLあり)
     } else {
-      wsBaseUrl = 'ws://localhost:8080';
+      // 開発時はここを api.bridge-tesg.com にするか localhost にするか選べます
+      wsBaseUrl = 'wss://api.bridge-tesg.com';
     }
     return '$wsBaseUrl/ws/chat/$threadId';
   }

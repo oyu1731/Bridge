@@ -65,7 +65,6 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
       final userData = jsonDecode(userJson);
       final userId = userData['id'];
 
-      // final url = 'http://localhost:8080/api/users/$userId';
       final url = '${ApiConfig.baseUrl}/api/users/$userId';
       final response = await http.get(Uri.parse(url));
 
@@ -100,7 +99,6 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
 
   Future<void> fetchData() async {
     final industriesResponse = await http.get(
-      // Uri.parse('http://localhost:8080/api/industries'),
       Uri.parse('${ApiConfig.baseUrl}/api/industries'),
     );
     if (industriesResponse.statusCode == 200) {
@@ -133,7 +131,6 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
   }
 
   Future<void> fetchIndustryRelations(int userId) async {
-    // final url = 'http://localhost:8080/api/industries/user/$userId';
     final url = '${ApiConfig.baseUrl}/api/industries/user/$userId';
     final response = await http.get(Uri.parse(url));
 
@@ -341,7 +338,6 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
       'icon': _iconPhotoId,
     };
 
-    // final url = 'http://localhost:8080/api/users/$userId/profile';
     final url = '${ApiConfig.baseUrl}/api/users/$userId/profile';
     final response = await http.put(
       Uri.parse(url),

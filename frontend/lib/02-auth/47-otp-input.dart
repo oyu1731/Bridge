@@ -41,7 +41,6 @@ class _OtpInputPageState extends State<OtpInputPage> {
 
     try {
       final response = await http.post(
-        // Uri.parse('http://localhost:8080/api/password/verify-otp'),
         Uri.parse('${ApiConfig.baseUrl}/api/password/verify-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': widget.email, 'otp': otp}),

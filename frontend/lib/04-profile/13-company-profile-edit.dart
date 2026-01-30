@@ -71,7 +71,6 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
       final userData = jsonDecode(userJson);
       final userId = userData['id'];
 
-      // final url = 'http://localhost:8080/api/users/$userId';
       final url = '${ApiConfig.baseUrl}/api/users/$userId';
       final response = await http.get(Uri.parse(url));
 
@@ -126,7 +125,6 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
 
   Future<void> fetchData() async {
     final industriesResponse = await http.get(
-      // Uri.parse('http://localhost:8080/api/industries'),
       Uri.parse('${ApiConfig.baseUrl}/api/industries'),
     );
     if (industriesResponse.statusCode == 200) {
@@ -159,7 +157,6 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
   }
 
   Future<void> fetchIndustryRelations(int userId) async {
-    // final url = 'http://localhost:8080/api/industries/user/$userId';
     final url = '${ApiConfig.baseUrl}/api/industries/user/$userId';
     final response = await http.get(Uri.parse(url));
 
@@ -394,7 +391,6 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
       'icon': _iconPhotoId,
     };
 
-    // final userUpdateUrl = 'http://localhost:8080/api/users/$userId/profile';
     final userUpdateUrl = '${ApiConfig.baseUrl}/api/users/$userId/profile';
     final userUpdateResponse = await http.put(
       Uri.parse(userUpdateUrl),
@@ -405,7 +401,6 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
     // 企業写真のphoto_idを保存
     if (companyId != null && _companyPhotoId != null) {
       final companyPhotoUrl =
-          // 'http://localhost:8080/api/companies/$companyId/photo';
           '${ApiConfig.baseUrl}/api/companies/$companyId/photo';
       final companyPhotoRes = await http.put(
         Uri.parse(companyPhotoUrl),
@@ -428,7 +423,6 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
             .toList();
 
     final industriesUpdateUrl =
-        // 'http://localhost:8080/api/users/$userId/industries';
         '${ApiConfig.baseUrl}/api/users/$userId/industries';
     final industriesUpdateResponse = await http.put(
       Uri.parse(industriesUpdateUrl),
@@ -469,7 +463,6 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
         companyUpdateData['photoId'] = _companyPhotoId;
       }
       print('企業プロフィール更新: $companyUpdateData');
-      // final companyUpdateUrl = 'http://localhost:8080/api/companies/$companyId';
       final companyUpdateUrl = '${ApiConfig.baseUrl}/api/companies/$companyId';
       final companyUpdateRes = await http.put(
         Uri.parse(companyUpdateUrl),

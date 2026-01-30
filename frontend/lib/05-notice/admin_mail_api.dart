@@ -1,18 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:bridge/11-common/api_config.dart';
 import '44-admin-mail-list.dart'; // NotificationData を使うなら
 
 class AdminNotificationApi {
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://localhost:8080',
-  );
+  static String get baseUrl => ApiConfig.baseUrl;
 
   /// 一覧取得
   static Future<List<NotificationData>> fetchAll() async {
-    final res = await http.get(
-      Uri.parse('$baseUrl/api/notifications'),
-    );
+    final res = await http.get(Uri.parse('$baseUrl/api/notifications'));
 
     if (res.statusCode != 200) {
       throw Exception('一覧取得失敗');
@@ -55,9 +51,7 @@ class AdminNotificationApi {
 
   /// 削除
   static Future<void> delete(int id) async {
-    final res = await http.delete(
-      Uri.parse('$baseUrl/api/notifications/$id'),
-    );
+    final res = await http.delete(Uri.parse('$baseUrl/api/notifications/$id'));
 
     if (res.statusCode != 204) {
       throw Exception('削除失敗');

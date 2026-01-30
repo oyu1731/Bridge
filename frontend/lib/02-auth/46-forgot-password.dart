@@ -40,7 +40,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     });
     try {
       // TODO: BASE_URL を環境に合わせて修正
-      // const baseUrl = 'http://localhost:8080/api/password/forgot';
       final baseUrl = '${ApiConfig.baseUrl}/api/password/forgot';
       final resp = await http.post(
         Uri.parse(baseUrl),

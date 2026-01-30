@@ -65,7 +65,6 @@ class _PasswordUpdatePageState extends State<PasswordUpdatePage> {
         return;
       }
 
-      // final url = Uri.parse('http://localhost:8080/api/users/$userId/password');
       final url = Uri.parse('${ApiConfig.baseUrl}/api/users/$userId/password');
       final response = await http.put(
         url,

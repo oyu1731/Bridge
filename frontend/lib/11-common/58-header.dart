@@ -735,7 +735,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
 
     try {
       final res = await http.get(
-        Uri.parse('http://localhost:8080/api/users/$userId'),
+        Uri.parse('${ApiConfig.baseUrl}/api/users/$userId'),
       );
       if (res.statusCode == 200) {
         final api = jsonDecode(res.body);
@@ -880,7 +880,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
     if (accountType == '企業') type = 3;
 
     final res = await http.get(
-      Uri.parse('http://localhost:8080/api/notifications'),
+      Uri.parse('${ApiConfig.baseUrl}/api/notifications'),
     );
     if (res.statusCode != 200) return;
 

@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 
 class ThreadApiConfig {
-  // static const String baseUrl = 'http://localhost:8080';
   static String get baseUrl {
     if (kReleaseMode) {
       return 'https://api.bridge-tesg.com'; // ★本番（独自ドメイン）
