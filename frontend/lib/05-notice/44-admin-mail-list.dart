@@ -117,32 +117,13 @@ class _AdminMailListState extends State<AdminMailList> {
   }
 
   Future<void> _searchNotifications() async {
-    // 送信するパラメータをMapにまとめる
-    Map<String, String> params = {};
-
-    if (_searchController.text.isNotEmpty) {
-      params['title'] = _searchController.text;
-    }
-    if (_selectedTarget != null) {
-      params['type'] = _selectedTarget!;
-    }
-    if (_selectedCategory != null) {
-      params['category'] = _selectedCategory == '運営情報' ? '1' : '2';
-    }
-    if (_selectedDate != null) {
-      params['sendFlag'] =
-          "${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}";
-    }
-
-    final uri = Uri.parse(
-      ApiConfig.baseUrl,
-    ).replace(path: '/api/notifications/search', queryParameters: params);
-
     try {
       final results = await AdminNotificationApi.search(
         title: _searchController.text,
         type: _selectedTarget,
-        category: _selectedCategory == '運営情報' ? '1' : '2',
+        category: _selectedCategory == null
+          ? null
+          : (_selectedCategory == '運営情報' ? '1' : '2'),
         sendDate: _selectedDate,
       );
 
