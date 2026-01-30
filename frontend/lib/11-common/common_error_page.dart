@@ -1,3 +1,4 @@
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bridge/11-common/58-header.dart';
@@ -35,15 +36,12 @@ class CommonErrorPage extends StatelessWidget {
     final userId = local['id'];
     try {
       final res = await http.get(
-        Uri.parse('http://localhost:8080/api/users/$userId'),
+        Uri.parse('${ApiConfig.baseUrl}/api/users/$userId'),
       );
       if (res.statusCode == 200) {
         final api = jsonDecode(res.body);
         // type: 1=学生, 2=社会人, 3=企業, 4=管理者
-        return {
-          'isLoggedIn': true,
-          'type': api['type'],
-        };
+        return {'isLoggedIn': true, 'type': api['type']};
       }
     } catch (_) {}
     return {'isLoggedIn': true, 'type': null};
@@ -58,7 +56,8 @@ class CommonErrorPage extends StatelessWidget {
         child: FutureBuilder<Map<String, dynamic>>(
           future: _getUserInfo(),
           builder: (context, snapshot) {
-            final userInfo = snapshot.data ?? {'isLoggedIn': false, 'type': null};
+            final userInfo =
+                snapshot.data ?? {'isLoggedIn': false, 'type': null};
             final isLoggedIn = userInfo['isLoggedIn'] ?? false;
             final type = userInfo['type'];
             return Column(
@@ -88,13 +87,17 @@ class CommonErrorPage extends StatelessWidget {
                         );
                       } else {
                         Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (_) => StudentWorkerHome()),
+                          MaterialPageRoute(
+                            builder: (_) => StudentWorkerHome(),
+                          ),
                           (_) => false,
                         );
                       }
                     } else {
                       Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => MyHomePage(title: 'Bridge')),
+                        MaterialPageRoute(
+                          builder: (_) => MyHomePage(title: 'Bridge'),
+                        ),
                         (_) => false,
                       );
                     }
@@ -108,4 +111,4 @@ class CommonErrorPage extends StatelessWidget {
       ),
     );
   }
-}   
+}

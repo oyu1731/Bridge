@@ -121,7 +121,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   _messageStreamController;
   late final WebSocketChannel _channel;
   // final String baseUrl = 'http://localhost:8080/api';
-  final String baseUrl = ApiConfig.baseUrl;
+  final String baseUrl = '${ApiConfig.baseUrl}/api';
 
   File? _selectedImage;
   Uint8List? _webImageBytes;

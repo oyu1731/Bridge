@@ -145,7 +145,9 @@ class _AdminMailListState extends State<AdminMailList> {
           "${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}";
     }
 
-    final uri = Uri.http('localhost:8080', '/api/notifications/search', params);
+    final uri = Uri.parse(
+      ApiConfig.baseUrl,
+    ).replace(path: '/api/notifications/search', queryParameters: params);
 
     try {
       final response = await http.get(uri);

@@ -9,9 +9,13 @@ Future<void> startWebCheckout({
   required String companyName,
   required String companyEmail,
   required int? tempId,
-  String successUrl = "http://localhost:5000/#/payment-success",
-  String cancelUrl = "http://localhost:5000/#/payment-cancel",
+  String? successUrl,
+  String? cancelUrl,
 }) async {
+  final String baseUrl = ApiConfig.baseUrl;
+  final String effectiveSuccessUrlParam = successUrl ?? "$baseUrl/#/payment-success";
+  final String effectiveCancelUrl = cancelUrl ?? "$baseUrl/#/payment-cancel";
+
   final payload = {
     "amount": amount,
     "currency": currency,
@@ -19,14 +23,14 @@ Future<void> startWebCheckout({
     "companyName": companyName,
     "companyEmail": companyEmail,
     "tempId": tempId,
-    "successUrl": successUrl,
-    "cancelUrl": cancelUrl,
+    "successUrl": effectiveSuccessUrlParam,
+    "cancelUrl": effectiveCancelUrl,
   };
 
   final String effectiveSuccessUrl =
-      successUrl.contains('?')
-          ? '$successUrl&session_id={CHECKOUT_SESSION_ID}'
-          : '$successUrl?session_id={CHECKOUT_SESSION_ID}';
+      effectiveSuccessUrlParam.contains('?')
+          ? '$effectiveSuccessUrlParam&session_id={CHECKOUT_SESSION_ID}'
+          : '$effectiveSuccessUrlParam?session_id={CHECKOUT_SESSION_ID}';
 
   payload['successUrl'] = effectiveSuccessUrl;
 
