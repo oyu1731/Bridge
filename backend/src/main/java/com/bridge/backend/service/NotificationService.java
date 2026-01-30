@@ -33,7 +33,8 @@ public class NotificationService {
                 n.getCategory(),
                 n.getUserId(),
                 n.getReservationTime(),
-                n.getSendFlag()
+                n.getSendFlag(),
+                n.getSendFlagInt()
             )).toList();
     }
 
@@ -61,7 +62,8 @@ public class NotificationService {
             n.getCategory(),
             n.getUserId(),
             n.getReservationTime(),
-            n.getSendFlag()
+            n.getSendFlag(),
+            n.getSendFlagInt()
         )).toList();
     }
 
