@@ -25,7 +25,7 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
 
   Future<void> _loadUserData() async {
     final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}api/users/${widget.userId}/detail'),
+      Uri.parse('${ApiConfig.baseUrl}/api/users/${widget.userId}/detail'),
     );
     final data = json.decode(utf8.decode(response.bodyBytes));
     setState(() {
@@ -47,7 +47,7 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
 
   Future<void> _loadCommentHistory() async {
     final res = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}api/users/${widget.userId}/comments'),
+      Uri.parse('${ApiConfig.baseUrl}/api/users/${widget.userId}/comments'),
     );
     final List list = json.decode(utf8.decode(res.bodyBytes));
     setState(() {
