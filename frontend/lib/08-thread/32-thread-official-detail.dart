@@ -52,7 +52,6 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
       if (res2.statusCode == 200) {
         final path = json.decode(res2.body)['photoPath'];
         if (path != null && path.toString().isNotEmpty) {
-          // _userIconCache[userId] = "http://localhost:8080$path";
           _userIconCache[userId] = "$baseUrl$path";
         } else {
           _userIconCache[userId] = null;
@@ -99,7 +98,6 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
         final res2 = await http.get(Uri.parse('$baseUrl/photos/$iconId'));
         if (res2.statusCode == 200) {
           final path = json.decode(res2.body)['photoPath'];
-          // _currentUserIconUrl = "http://localhost:8080$path";
           _currentUserIconUrl = "$baseUrl$path";
         }
       }
@@ -120,7 +118,6 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   late final StreamController<List<Map<String, dynamic>>>
   _messageStreamController;
   late final WebSocketChannel _channel;
-  // final String baseUrl = 'http://localhost:8080/api';
   final String baseUrl = '${ApiConfig.baseUrl}/api';
 
   File? _selectedImage;
@@ -262,7 +259,6 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     final res = await http.get(Uri.parse('$baseUrl/photos/$photoId'));
     if (res.statusCode == 200) {
       final path = json.decode(res.body)['photoPath'];
-      // final url = "http://localhost:8080$path";
       final url = "$baseUrl$path";
       _photoUrlCache[photoId] = url;
       return url;
@@ -322,13 +318,11 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
       //     print("これでアイコンの写真のパスが取得できる");
       //     print(json.decode(response2.body)['photoPath']);
       //     final iconPath = json.decode(response2.body)['photoPath'];
-      //     userIconUrl = "http://localhost:8080$iconPath";
       //     // アイコンIDがあればURLを取得
       //     // if (msg['userIconId'] != null) {
       //     //   final iconResponse = await http.get(Uri.parse('$baseUrl/photos/${msg['userIconId']}'));
       //     //   if (iconResponse.statusCode == 200) {
       //     //     final iconData = json.decode(iconResponse.body);
-      //     //     userIconUrl = "http://localhost:8080/photos/${iconData['photoPath']}";
       //     //   }
       //     // }
       //     // メッセージリストに追加

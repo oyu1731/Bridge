@@ -62,7 +62,6 @@ class _ThreadCreateState extends State<ThreadCreate> {
   // APIから業界データ取得
   Future<void> _fetchIndustries() async {
     try {
-      // final response = await http.get(Uri.parse('http://localhost:8080/api/industries'));
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/api/industries'),
       );
@@ -249,7 +248,6 @@ class _ThreadCreateState extends State<ThreadCreate> {
 
     try {
       final response = await http.post(
-        // Uri.parse('http://localhost:8080/api/threads/unofficial'),
         Uri.parse('${ApiConfig.baseUrl}/api/threads/unofficial'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(threadData),

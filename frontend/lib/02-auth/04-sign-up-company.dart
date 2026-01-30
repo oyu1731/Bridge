@@ -90,9 +90,9 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
   // 業界リストを取得
   Future<void> _fetchIndustries() async {
     try {
-      final response =
-      // await http.get(Uri.parse('http://localhost:8080/api/industries'));
-      await http.get(Uri.parse('${ApiConfig.baseUrl}/api/industries'));
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/industries'),
+      );
       if (!mounted) return;
 
       if (response.statusCode == 200) {
@@ -532,7 +532,6 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                           // 1) 一時サインアップを作成して tempId を取得
                           final tempRes = await http.post(
                             Uri.parse(
-                              // 'http://localhost:8080/api/v1/temp-signups',
                               '${ApiConfig.baseUrl}/api/v1/temp-signups',
                             ),
                             headers: {

@@ -55,7 +55,6 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
       _loading = true;
     });
     try {
-      // const baseUrl = 'http://localhost:8080/api/password/reset';
       final baseUrl = '${ApiConfig.baseUrl}/api/password/reset';
       final resp = await http.post(
         Uri.parse(baseUrl),

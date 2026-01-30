@@ -440,7 +440,6 @@ class _InterviewPracticeState extends State<InterviewPractice> {
                           };
 
                           final url = Uri.parse(
-                            // 'http://localhost:8080/api/interview',
                             '${ApiConfig.baseUrl}/api/interview',
                           );
                           final headers = {
@@ -995,7 +994,6 @@ class _InterviewScreenState extends State<InterviewScreen> {
       print("送信するデータ:\n$prettyJson");
 
       final url = Uri.parse(
-        // 'http://localhost:8080/api/interview/answers?questionType=${widget.questionType}',
         '${ApiConfig.baseUrl}/api/interview/answers?questionType=${widget.questionType}',
       );
       final headers = {'Content-Type': 'application/json; charset=UTF-8'};

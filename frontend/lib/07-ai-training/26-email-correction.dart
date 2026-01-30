@@ -57,7 +57,6 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
 
     try {
       final response = await http.post(
-        // Uri.parse('http://localhost:8080/api/email-correction'),
         Uri.parse('${ApiConfig.baseUrl}/api/email-correction'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'originalEmail': _originalEmailController.text}),

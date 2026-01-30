@@ -82,7 +82,6 @@ class _StudentInputPageState extends State<StudentInputPage> {
   Future<void> _fetchIndustries() async {
     try {
       final response = await http.get(
-        // Uri.parse('http://localhost:8080/api/industries'),
         Uri.parse('${ApiConfig.baseUrl}/api/industries'),
       );
 
@@ -359,7 +358,6 @@ class _StudentInputPageState extends State<StudentInputPage> {
 
                           final desiredIndustries = _selectedIndustryIds;
 
-                          // final url = Uri.parse('http://localhost:8080/api/users');
                           final url = Uri.parse(
                             '${ApiConfig.baseUrl}/api/users',
                           );

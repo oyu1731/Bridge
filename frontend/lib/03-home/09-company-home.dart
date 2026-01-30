@@ -70,7 +70,6 @@ class _CompanyHomeState extends State<CompanyHome>
       final response = await http
           .post(
             Uri.parse(
-              // "http://localhost:8080/api/users/$userId/check-subscription",
               '${ApiConfig.baseUrl}/api/users/$userId/check-subscription',
             ),
           )

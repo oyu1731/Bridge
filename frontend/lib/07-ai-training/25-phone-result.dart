@@ -43,7 +43,6 @@ class _PhoneResultScreenState extends State<PhoneResultScreen> {
 
     final encodedSessionId = Uri.encodeComponent(widget.sessionId);
     final url = Uri.parse(
-      // 'http://localhost:8080/api/phone/evaluation/$encodedSessionId',
       '${ApiConfig.baseUrl}/api/phone/evaluation/$encodedSessionId',
     );
     print('Sending GET request to URL: $url');

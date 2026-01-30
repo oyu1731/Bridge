@@ -54,7 +54,6 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
       if (res2.statusCode == 200) {
         final path = json.decode(res2.body)['photoPath'];
         if (path != null && path.toString().isNotEmpty) {
-          // _userIconCache[userId] = "http://localhost:8080$path";
           _userIconCache[userId] = "$baseUrl$path";
         } else {
           _userIconCache[userId] = null;
@@ -100,7 +99,6 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
         final res2 = await http.get(Uri.parse('$baseUrl/photos/$iconId'));
         if (res2.statusCode == 200) {
           final path = json.decode(res2.body)['photoPath'];
-          // _currentUserIconUrl = "http://localhost:8080$path";
           _currentUserIconUrl = "$baseUrl$path";
         }
       }
@@ -119,7 +117,6 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
   late final StreamController<List<Map<String, dynamic>>>
   _messageStreamController;
   late final WebSocketChannel _channel;
-  // final String baseUrl = 'http://localhost:8080/api';
   final String baseUrl = '${ApiConfig.baseUrl}/api';
 
   File? _selectedImage;
@@ -257,7 +254,6 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
     final res = await http.get(Uri.parse('$baseUrl/photos/$photoId'));
     if (res.statusCode == 200) {
       final path = json.decode(res.body)['photoPath'];
-      // final url = "http://localhost:8080$path";
       final url = "$baseUrl$path";
       _photoUrlCache[photoId] = url;
       return url;
@@ -296,7 +292,6 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
           print("これでアイコンの写真のパスが取得できる");
           print(json.decode(response2.body)['photoPath']);
           final iconPath = json.decode(response2.body)['photoPath'];
-          // userIconUrl = "http://localhost:8080$iconPath";
           userIconUrl = "$baseUrl$iconPath";
           if (!_messages.any((m) => m['id'] == msg['id'])) {
             _messages.add({

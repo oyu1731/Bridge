@@ -415,7 +415,6 @@ class _PhonePracticeState extends State<PhonePractice> {
                           print("送信する内容: $_companyInfo");
 
                           final url = Uri.parse(
-                            // 'http://localhost:8080/api/phone/practice',
                             '${ApiConfig.baseUrl}/api/phone/practice',
                           );
                           final headers = {
@@ -797,7 +796,6 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
       return;
     }
 
-    // final url = Uri.parse('http://localhost:8080/api/phone/continue');
     final url = Uri.parse('${ApiConfig.baseUrl}/api/phone/continue');
     final headers = {'Content-Type': 'application/json; charset=UTF-8'};
     final payload = {"sessionId": widget.sessionId, "message": answer};
@@ -856,7 +854,6 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
   }
 
   void _endCallAndNavigateToResult() async {
-    // final url = Uri.parse('http://localhost:8080/api/phone/end');
     final url = Uri.parse('${ApiConfig.baseUrl}/api/phone/end');
     final headers = {'Content-Type': 'application/json; charset=UTF-8'};
     final payload = {"sessionId": widget.sessionId};

@@ -117,7 +117,6 @@ class _AdminMailListState extends State<AdminMailList> {
   }
 
   Future<void> _searchNotifications() async {
-<<<<<<< HEAD
     // 送信するパラメータをMapにまとめる
     Map<String, String> params = {};
 
@@ -139,8 +138,6 @@ class _AdminMailListState extends State<AdminMailList> {
       ApiConfig.baseUrl,
     ).replace(path: '/api/notifications/search', queryParameters: params);
 
-=======
->>>>>>> b583106864647722472d1a955aaa3fc2806c2aeb
     try {
       final results = await AdminNotificationApi.search(
         title: _searchController.text,
@@ -160,14 +157,21 @@ class _AdminMailListState extends State<AdminMailList> {
   Future<void> _deleteNotification(NotificationData notification) async {
     bool confirm = await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('削除確認'),
-        content: const Text('このメールを削除しますか？'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('キャンセル')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('削除')),
-        ],
-      ),
+      builder:
+          (_) => AlertDialog(
+            title: const Text('削除確認'),
+            content: const Text('このメールを削除しますか？'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('キャンセル'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('削除'),
+              ),
+            ],
+          ),
     );
 
     if (confirm != true) return;
@@ -175,15 +179,15 @@ class _AdminMailListState extends State<AdminMailList> {
     try {
       await AdminNotificationApi.delete(notification.id);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('メールを削除しました')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('メールを削除しました')));
 
       _fetchNotifications();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('削除に失敗しました')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('削除に失敗しました')));
     }
   }
 
@@ -193,21 +197,22 @@ class _AdminMailListState extends State<AdminMailList> {
   ) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(notification.title),
-        content: SingleChildScrollView(
-          child: Text(
-            notification.content,
-            style: const TextStyle(fontSize: 14),
+      builder:
+          (_) => AlertDialog(
+            title: Text(notification.title),
+            content: SingleChildScrollView(
+              child: Text(
+                notification.content,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('閉じる'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('閉じる'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -465,35 +470,45 @@ class _AdminMailListState extends State<AdminMailList> {
             ],
           ),
           for (final n in _notifications)
-            TableRow(children: [
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: InkWell(
-                  onTap: () {
-                    _showNotificationDetail(context, n);
-                  },
-                  child: Text(
-                    n.title,
-                    style: const TextStyle(
-                      decoration: TextDecoration.underline,
-                      color: Colors.blue,
+            TableRow(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: InkWell(
+                    onTap: () {
+                      _showNotificationDetail(context, n);
+                    },
+                    child: Text(
+                      n.title,
+                      style: const TextStyle(
+                        decoration: TextDecoration.underline,
+                        color: Colors.blue,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Padding(padding: const EdgeInsets.all(8), child: Text(_convertType(n.type))),
-              Padding(padding: const EdgeInsets.all(8), child: Text(_convertCategory(n.category))),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(n.sendFlag != null
-                    ? "${n.sendFlag!.year}/${n.sendFlag!.month.toString().padLeft(2,'0')}/${n.sendFlag!.day.toString().padLeft(2,'0')}"
-                    : "-"),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => _deleteNotification(n),
-              ),
-            ])
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(_convertType(n.type)),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(_convertCategory(n.category)),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(
+                    n.sendFlag != null
+                        ? "${n.sendFlag!.year}/${n.sendFlag!.month.toString().padLeft(2, '0')}/${n.sendFlag!.day.toString().padLeft(2, '0')}"
+                        : "-",
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => _deleteNotification(n),
+                ),
+              ],
+            ),
         ],
       ),
     );

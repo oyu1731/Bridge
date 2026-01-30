@@ -47,7 +47,6 @@ class _AnswerExplanationScreenState extends State<AnswerExplanationScreen> {
 
     if (!isCorrect) return;
 
-    // final url = Uri.parse("http://localhost:8080/api/quiz/correct");
     final url = Uri.parse("${ApiConfig.baseUrl}/api/quiz/correct");
 
     final int userId = session?['id'];

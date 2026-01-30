@@ -79,7 +79,6 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
   }
 
   Future<void> _fetchLogs() async {
-    // final res = await http.get(Uri.parse("http://localhost:8080/api/notice/logs"));
     final res = await http.get(
       Uri.parse("${ApiConfig.baseUrl}/api/notice/logs"),
     );

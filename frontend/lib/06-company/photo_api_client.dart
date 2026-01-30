@@ -15,7 +15,6 @@ class PhotoDTO {
     String? photoPath = json['photoPath'];
     String? fullPath;
     if (photoPath != null && photoPath.isNotEmpty) {
-      // /uploads/photos/xxx.jpg のようなパスを http://localhost:8080/uploads/photos/xxx.jpg に変換
       fullPath = '${ApiConfig.baseUrl}$photoPath';
     }
 

@@ -119,7 +119,6 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
       final response = await http
           .post(
             Uri.parse(
-              // "http://localhost:8080/api/users/$userId/check-subscription",
               '${ApiConfig.baseUrl}/api/users/$userId/check-subscription',
             ),
           )
@@ -282,7 +281,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
       setState(() {
         _errorMessage = '検索エラー: $e';
         _isLoading = false;
-              });
+      });
     }
   }
 

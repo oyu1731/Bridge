@@ -7,7 +7,7 @@ class ApiConfig {
     if (kReleaseMode) {
       return 'https://api.bridge-tesg.com'; // ★本番（独自ドメイン）
     } else {
-      return 'https://api.bridge-tesg.com'; // ★開発（自分のPC）
+      return 'localhost:8080'; // ★開発（自分のPC）
     }
   }
 

@@ -93,9 +93,9 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
 
   Future<void> _fetchIndustries() async {
     try {
-      final response =
-      // await http.get(Uri.parse('http://localhost:8080/api/industries'));
-      await http.get(Uri.parse('${ApiConfig.baseUrl}/api/industries'));
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/industries'),
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
@@ -418,7 +418,6 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
 
                         try {
                           final res = await http.post(
-                            // Uri.parse('http://localhost:8080/api/users'),
                             Uri.parse('${ApiConfig.baseUrl}/api/users'),
                             headers: {
                               'Content-Type': 'application/json; charset=UTF-8',

@@ -81,7 +81,6 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     setState(() => _isProcessing = true);
 
     try {
-      // final url = Uri.parse('http://localhost:8080/api/users/$_userId');
       final url = Uri.parse('${ApiConfig.baseUrl}/api/users/$_userId');
       final resp = await http.delete(url);
 
