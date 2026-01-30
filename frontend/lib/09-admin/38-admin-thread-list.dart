@@ -3,6 +3,7 @@ import 'package:bridge/11-common/58-header.dart';
 import '39-admin-thread-detail.dart';
 import 'package:bridge/08-thread/thread_api_client.dart';
 import 'package:bridge/08-thread/thread_model.dart';
+import 'admin_reported_thread.dart';
 import 'admin-thread-list.dart';
 
 class AdminThreadList extends StatefulWidget {
@@ -12,7 +13,7 @@ class AdminThreadList extends StatefulWidget {
 
 class _AdminThreadListState extends State<AdminThreadList> {
   List<Thread> officialThreads = [];
-  List<Thread> unofficialThreads = [];
+  List<AdminReportedThread> unofficialThreads = [];
 
   @override
   void initState() {
@@ -22,18 +23,19 @@ class _AdminThreadListState extends State<AdminThreadList> {
 
   Future<void> _fetchThreads() async {
     try {
-      final threads = await ThreadApiClient.getReportedThreads();
 
-      // ---- 公式スレッド ----
-      final official = threads.where((t) => t.type == 1).toList();
+      final allThreads = await ThreadApiClient.getAllThreads();
+      final official = allThreads.where((t) => t.type == 1).toList();
 
-      // ---- 非公式スレッド ----
-      final unofficial = threads.where((t) => t.type == 2).toList();
+      final reportedThreads = await ThreadApiClient.getReportedThreads();
+      final unofficial = reportedThreads
+          .where((r) => r.thread.type == 2)
+          .toList();
 
       // 通報順
       unofficial.sort((a, b) {
-        final aDate = a.lastReportedAt ?? DateTime(2000);
-        final bDate = b.lastReportedAt ?? DateTime(2000);
+        final aDate = a.thread.lastReportedAt ?? DateTime(2000);
+        final bDate = b.thread.lastReportedAt ?? DateTime(2000);
         return bDate.compareTo(aDate);
       });
 
@@ -49,7 +51,7 @@ class _AdminThreadListState extends State<AdminThreadList> {
     }
   }
 
-  Future<void> _confirmDeleteThread(Thread thread) async {
+  Future<void> _confirmDeleteThread(AdminReportedThread reported) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -69,7 +71,7 @@ class _AdminThreadListState extends State<AdminThreadList> {
     );
 
     if (confirm == true) {
-      await _deleteThread(thread.id);
+      await _deleteThread(reported.thread.id);
     }
   }
 
@@ -88,6 +90,7 @@ class _AdminThreadListState extends State<AdminThreadList> {
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -108,11 +111,12 @@ class _AdminThreadListState extends State<AdminThreadList> {
               children: officialThreads.map((thread) {
                 return GestureDetector(
                   onTap: () {
+                    print('thread.id=${thread.id}');
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => AdminThreadDetail(
-                          threadId: int.parse(thread.id),
+                          threadId: thread.id,
                           title: thread.title,
                         ),
                       ),
@@ -189,12 +193,13 @@ class _AdminThreadListState extends State<AdminThreadList> {
               children: unofficialThreads.map((thread) {
                 return GestureDetector(
                   onTap: () {
+                    print('thread.id=${thread.thread.id}');
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => AdminThreadDetail(
-                          threadId: int.parse(thread.id),
-                          title: thread.title,
+                          threadId: thread.thread.id,
+                          title: thread.thread.title,
                         ),
                       ),
                     );
@@ -205,12 +210,12 @@ class _AdminThreadListState extends State<AdminThreadList> {
                     elevation: 2,
                     child: ListTile(
                       title: Text(
-                        thread.title,
+                        thread.thread.title,
                         style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text(
-                        thread.description,
+                        thread.thread.description,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: Colors.grey[700]),
@@ -219,7 +224,7 @@ class _AdminThreadListState extends State<AdminThreadList> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            thread.adminTimeAgo ?? '',
+                            thread.thread.adminTimeAgo ?? '',
                             style: const TextStyle(color: Colors.grey),
                           ),
                           const SizedBox(width: 8),

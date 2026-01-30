@@ -147,7 +147,7 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
                           context,
                           MaterialPageRoute(
                             builder: (_) => AdminThreadDetail(
-                              threadId: int.parse(thread.id),
+                              threadId: thread.id,
                               title: thread.title,
                             ),
                           ),

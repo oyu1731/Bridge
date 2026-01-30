@@ -17,7 +17,7 @@ class NoticeData {
   final int? fromUserId;
   final int? toUserId;
   final int? type;
-  final int? threadId;
+  final String? threadId;
   final int? chatId;
   final DateTime? createdAt;
   final String? threadTitle;
@@ -47,7 +47,7 @@ class NoticeData {
       fromUserId: json['fromUserId'],
       toUserId: json['toUserId'],
       type: json['type'],
-      threadId: json['threadId'],
+      threadId: json['threadId']?.toString(),
       chatId: json['chatId'],
       createdAt:
           json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
