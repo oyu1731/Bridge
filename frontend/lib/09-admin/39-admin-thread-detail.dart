@@ -187,10 +187,22 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
   // 画像データ取得
   // -------------------------
   Future<String?> fetchPhotoUrl(int photoId) async {
-    final response = await http.get(Uri.parse('$baseUrl/photos/$photoId'));
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/photos/$photoId'),
+    );
+
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      return "http://localhost:8080${data['photoPath']}";
+
+      final path = data['photoPath'];
+      if (path == null) return null;
+
+      // ここが超重要
+      if (path.startsWith('http')) {
+        return path;
+      } else {
+        return '${ApiConfig.baseUrl}$path';
+      }
     }
     return null;
   }
