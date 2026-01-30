@@ -121,6 +121,13 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
 
+        // 安全対策: 何らかの理由でDBにデフォルト値が入ってしまうことを防ぐ
+        if (savedUser.getIcon() != null) {
+            logger.info("Saved user has non-null icon ({}). Resetting to null. userId={}", savedUser.getIcon(), savedUser.getId());
+            savedUser.setIcon(null);
+            savedUser = userRepository.save(savedUser);
+        }
+
         // 2. 業界関係保存
         if (userDto.getDesiredIndustries() != null) {
             int relationType = switch (userDto.getType()) {
@@ -379,7 +386,7 @@ public class UserService {
                     user.getId(),
                     user.getNickname(),
                     user.getType(),
-                    user.getIcon() != null ? user.getIcon() : 0,
+                    user.getIcon(),
                     photoPath,
                     reportCount
             );
@@ -412,7 +419,7 @@ public class UserService {
                     user.getId(),
                     user.getNickname(),
                     user.getType(),
-                    user.getIcon() != null ? user.getIcon() : 0,
+                    user.getIcon(),
                     photoPath,
                     reportCount
             );

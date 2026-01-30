@@ -118,7 +118,8 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   late final StreamController<List<Map<String, dynamic>>>
   _messageStreamController;
   late final WebSocketChannel _channel;
-  final String baseUrl = '${ApiConfig.baseUrl}/api';
+  final String baseUrl = '${ApiConfig.baseUrl}';
+  final String img_baseurl = '${ApiConfig.baseUrl}';
 
   File? _selectedImage;
   Uint8List? _webImageBytes;
@@ -205,7 +206,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   Future<int?> uploadImage() async {
     if (_selectedImage == null && _webImageBytes == null) return null;
     setState(() => _isUploading = true);
-    final uri = Uri.parse('$baseUrl/photos/upload');
+    final uri = Uri.parse('$img_baseurl/photos/upload');
     final request = http.MultipartRequest('POST', uri);
     request.fields['userId'] = currentUserId;
     if (kIsWeb) {
