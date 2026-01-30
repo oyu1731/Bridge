@@ -56,19 +56,26 @@ class _AdminAccountListState extends State<AdminAccountList> {
   Future<void> _searchUsers() async {
     final keyword = _searchController.text;
     final type = _selectedType ?? '';
+
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
+
     try {
-      final url = Uri.parse(
-        '${ApiConfig.baseUrl}/api/users/search?keyword=${Uri.encodeComponent(keyword)}&type=$type',
-      );
-      final response = await http.get(url);
+      final uri = Uri.parse(
+        '${ApiConfig.baseUrl}/api/users/search',
+      ).replace(queryParameters: {
+        if (keyword.isNotEmpty) 'keyword': keyword,
+        if (type.isNotEmpty) 'type': type,
+      });
+
+      final response = await http.get(uri);
+
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
         setState(() {
-          _users = data.map((e) => e as Map<String, dynamic>).toList();
+          _users = data.cast<Map<String, dynamic>>();
           _isLoading = false;
         });
       } else {
@@ -85,31 +92,28 @@ class _AdminAccountListState extends State<AdminAccountList> {
     }
   }
 
-  void _deleteUser(int index) async {
-    final userId = _users[index]['id'];
+  void _deleteUser(int userId) async {
+  bool confirm = await showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('削除確認'),
+      content: const Text('このアカウントを削除しますか？'),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('キャンセル')),
+        TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('削除')),
+      ],
+    ),
+  );
 
-    bool confirm = await showDialog(
-      context: context,
-      builder:
-          (_) => AlertDialog(
-            title: const Text('削除確認'),
-            content: const Text('このアカウントを削除しますか？'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('キャンセル'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('削除'),
-              ),
-            ],
-          ),
+  if (!confirm) return;
+
+  await http.put(
+    Uri.parse('${ApiConfig.baseUrl}/api/users/$userId/delete'),
     );
-
-    if (!confirm) return;
-
-    await http.put(Uri.parse('${ApiConfig.baseUrl}/api/users/$userId/delete'));
 
     _fetchUsers();
   }
@@ -320,12 +324,12 @@ class _AdminAccountListState extends State<AdminAccountList> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete),
-                    onPressed: () => _deleteUser(_users.indexOf(user)),
+                    onPressed: () => _deleteUser(user['id'])
                   ),
                 ],
               ),
             );
-          }).toList(),
+      }).toList(),
     );
   }
 }

@@ -2,8 +2,7 @@ import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/05-notice/45-admin-mail-send.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'admin_mail_api.dart';
 
 // Notification モデル
 class NotificationData {
@@ -88,23 +87,13 @@ class _AdminMailListState extends State<AdminMailList> {
 
   Future<void> _fetchNotifications() async {
     try {
-      final response = await http.get(
-        // Uri.parse("http://localhost:8080/api/notifications"),
-        Uri.parse("${ApiConfig.baseUrl}/api/notifications"),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        setState(() {
-          _notifications =
-              data.map((e) => NotificationData.fromJson(e)).toList();
-          _loading = false;
-        });
-      } else {
-        throw Exception("Fail: ${response.statusCode}");
-      }
+      final list = await AdminNotificationApi.fetchAll();
+      setState(() {
+        _notifications = list;
+        _loading = false;
+      });
     } catch (e) {
-      print("Error fetching notices: $e");
+      print('Error fetching notices: $e');
       setState(() => _loading = false);
     }
   }
@@ -128,6 +117,7 @@ class _AdminMailListState extends State<AdminMailList> {
   }
 
   Future<void> _searchNotifications() async {
+<<<<<<< HEAD
     // 送信するパラメータをMapにまとめる
     Map<String, String> params = {};
 
@@ -149,34 +139,19 @@ class _AdminMailListState extends State<AdminMailList> {
       ApiConfig.baseUrl,
     ).replace(path: '/api/notifications/search', queryParameters: params);
 
+=======
+>>>>>>> b583106864647722472d1a955aaa3fc2806c2aeb
     try {
-      final response = await http.get(uri);
+      final results = await AdminNotificationApi.search(
+        title: _searchController.text,
+        type: _selectedTarget,
+        category: _selectedCategory == '運営情報' ? '1' : '2',
+        sendDate: _selectedDate,
+      );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        List<NotificationData> results =
-            data.map((e) => NotificationData.fromJson(e)).toList();
-
-        // 日付指定がある場合は、念のためフロントでも絞り込み
-        if (_selectedDate != null) {
-          results =
-              results
-                  .where(
-                    (n) =>
-                        n.sendFlag != null &&
-                        n.sendFlag!.year == _selectedDate!.year &&
-                        n.sendFlag!.month == _selectedDate!.month &&
-                        n.sendFlag!.day == _selectedDate!.day,
-                  )
-                  .toList();
-        }
-
-        setState(() {
-          _notifications = results;
-        });
-      } else {
-        print('検索失敗: ${response.statusCode}');
-      }
+      setState(() {
+        _notifications = results;
+      });
     } catch (e) {
       print('検索エラー: $e');
     }
@@ -185,48 +160,55 @@ class _AdminMailListState extends State<AdminMailList> {
   Future<void> _deleteNotification(NotificationData notification) async {
     bool confirm = await showDialog(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: const Text('削除確認'),
-            content: const Text('このメールを削除しますか？'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('キャンセル'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('削除'),
-              ),
-            ],
-          ),
+      builder: (_) => AlertDialog(
+        title: const Text('削除確認'),
+        content: const Text('このメールを削除しますか？'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('キャンセル')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('削除')),
+        ],
+      ),
     );
 
     if (confirm != true) return;
 
     try {
-      final response = await http.delete(
-        // Uri.parse('http://localhost:8080/api/notifications/${notification.id}'),
-        Uri.parse('${ApiConfig.baseUrl}/api/notifications/${notification.id}'),
+      await AdminNotificationApi.delete(notification.id);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('メールを削除しました')),
       );
 
-      if (response.statusCode == 204) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('メールを削除しました'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-
-        _fetchNotifications(); // 再取得
-      } else {
-        throw Exception('削除失敗: ${response.statusCode}');
-      }
+      _fetchNotifications();
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('削除に失敗しました')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('削除に失敗しました')),
+      );
     }
+  }
+
+  void _showNotificationDetail(
+    BuildContext context,
+    NotificationData notification,
+  ) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(notification.title),
+        content: SingleChildScrollView(
+          child: Text(
+            notification.content,
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('閉じる'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -483,39 +465,35 @@ class _AdminMailListState extends State<AdminMailList> {
             ],
           ),
           for (final n in _notifications)
-            TableRow(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8),
+            TableRow(children: [
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: InkWell(
+                  onTap: () {
+                    _showNotificationDetail(context, n);
+                  },
                   child: Text(
                     n.title,
                     style: const TextStyle(
                       decoration: TextDecoration.underline,
+                      color: Colors.blue,
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Text(_convertType(n.type)),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Text(_convertCategory(n.category)),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Text(
-                    n.sendFlag != null
-                        ? "${n.sendFlag!.year}/${n.sendFlag!.month.toString().padLeft(2, '0')}/${n.sendFlag!.day.toString().padLeft(2, '0')}"
-                        : "-",
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _deleteNotification(n),
-                ),
-              ],
-            ),
+              ),
+              Padding(padding: const EdgeInsets.all(8), child: Text(_convertType(n.type))),
+              Padding(padding: const EdgeInsets.all(8), child: Text(_convertCategory(n.category))),
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Text(n.sendFlag != null
+                    ? "${n.sendFlag!.year}/${n.sendFlag!.month.toString().padLeft(2,'0')}/${n.sendFlag!.day.toString().padLeft(2,'0')}"
+                    : "-"),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () => _deleteNotification(n),
+              ),
+            ])
         ],
       ),
     );
