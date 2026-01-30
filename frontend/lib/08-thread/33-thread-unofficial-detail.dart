@@ -118,6 +118,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
   _messageStreamController;
   late final WebSocketChannel _channel;
   final String baseUrl = '${ApiConfig.baseUrl}/api';
+  final String img_baseurl = '${ApiConfig.baseUrl}';
 
   File? _selectedImage;
   Uint8List? _webImageBytes;
@@ -202,7 +203,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
   Future<int?> uploadImage() async {
     if (_selectedImage == null && _webImageBytes == null) return null;
     setState(() => _isUploading = true);
-    final uri = Uri.parse('$baseUrl/photos/upload');
+    final uri = Uri.parse('$img_baseurl/photos/upload');
     final request = http.MultipartRequest('POST', uri);
     //ここは絶対にユーザーidを文字列にする
     request.fields['userId'] = currentUserId.toString();

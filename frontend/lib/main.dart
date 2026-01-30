@@ -528,7 +528,7 @@ class _MyHomePageState extends State<MyHomePage> {
         'is_withdrawn': false,
         'created_at': '2025-11-10',
         'society_history': null,
-        'icon': 1,
+        'icon': null,
         'announcement_deletion': 1,
       },
       '社会人': {
@@ -544,7 +544,7 @@ class _MyHomePageState extends State<MyHomePage> {
         'is_withdrawn': false,
         'created_at': '2025-11-10',
         'society_history': 5,
-        'icon': 2,
+        'icon': null,
         'announcement_deletion': 1,
       },
       '企業': {
@@ -560,7 +560,7 @@ class _MyHomePageState extends State<MyHomePage> {
         'is_withdrawn': false,
         'created_at': '2025-11-10',
         'society_history': null,
-        'icon': 3,
+        'icon': null,
         'announcement_deletion': 1,
       },
       '管理者': {
