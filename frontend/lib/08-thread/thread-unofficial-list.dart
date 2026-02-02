@@ -55,7 +55,6 @@ import 'thread_api_client.dart';
 
 // // API からスレッド一覧取得
 // Future<List<Thread>> fetchThreads() async {
-//   final url = Uri.parse('http://localhost:8080/api/threads');
 //   final response = await http.get(url);
 
 //   if (response.statusCode == 200) {
@@ -84,29 +83,32 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
     final userData = jsonDecode(jsonString);
 
     setState(() {
-      userType = userData['type']+1;
+      userType = userData['type'] + 1;
     });
   }
 
   Future<void> _fetchUnofficialThreads() async {
-  try {
-    await _loadUserData();   // ← await を付ける（超重要）
+    try {
+      await _loadUserData(); // ← await を付ける（超重要）
 
-    final allThreads = await ThreadApiClient.getAllThreads();
+      final allThreads = await ThreadApiClient.getAllThreads();
 
-    setState(() {
-      unofficialThreads = allThreads
-          .where((t) =>
-              t.type == 2 &&
-              (t.entryCriteria == userType || t.entryCriteria == 1))
-          .toList();
+      setState(() {
+        unofficialThreads =
+            allThreads
+                .where(
+                  (t) =>
+                      t.type == 2 &&
+                      (t.entryCriteria == userType || t.entryCriteria == 1),
+                )
+                .toList();
 
-      filteredThreads = List.from(unofficialThreads);
-    });
-  } catch (e) {
-    print("非公式スレッドの取得に失敗: $e");
+        filteredThreads = List.from(unofficialThreads);
+      });
+    } catch (e) {
+      print("非公式スレッドの取得に失敗: $e");
+    }
   }
-}
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -115,7 +117,7 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
     super.initState();
     _fetchUnofficialThreads();
   }
-  
+
   void _searchThreads() {
     final query = _searchController.text.trim();
 
@@ -175,7 +177,10 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 12,
+                ),
                 suffixIcon: IconButton(
                   icon: Icon(Icons.search, color: Colors.grey[700]),
                   onPressed: _searchThreads,
@@ -197,9 +202,13 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ThreadUnOfficialDetail(
-                            thread: {'id': thread.id, 'title': thread.title},
-                          ),
+                          builder:
+                              (context) => ThreadUnOfficialDetail(
+                                thread: {
+                                  'id': thread.id,
+                                  'title': thread.title,
+                                },
+                              ),
                         ),
                       );
                     },

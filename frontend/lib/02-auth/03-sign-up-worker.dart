@@ -1,3 +1,4 @@
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -60,7 +61,6 @@ class PhoneNumberFormatter extends TextInputFormatter {
   }
 }
 
-
 class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
   final _formKey = GlobalKey<FormState>();
 
@@ -93,20 +93,19 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
 
   Future<void> _fetchIndustries() async {
     try {
-      final response =
-          await http.get(Uri.parse('http://localhost:8080/api/industries'));
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/industries'),
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
         setState(() {
-          _industries = data
-              .map<Map<String, dynamic>>(
-                (item) => {
-                  'id': item['id'],
-                  'name': item['industry'],
-                },
-              )
-              .toList();
+          _industries =
+              data
+                  .map<Map<String, dynamic>>(
+                    (item) => {'id': item['id'], 'name': item['industry']},
+                  )
+                  .toList();
           _isLoading = false;
         });
       } else {
@@ -147,9 +146,7 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
           padding: const EdgeInsets.all(16),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 600, 
-              ),
+              constraints: const BoxConstraints(maxWidth: 600),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -166,31 +163,27 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                     const SizedBox(height: 10),
                     Text(
                       '企業または学生の方は、このページでは登録できません。',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: textCyanDark,
-                      ),
+                      style: TextStyle(fontSize: 15, color: textCyanDark),
                     ),
                     const SizedBox(height: 20),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
-                          child: Icon(
-                            Icons.person_outline,
-                            color: cyanDark,
-                          )
+                        Padding(
+                          padding: EdgeInsetsGeometry.only(top: 14),
+                          child: Icon(Icons.person_outline, color: cyanDark),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child:TextFormField(
+                          child: TextFormField(
                             controller: _nicknameController,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                               labelText: 'ニックネーム',
                             ),
-                            validator: (v) =>
-                                v == null || v.isEmpty ? '入力してください' : null,
+                            validator:
+                                (v) =>
+                                    v == null || v.isEmpty ? '入力してください' : null,
                           ),
                         ),
                       ],
@@ -199,11 +192,9 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
-                          child: Icon(
-                            Icons.email_outlined,
-                            color: cyanDark,
-                          )
+                        Padding(
+                          padding: EdgeInsetsGeometry.only(top: 14),
+                          child: Icon(Icons.email_outlined, color: cyanDark),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -227,11 +218,9 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
-                          child: Icon(
-                            Icons.lock_outline,
-                            color: cyanDark,
-                          )
+                        Padding(
+                          padding: EdgeInsetsGeometry.only(top: 14),
+                          child: Icon(Icons.lock_outline, color: cyanDark),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -243,7 +232,9 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                               hintText: '英数字８文字以上で入力してください',
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
                                   color: cyanDark,
                                 ),
                                 onPressed: () {
@@ -271,11 +262,9 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
-                          child: Icon(
-                            Icons.phone_outlined,
-                            color: cyanDark,
-                          )
+                        Padding(
+                          padding: EdgeInsetsGeometry.only(top: 14),
+                          child: Icon(Icons.phone_outlined, color: cyanDark),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -294,24 +283,24 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                               if (value == null || value.isEmpty) {
                                 return '電話番号を入力してください';
                               }
-                              if (!RegExp(r'^\d{3}-\d{4}-\d{4}$').hasMatch(value)) {
+                              if (!RegExp(
+                                r'^\d{3}-\d{4}-\d{4}$',
+                              ).hasMatch(value)) {
                                 return '電話番号の形式が正しくありません';
                               }
-                                return null;
-                              },
+                              return null;
+                            },
                           ),
-                        ), 
-                      ],  
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 20),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
-                          child: Icon(
-                            Icons.work_outline,
-                            color: cyanDark,
-                          )
+                        Padding(
+                          padding: EdgeInsetsGeometry.only(top: 14),
+                          child: Icon(Icons.work_outline, color: cyanDark),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -326,8 +315,9 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                               FilteringTextInputFormatter.digitsOnly,
                               LengthLimitingTextInputFormatter(2),
                             ],
-                            validator: (v) =>
-                                v == null || v.isEmpty ? '入力してください' : null,
+                            validator:
+                                (v) =>
+                                    v == null || v.isEmpty ? '入力してください' : null,
                           ),
                         ),
                       ],
@@ -335,19 +325,14 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                     const SizedBox(height: 30),
                     Row(
                       children: [
-                        Padding(padding:  EdgeInsetsGeometry.only(top: 4),
-                          child: Icon(
-                            Icons.business_outlined,
-                            color: cyanDark,
-                          )
+                        Padding(
+                          padding: EdgeInsetsGeometry.only(top: 4),
+                          child: Icon(Icons.business_outlined, color: cyanDark),
                         ),
                         const SizedBox(width: 10),
                         const Text(
                           '現職業界',
-                          style: TextStyle(
-                            fontSize: 17,
-                            color: textCyanDark,
-                          ),
+                          style: TextStyle(fontSize: 17, color: textCyanDark),
                         ),
                       ],
                     ),
@@ -355,40 +340,47 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                     _isLoading
                         ? const CircularProgressIndicator()
                         : Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: _industryError.isNotEmpty
-                                    ? errorOrange
-                                    : cyanDark,
-                                width: 1.0,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color:
+                                  _industryError.isNotEmpty
+                                      ? errorOrange
+                                      : cyanDark,
+                              width: 1.0,
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Column(
-                              children: _industries.map((industry) {
-                                return CheckboxListTile(
-                                  title: Text(
-                                    industry['name'],
-                                    style: const TextStyle(
-                                      color: textCyanDark,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  value:
-                                      _selectedIndustryIds.contains(industry['id']),
-                                  activeColor: cyanDark,
-                                  onChanged: (v) {
-                                    setState(() {
-                                      v == true
-                                          ? _selectedIndustryIds.add(industry['id'])
-                                          : _selectedIndustryIds.remove(industry['id']);
-                                    });
-                                  },
-                                );
-                              }).toList(),
-                            ),
+                            borderRadius: BorderRadius.circular(8),
                           ),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Column(
+                            children:
+                                _industries.map((industry) {
+                                  return CheckboxListTile(
+                                    title: Text(
+                                      industry['name'],
+                                      style: const TextStyle(
+                                        color: textCyanDark,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    value: _selectedIndustryIds.contains(
+                                      industry['id'],
+                                    ),
+                                    activeColor: cyanDark,
+                                    onChanged: (v) {
+                                      setState(() {
+                                        v == true
+                                            ? _selectedIndustryIds.add(
+                                              industry['id'],
+                                            )
+                                            : _selectedIndustryIds.remove(
+                                              industry['id'],
+                                            );
+                                      });
+                                    },
+                                  );
+                                }).toList(),
+                          ),
+                        ),
 
                     if (_industryError.isNotEmpty)
                       Padding(
@@ -417,17 +409,18 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                           'email': _emailController.text,
                           'password': _passwordController.text,
                           'phoneNumber': _phoneNumberController.text,
-                          'societyHistory':
-                              int.parse(_societyHistoryController.text),
+                          'societyHistory': int.parse(
+                            _societyHistoryController.text,
+                          ),
                           'desiredIndustries': _selectedIndustryIds,
                           'type': 2,
                         });
 
                         try {
                           final res = await http.post(
-                            Uri.parse('http://localhost:8080/api/users'),
+                            Uri.parse('${ApiConfig.baseUrl}/api/users'),
                             headers: {
-                              'Content-Type': 'application/json; charset=UTF-8'
+                              'Content-Type': 'application/json; charset=UTF-8',
                             },
                             body: body,
                           );

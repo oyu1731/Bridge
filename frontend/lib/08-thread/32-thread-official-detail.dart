@@ -1,3 +1,4 @@
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -15,7 +16,8 @@ import '31-thread-list.dart';
 
 class ThreadOfficialDetail extends StatefulWidget {
   final Map<String, dynamic> thread;
-  const ThreadOfficialDetail({required this.thread, Key? key}) : super(key: key);
+  const ThreadOfficialDetail({required this.thread, Key? key})
+    : super(key: key);
 
   @override
   _ThreadOfficialDetailState createState() => _ThreadOfficialDetailState();
@@ -37,9 +39,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   Future<void> _loadUserInfo(String userId) async {
     if (_nicknameCache.containsKey(userId)) return;
 
-    final res = await http.get(
-      Uri.parse('$baseUrl/chat/user/$userId'),
-    );
+    final res = await http.get(Uri.parse('$baseUrl/chat/user/$userId'));
     if (res.statusCode != 200) return;
 
     final data = json.decode(res.body);
@@ -48,13 +48,11 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
 
     final iconId = data['icon'];
     if (iconId != null) {
-      final res2 = await http.get(
-        Uri.parse('$baseUrl/photos/$iconId'),
-      );
+      final res2 = await http.get(Uri.parse('$baseUrl/photos/$iconId'));
       if (res2.statusCode == 200) {
         final path = json.decode(res2.body)['photoPath'];
         if (path != null && path.toString().isNotEmpty) {
-          _userIconCache[userId] = "http://localhost:8080$path";
+          _userIconCache[userId] = "$baseUrl$path";
         } else {
           _userIconCache[userId] = null;
         }
@@ -82,9 +80,9 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   }
 
   //サインインしているユーザーのアイコンのURL
-  String? _currentUserIconUrl; 
+  String? _currentUserIconUrl;
   //initでユーザのIDを入れる
-  String currentUserId="";
+  String currentUserId = "";
   //読み込めたかどうかの判定
   //ユーザ情報取得
   Future<void> _loadCurrentUser() async {
@@ -93,18 +91,14 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     if (jsonString == null) return;
     final userData = jsonDecode(jsonString);
     currentUserId = userData['id'].toString();
-    final res = await http.get(
-      Uri.parse('$baseUrl/chat/user/$currentUserId'),
-    );
+    final res = await http.get(Uri.parse('$baseUrl/chat/user/$currentUserId'));
     if (res.statusCode == 200) {
       final iconId = json.decode(res.body)['icon'];
       if (iconId != null) {
-        final res2 = await http.get(
-          Uri.parse('$baseUrl/photos/$iconId'),
-        );
+        final res2 = await http.get(Uri.parse('$baseUrl/photos/$iconId'));
         if (res2.statusCode == 200) {
           final path = json.decode(res2.body)['photoPath'];
-          _currentUserIconUrl = "http://localhost:8080$path";
+          _currentUserIconUrl = "$baseUrl$path";
         }
       }
     }
@@ -115,14 +109,17 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
       currentUserId = userData['id'].toString();
     });
   }
+
   Map<String, String> _userNicknames = {};
   List<Map<String, dynamic>> _messages = [];
   String searchText = '';
   bool _isSending = false;
 
-  late final StreamController<List<Map<String, dynamic>>> _messageStreamController;
+  late final StreamController<List<Map<String, dynamic>>>
+  _messageStreamController;
   late final WebSocketChannel _channel;
-  final String baseUrl = 'http://localhost:8080/api';
+  final String baseUrl = '${ApiConfig.baseUrl}';
+  final String img_baseurl = '${ApiConfig.baseUrl}';
 
   File? _selectedImage;
   Uint8List? _webImageBytes;
@@ -132,12 +129,13 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   @override
   void initState() {
     super.initState();
-    _messageStreamController = StreamController<List<Map<String, dynamic>>>.broadcast();
+    _messageStreamController =
+        StreamController<List<Map<String, dynamic>>>.broadcast();
     _loadCurrentUser();
     _fetchMessages();
 
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://localhost:8080/ws/chat/${widget.thread['id']}'),
+      Uri.parse(ApiConfig.chatWebSocketUrl(widget.thread['id'])),
     );
 
     _channel.stream.listen((data) async{
@@ -153,10 +151,13 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
             'text': msg['content'],
             'created_at': msg['createdAt'],
             'photoId': msg['photoId'],
-            'userIconUrl': msg['userIconUrl'], 
+            'userIconUrl': msg['userIconUrl'],
           });
-          _messages.sort((a, b) =>
-              DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+          _messages.sort(
+            (a, b) => DateTime.parse(
+              a['created_at'],
+            ).compareTo(DateTime.parse(b['created_at'])),
+          );
           _messageStreamController.add(List.from(_messages));
 
           //ページを開いたときに下まで移動する（移動しないだめコメントアウト）
@@ -185,7 +186,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     final picker = ImagePicker();
     final XFile? picked = await picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 70,      //これをいれなきゃたまに画像が送れない（0〜100）
+      imageQuality: 70, //これをいれなきゃたまに画像が送れない（0〜100）
       //maxWidth: 1200,        // ← 大きすぎる画像を縮小
     );
     if (picked == null) return;
@@ -208,22 +209,26 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   Future<int?> uploadImage() async {
     if (_selectedImage == null && _webImageBytes == null) return null;
     setState(() => _isUploading = true);
-    final uri = Uri.parse('$baseUrl/photos/upload');
+    final uri = Uri.parse('$img_baseurl/photos/upload');
     final request = http.MultipartRequest('POST', uri);
     request.fields['userId'] = currentUserId;
     if (kIsWeb) {
-      request.files.add(http.MultipartFile.fromBytes(
-        'file',
-        _webImageBytes!,
-        filename: _webImageName ?? "upload.jpg",
-        //contentType: MediaType('image', 'jpeg'),
-      ));
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          _webImageBytes!,
+          filename: _webImageName ?? "upload.jpg",
+          //contentType: MediaType('image', 'jpeg'),
+        ),
+      );
     } else {
-      request.files.add(await http.MultipartFile.fromPath(
-        'file',
-        _selectedImage!.path,
-        //contentType: MediaType('image', 'jpeg'),
-      ));
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          _selectedImage!.path,
+          //contentType: MediaType('image', 'jpeg'),
+        ),
+      );
     }
 
     try {
@@ -255,12 +260,10 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
       return _photoUrlCache[photoId];
     }
 
-    final res = await http.get(
-      Uri.parse('$baseUrl/photos/$photoId'),
-    );
+    final res = await http.get(Uri.parse('$baseUrl/photos/$photoId'));
     if (res.statusCode == 200) {
       final path = json.decode(res.body)['photoPath'];
-      final url = "http://localhost:8080$path";
+      final url = "$baseUrl$path";
       _photoUrlCache[photoId] = url;
       return url;
     }
@@ -270,7 +273,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   Future<void> _fetchMessages() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/chat/${widget.thread['id']}/active')
+        Uri.parse('$baseUrl/chat/${widget.thread['id']}/active'),
       );
       // ⭐ ここが超重要
       if (response.statusCode == 410) {
@@ -293,9 +296,10 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
               'userIconUrl': _userIconCache[userId],
             });
           }
-          _messages.sort((a, b) =>
-            DateTime.parse(a['created_at'])
-                .compareTo(DateTime.parse(b['created_at']))
+          _messages.sort(
+            (a, b) => DateTime.parse(
+              a['created_at'],
+            ).compareTo(DateTime.parse(b['created_at'])),
           );
           _messageStreamController.add(List.from(_messages));
         }
@@ -318,13 +322,11 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
       //     print("これでアイコンの写真のパスが取得できる");
       //     print(json.decode(response2.body)['photoPath']);
       //     final iconPath = json.decode(response2.body)['photoPath'];
-      //     userIconUrl = "http://localhost:8080$iconPath";
       //     // アイコンIDがあればURLを取得
       //     // if (msg['userIconId'] != null) {
       //     //   final iconResponse = await http.get(Uri.parse('$baseUrl/photos/${msg['userIconId']}'));
       //     //   if (iconResponse.statusCode == 200) {
       //     //     final iconData = json.decode(iconResponse.body);
-      //     //     userIconUrl = "http://localhost:8080/photos/${iconData['photoPath']}";
       //     //   }
       //     // }
       //     // メッセージリストに追加
@@ -372,23 +374,24 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text('スレッドが削除されました'),
-        content: const Text('このスレッドは既に存在しません。'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => ThreadList()),
-                (route) => false,
-              );
-            },
-            child: const Text('一覧へ戻る'),
+      builder:
+          (_) => AlertDialog(
+            title: const Text('スレッドが削除されました'),
+            content: const Text('このスレッドは既に存在しません。'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => ThreadList()),
+                    (route) => false,
+                  );
+                },
+                child: const Text('一覧へ戻る'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -400,9 +403,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
       builder: (context) {
         return AlertDialog(
           title: const Text('ログインが必要です'),
-          content: const Text(
-            'ログイン状態が切れています。\nもう一度サインインしてください。',
-          ),
+          content: const Text('ログイン状態が切れています。\nもう一度サインインしてください。'),
           actions: [
             TextButton(
               onPressed: () async {
@@ -440,9 +441,9 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     final text_check = _messageController.text.trim();
 
     if (text_check.length > 255) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('メッセージは255文字以内で入力してください')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('メッセージは255文字以内で入力してください')));
       return;
     }
     // if (currentUserId.isEmpty) {
@@ -453,7 +454,8 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     // }
     if (_isSending) return;
     final text = _messageController.text.trim();
-    if (text.isEmpty && _selectedImage == null && _webImageBytes == null) return;
+    if (text.isEmpty && _selectedImage == null && _webImageBytes == null)
+      return;
     setState(() => _isSending = true);
 
     int? photoId;
@@ -485,8 +487,11 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
           'photoId': msg['photoId'],
           'userIconUrl': _currentUserIconUrl,
         });
-        _messages.sort((a, b) =>
-            DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+        _messages.sort(
+          (a, b) => DateTime.parse(
+            a['created_at'],
+          ).compareTo(DateTime.parse(b['created_at'])),
+        );
         _messageStreamController.add(List.from(_messages));
 
         _messageController.clear();
@@ -496,10 +501,9 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
           _webImageName = null;
         });
 
-        _channel.sink.add(json.encode({
-          ...msg,
-          'userIconUrl': _currentUserIconUrl,
-        }));
+        _channel.sink.add(
+          json.encode({...msg, 'userIconUrl': _currentUserIconUrl}),
+        );
 
         //自動スクロール
         _scrollToBottom(); 
@@ -509,6 +513,11 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('スレッドが見つかりません')),
         );
+      //   _scrollToBottom();
+      // } else if (response.statusCode == 404 || response.statusCode == 410) {
+      //   _showThreadDeletedDialog();
+      // } else {
+      //   print("Send failed: ${response.statusCode}");
       }
     } catch (e) {
       print("Send error: $e");
@@ -534,22 +543,22 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("通報しました")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("通報しました")));
       } else if (response.statusCode == 400) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("このチャットはすでに通報済みです")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("このチャットはすでに通報済みです")));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("通報に失敗しました")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("通報に失敗しました")));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("通信エラーが発生しました")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("通信エラーが発生しました")));
     }
   }
 
@@ -558,9 +567,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     if (_userNicknames.containsKey(userId)) return _userNicknames[userId]!;
 
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/chat/user/$userId'),
-      );
+      final response = await http.get(Uri.parse('$baseUrl/chat/user/$userId'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final nickname = data['nickname'] ?? 'Unknown';
@@ -585,8 +592,10 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(widget.thread['title'] ?? 'スレッド',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    widget.thread['title'] ?? 'スレッド',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                 ),
                 IconButton(
                   icon: Icon(Icons.arrow_downward),
@@ -613,9 +622,14 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
               initialData: _messages,
               builder: (context, snapshot) {
                 final items = snapshot.data!;
-                final filtered = items
-                    .where((m) => searchText.isEmpty || m['text'].contains(searchText))
-                    .toList();
+                final filtered =
+                    items
+                        .where(
+                          (m) =>
+                              searchText.isEmpty ||
+                              m['text'].contains(searchText),
+                        )
+                        .toList();
                 return ListView.builder(
                   controller: _scrollController,
                   itemCount: filtered.length,
@@ -631,14 +645,17 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                     final typeLabel = _typeLabel(userType);
 
                     return Align(
-                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment:
+                          isMe ? Alignment.centerRight : Alignment.centerLeft,
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
                           maxWidth: MediaQuery.of(context).size.width * 0.7,
                         ),
                         child: Column(
                           crossAxisAlignment:
-                              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                              isMe
+                                  ? CrossAxisAlignment.end
+                                  : CrossAxisAlignment.start,
                           children: [
                             Padding(
                               padding: const EdgeInsets.only(bottom: 2.0),
@@ -646,25 +663,30 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   ClipOval(
-                                    child: iconUrl != null && iconUrl.isNotEmpty
-                                        ? Image.network(
-                                            iconUrl,
-                                            width: 16,
-                                            height: 16,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return const Icon(
-                                                Icons.account_circle_outlined,
-                                                size: 16,
-                                                color: Color(0xFF616161),
-                                              );
-                                            },
-                                          )
-                                        : const Icon(
-                                            Icons.account_circle_outlined,
-                                            size: 16,
-                                            color: Color(0xFF616161),
-                                          ),
+                                    child:
+                                        iconUrl != null && iconUrl.isNotEmpty
+                                            ? Image.network(
+                                              iconUrl,
+                                              width: 16,
+                                              height: 16,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (
+                                                context,
+                                                error,
+                                                stackTrace,
+                                              ) {
+                                                return const Icon(
+                                                  Icons.account_circle_outlined,
+                                                  size: 16,
+                                                  color: Color(0xFF616161),
+                                                );
+                                              },
+                                            )
+                                            : const Icon(
+                                              Icons.account_circle_outlined,
+                                              size: 16,
+                                              color: Color(0xFF616161),
+                                            ),
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
@@ -673,11 +695,16 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                     ),
-                                  ),/// 👇 タイプバッジ（自分以外 & typeがある時だけ）
+                                  ),
+
+                                  /// 👇 タイプバッジ（自分以外 & typeがある時だけ）
                                   if (!isMe && typeLabel.isNotEmpty) ...[
                                     const SizedBox(width: 4),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: Colors.black,
                                         borderRadius: BorderRadius.circular(8),
@@ -691,15 +718,19 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                                         ),
                                       ),
                                     ),
-                                  ]
+                                  ],
                                 ],
                               ),
                             ),
                             Container(
                               margin: EdgeInsets.symmetric(vertical: 4),
-                              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                              padding: EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 12,
+                              ),
                               decoration: BoxDecoration(
-                                color: isMe ? Colors.green[300] : Colors.grey[200],
+                                color:
+                                    isMe ? Colors.green[300] : Colors.grey[200],
                                 borderRadius: BorderRadius.only(
                                   topLeft: Radius.circular(12),
                                   topRight: Radius.circular(12),
@@ -710,28 +741,43 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                               //コメントのコンテナ
                               child: Column(
                                 crossAxisAlignment:
-                                    isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                    isMe
+                                        ? CrossAxisAlignment.end
+                                        : CrossAxisAlignment.start,
                                 children: [
                                   if (msg['photoId'] != null) ...[
                                     FutureBuilder(
                                       future: fetchPhotoUrl(msg['photoId']),
                                       builder: (context, snapshot) {
                                         if (!snapshot.hasData) {
-                                          return SizedBox(width: 200, height: 200); // プレースホルダー
+                                          return SizedBox(
+                                            width: 200,
+                                            height: 200,
+                                          ); // プレースホルダー
                                         }
                                         return Padding(
-                                          padding: const EdgeInsets.only(bottom: 8.0),
+                                          padding: const EdgeInsets.only(
+                                            bottom: 8.0,
+                                          ),
                                           child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                             child: GestureDetector(
                                               onTap: () {
                                                 showDialog(
                                                   context: context,
-                                                  builder: (_) => Dialog(
-                                                    child: InteractiveViewer(
-                                                      child: Image.network(snapshot.data!),
-                                                    ),
-                                                  ),
+                                                  builder:
+                                                      (_) => Dialog(
+                                                        child:
+                                                            InteractiveViewer(
+                                                              child:
+                                                                  Image.network(
+                                                                    snapshot
+                                                                        .data!,
+                                                                  ),
+                                                            ),
+                                                      ),
                                                 );
                                               },
                                               child: Image.network(
@@ -753,22 +799,21 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                                       if (!isMe)
                                         PopupMenuButton<String>(
                                           onSelected: (value) {
-                                            if (value == 'report') _reportMessage(msg);
+                                            if (value == 'report')
+                                              _reportMessage(msg);
                                           },
-                                          itemBuilder: (context) => [
-                                            PopupMenuItem(
-                                              value: 'report',
-                                              child: Text('通報する'),
-                                            ),
-                                          ],
+                                          itemBuilder:
+                                              (context) => [
+                                                PopupMenuItem(
+                                                  value: 'report',
+                                                  child: Text('通報する'),
+                                                ),
+                                              ],
                                         ),
                                     ],
                                   ),
                                   SizedBox(height: 4),
-                                  Text(
-                                    timeStr,
-                                    style: TextStyle(fontSize: 10),
-                                  ),
+                                  Text(timeStr, style: TextStyle(fontSize: 10)),
                                 ],
                               ),
                             ),
@@ -790,9 +835,20 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: kIsWeb
-                          ? Image.memory(_webImageBytes!, width: 120, height: 120, fit: BoxFit.cover)
-                          : Image.file(_selectedImage!, width: 120, height: 120, fit: BoxFit.cover),
+                      child:
+                          kIsWeb
+                              ? Image.memory(
+                                _webImageBytes!,
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.cover,
+                              )
+                              : Image.file(
+                                _selectedImage!,
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.cover,
+                              ),
                     ),
                     Positioned(
                       right: 0,
@@ -808,10 +864,14 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                         child: CircleAvatar(
                           radius: 12,
                           backgroundColor: Colors.black54,
-                          child: Icon(Icons.close, size: 16, color: Colors.white),
+                          child: Icon(
+                            Icons.close,
+                            size: 16,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -839,9 +899,14 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                   ),
                 ),
                 IconButton(
-                  icon: _isSending
-                      ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                      : Icon(Icons.send, color: Colors.blue),
+                  icon:
+                      _isSending
+                          ? SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : Icon(Icons.send, color: Colors.blue),
                   onPressed: _isSending ? null : _sendMessage,
                 ),
               ],

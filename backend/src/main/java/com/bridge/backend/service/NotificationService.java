@@ -3,6 +3,8 @@ package com.bridge.backend.service;
 import com.bridge.backend.dto.NotificationDto;
 import com.bridge.backend.entity.Notification;
 import com.bridge.backend.repository.NotificationRepository;
+import com.bridge.backend.repository.UserRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,9 @@ public class NotificationService {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     public List<NotificationDto> getNotifications() {
         List<Notification> notifications = notificationRepository.findByIsDeletedFalse();
 
@@ -28,7 +33,8 @@ public class NotificationService {
                 n.getCategory(),
                 n.getUserId(),
                 n.getReservationTime(),
-                n.getSendFlag()
+                n.getSendFlag(),
+                n.getSendFlagInt()
             )).toList();
     }
 
@@ -56,7 +62,8 @@ public class NotificationService {
             n.getCategory(),
             n.getUserId(),
             n.getReservationTime(),
-            n.getSendFlag()
+            n.getSendFlag(),
+            n.getSendFlagInt()
         )).toList();
     }
 
@@ -88,6 +95,10 @@ public class NotificationService {
         if (type == 8) {
             if (userId == null) {
                 throw new IllegalArgumentException("個人宛の場合はユーザーIDが必要です");
+            }
+            
+            if (!userRepository.existsById(userId)) {
+                throw new IllegalArgumentException("このユーザーIDは無効です");
             }
         } else {
             notification.setUserId(null); // type 1～7 の場合は userId は null

@@ -1,3 +1,4 @@
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -84,7 +85,7 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
   Future<void> _fetchSubscription(int userId) async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:8080/api/subscriptions/user/$userId'),
+        Uri.parse('${ApiConfig.baseUrl}/api/subscriptions/user/$userId'),
       );
 
       if (response.statusCode == 200) {

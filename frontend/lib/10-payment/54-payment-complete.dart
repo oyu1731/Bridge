@@ -1,13 +1,24 @@
-import 'package:bridge/06-company/api_config.dart';
+import 'package:bridge/11-common/url.dart' as url;
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:bridge/03-home/09-company-home.dart';
 import 'package:bridge/03-home/08-student-worker-home.dart';
+import 'package:bridge/02-auth/05-sign-in.dart';
+import 'package:bridge/main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:js' as js;
+import 'dart:html' as html;
+
+// ===============================
+// セッション保存関数
+// ===============================
+Future<void> saveSession(dynamic userData) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('current_user', jsonEncode(userData));
+}
 
 // ===============================
 // 決済完了画面（軽量版）
@@ -51,97 +62,130 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
       });
     });
 
-    // 決済完了後はまず session_id があればバックエンドからユーザー情報を取得して保存してから遷移する
     _handleSessionAndNavigate();
   }
 
+  // ===============================
+  // ✅ 決済完了後のユーザー取得 → URLリセットしてトップへ
+  // ===============================
   Future<void> _handleSessionAndNavigate() async {
-    // 1) 優先順: widget.userType -> query param
-    String userType = widget.userType ?? '';
-    if (userType.isEmpty) userType = Uri.base.queryParameters['userType'] ?? '';
+    final sessionId = _extractSessionId();
 
-    // extract session_id (query parameters)
-    String? sessionId = Uri.base.queryParameters['session_id'];
-
-    if (sessionId != null && sessionId.isNotEmpty) {
-      // Poll backend for user info (webhook may not have finished yet)
-      const int maxAttempts = 6;
-      int attempt = 0;
-      Map<String, dynamic>? user;
-      while (attempt < maxAttempts && mounted) {
-        try {
-          final res = await http.get(
-            Uri.parse(
-              'http://localhost:8080/api/v1/payment/session/$sessionId',
-              // '${ApiConfig.baseUrl}/api/v1/payment/session/$sessionId',
-            ),
-          );
-          if (res.statusCode == 200) {
-            user = jsonDecode(res.body) as Map<String, dynamic>;
-            break;
-          }
-        } catch (_) {
-          // ignore and retry
-        }
-        attempt++;
-        await Future.delayed(const Duration(seconds: 1));
-      }
-
-      if (user != null) {
-        // save to SharedPreferences
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('current_user', jsonEncode(user));
-      }
+    if (sessionId == null || sessionId.isEmpty) {
+      print('❌ session_id がありません');
+      return;
     }
 
-    // 完了ページを表示し続ける（自動遷移しない）
-  }
+    print('✅ 取得した session_id = $sessionId');
 
-  void _navigateByUserType(String userType) {
-    String message;
-    Widget nextPage;
+    const int maxAttempts = 6;
+    int attempt = 0;
+    Map<String, dynamic>? user;
 
-    switch (userType) {
-      case '学生':
-      case 'student':
-        message = '決済が完了しました。ご利用ありがとうございます！';
-        nextPage = StudentWorkerHome(initialMessage: message);
-        break;
-      case '社会人':
-      case 'worker':
-        message = '決済が完了しました。ご利用ありがとうございます！';
-        nextPage = StudentWorkerHome(initialMessage: message);
-        break;
-      case 'company':
-      case '企業':
-      default:
-        message = '企業アカウントの登録と決済が完了しました。ありがとうございます！';
-        nextPage = CompanyHome(initialMessage: message);
-    }
-
-    // URLリセットなしで遷移実行
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => nextPage),
-      (route) => false,
-    );
-  }
-
-  // ホームへ戻る時にURLをリセット
-  void _resetUrlAndNavigateHome() {
-    // URLリセット
-    if (kIsWeb) {
+    while (attempt < maxAttempts && mounted) {
       try {
-        js.context.callMethod('eval', [
-          'window.history.replaceState({}, "", "/")',
-        ]);
-      } catch (e) {
-        print('URL reset failed: $e');
-      }
+        final res = await http.get(
+          Uri.parse(
+            '${url.ApiConfig.frontendUrl}/api/v1/payment/session/$sessionId',
+          ),
+        );
+        if (res.statusCode == 200) {
+          user = jsonDecode(res.body) as Map<String, dynamic>;
+          break;
+        }
+      } catch (_) {}
+      attempt++;
+      await Future.delayed(const Duration(seconds: 1));
     }
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const CompanyHome()),
-      (route) => false,
+
+    if (user == null) {
+      print('❌ ユーザー情報取得失敗');
+      return;
+    }
+
+    print('✅ ユーザーID: ${user['id']}を取得');
+
+    // ✅ バックエンド側でセッション保存
+    try {
+      final loginRes = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/auth/login-by-id/${user['id']}'),
+      );
+      if (loginRes.statusCode == 200) {
+        final sessionUser = jsonDecode(loginRes.body);
+        await saveSession(sessionUser);
+        print('✅ バックエンドセッション保存完了: userId=${user['id']}');
+      } else {
+        print('⚠️ バックエンドセッション保存エラー: ${loginRes.statusCode}');
+      }
+    } catch (e) {
+      print('⚠️ バックエンドセッション保存例外: $e');
+    }
+
+    final resolvedUserType = _normalizeUserType(
+      user['userType'] ?? user['type'] ?? widget.userType,
     );
+
+    print('✅ 解決された userType = $resolvedUserType');
+
+    // 🔥 Flutter Webのルーター干渉を完全に避けるため次フレームでURLリセット
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (mounted) {
+      _resetUrlAndNavigateHome();
+    }
+  }
+
+  // ===============================
+  // ✅ hashルーティング対応 session_id 抽出
+  // ===============================
+  String? _extractSessionId() {
+    final uri = Uri.base;
+
+    // ① 通常クエリ (?session_id=)
+    if (uri.queryParameters['session_id'] != null) {
+      return uri.queryParameters['session_id'];
+    }
+
+    // ② Flutter Web hash (#/payment-success?session_id=)
+    final fragment = uri.fragment;
+    if (fragment.contains('?')) {
+      final fragmentUri = Uri.parse('https://dummy/$fragment');
+      return fragmentUri.queryParameters['session_id'];
+    }
+
+    return null;
+  }
+
+  // ===============================
+  // ✅ 表記ゆれ統一
+  // ===============================
+  String _normalizeUserType(dynamic raw) {
+    final value = raw?.toString().toLowerCase().trim() ?? '';
+
+    if (['student', '学生'].contains(value)) return 'student';
+    if (['worker', '社会人'].contains(value)) return 'worker';
+    if (['company', '企業'].contains(value)) return 'company';
+
+    print('⚠️ 未知の userType: $raw → company 扱い');
+    return 'company';
+  }
+
+  // ===============================
+  // 🔥 URLを確実に http://localhost:5000/ にしてトップへ
+  // （自動遷移・ボタン両対応 / Flutter Web完全対応）
+  // ===============================
+  void _resetUrlAndNavigateHome() {
+    if (kIsWeb) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.microtask(() {
+          html.window.location.replace('${ApiConfig.baseUrl}');
+        });
+      });
+    } else {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const CompanyHome()),
+        (route) => false,
+      );
+    }
   }
 
   @override
@@ -272,9 +316,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
                           ),
                           SizedBox(height: isMobile ? 24 : 40),
                           ElevatedButton(
-                            onPressed: () {
-                              _resetUrlAndNavigateHome();
-                            },
+                            onPressed: _resetUrlAndNavigateHome,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                               padding: EdgeInsets.symmetric(
@@ -287,15 +329,10 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.home),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'ホームに戻る',
-                                  style: TextStyle(
-                                    fontSize: isMobile ? 16 : 18,
-                                  ),
-                                ),
+                              children: const [
+                                Icon(Icons.home),
+                                SizedBox(width: 8),
+                                Text('ホームに戻る', style: TextStyle(fontSize: 18)),
                               ],
                             ),
                           ),
@@ -319,6 +356,21 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
 // ===============================
 class PaymentCancelScreen extends StatelessWidget {
   const PaymentCancelScreen({Key? key}) : super(key: key);
+
+  void _resetUrlAndNavigateHome(BuildContext context) {
+    if (kIsWeb) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.microtask(() {
+          html.window.location.replace('${ApiConfig.baseUrl}');
+        });
+      });
+    } else {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const CompanyHome()),
+        (route) => false,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -366,12 +418,7 @@ class PaymentCancelScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 40),
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const CompanyHome()),
-                      (route) => false,
-                    );
-                  },
+                  onPressed: () => _resetUrlAndNavigateHome(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     padding: const EdgeInsets.symmetric(
@@ -394,7 +441,7 @@ class PaymentCancelScreen extends StatelessWidget {
 }
 
 // ===============================
-// チェックマークPainter（そのまま）
+// チェックマークPainter
 // ===============================
 class CheckmarkPainter extends CustomPainter {
   final double progress;

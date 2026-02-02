@@ -3,8 +3,10 @@ package com.bridge.backend.service;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
+import com.bridge.backend.entity.Company;
 import com.bridge.backend.entity.Subscription;
 import com.bridge.backend.entity.User;
+import com.bridge.backend.repository.CompanyRepository;
 import com.bridge.backend.repository.SubscriptionRepository;
 import com.bridge.backend.repository.UserRepository;
 import com.stripe.param.checkout.SessionCreateParams;
@@ -25,13 +27,15 @@ public class PaymentService {
     private String stripeSecretKey;
 
     private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final UserService userService;
     private final com.bridge.backend.repository.TempCompanySignupRepository tempSignupRepository;
 
     @Autowired
-    public PaymentService(UserRepository userRepository, SubscriptionRepository subscriptionRepository, UserService userService, com.bridge.backend.repository.TempCompanySignupRepository tempSignupRepository) {
+    public PaymentService(UserRepository userRepository, CompanyRepository companyRepository, SubscriptionRepository subscriptionRepository, UserService userService, com.bridge.backend.repository.TempCompanySignupRepository tempSignupRepository) {
         this.userRepository = userRepository;
+        this.companyRepository = companyRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.userService = userService;
         this.tempSignupRepository = tempSignupRepository;
@@ -191,17 +195,9 @@ public class PaymentService {
         return responseData;
     }
 
-    // 企業アカウント作成（Webhook から呼ばれる）
+    // 企業アカウント作成（Webhook から呼ばれる）→ 作成されたユーザーID を返す
     @Transactional
-    public void createCompanyAccount(String companyName, String companyEmail, Map<String, String> metadata) {
-        // TODO: 実運用ではここで User を作成し、必要であればメール送信や初期値設定を行う
-        // --- 参考の処理例 ---
-        // 1) userRepository に email が既に存在するか確認（既存なら更新）
-        // 2) 存在しなければ User を新規作成し planStatus や token を設定して保存
-        // 3) Subscription レコードを作成して保存（企業は 1 年など）
-        //
-        // ※ repository のメソッド名（例: findByEmail）がプロジェクト依存のため、実装に合わせて修正してください。
-
+    public Integer createCompanyAccount(String companyName, String companyEmail, Map<String, String> metadata) {
         System.out.println("Creating company account for: " + companyName + ", Email: " + companyEmail);
 
         if (metadata != null) {
@@ -215,12 +211,12 @@ public class PaymentService {
         if (metadata != null && metadata.get("tempId") != null) {
             try {
                 Integer tempId = Integer.valueOf(metadata.get("tempId"));
-                tempSignupRepository.findById(tempId).ifPresent(temp -> {
+                return tempSignupRepository.findById(tempId).map(temp -> {
                     try {
                         String email = temp.getEmail();
                         if (email != null && userRepository.existsByEmail(email)) {
                             // 既存ユーザーを企業として更新し、サブスクリプションを作成
-                            userRepository.findByEmail(email).ifPresent(existing -> {
+                            return userRepository.findByEmail(email).map(existing -> {
                                 existing.setType(3);
                                 existing.setPlanStatus("プレミアム");
                                 existing.setToken((existing.getToken() != null ? existing.getToken() : 0) + 500);
@@ -234,9 +230,10 @@ public class PaymentService {
                                 subscription.setIsPlanStatus(true);
                                 subscription.setCreatedAt(java.time.LocalDateTime.now());
                                 subscriptionRepository.save(subscription);
-                                System.out.println("Updated existing user and created subscription for email(from temp): " + email);
-                            });
-                            tempSignupRepository.deleteById(tempId);
+                                System.out.println("✅ Updated existing user and created subscription for email: " + email + ", userId=" + existing.getId());
+                                tempSignupRepository.deleteById(tempId);
+                                return existing.getId();
+                            }).orElse(null);
                         } else {
                             com.bridge.backend.dto.UserDto dto = new com.bridge.backend.dto.UserDto();
                             dto.setType(3);
@@ -249,14 +246,15 @@ public class PaymentService {
                             dto.setCompanyPhoneNumber(temp.getCompanyPhoneNumber());
 
                             User created = userService.createUser(dto);
-                            System.out.println("Created company user from temp signup id=" + created.getId());
+                            System.out.println("✅ Created company user from temp signup id=" + created.getId());
                             tempSignupRepository.deleteById(tempId);
+                            return created.getId();
                         }
                     } catch (Exception ex) {
                         System.err.println("Error creating user from temp signup: " + ex.getMessage());
+                        return null;
                     }
-                });
-                return;
+                }).orElse(null);
             } catch (NumberFormatException nfe) {
                 System.err.println("Invalid tempId in metadata: " + metadata.get("tempId"));
             }
@@ -264,11 +262,28 @@ public class PaymentService {
 
         if (companyEmail != null && userRepository.existsByEmail(companyEmail)) {
             // 既存ユーザーをアップデート（企業ユーザーとしてマークし、サブスクリプションを追加）
-            userRepository.findByEmail(companyEmail).ifPresent(user -> {
+            Integer userId = userRepository.findByEmail(companyEmail).map(user -> {
                 user.setPlanStatus("プレミアム");
                 user.setToken((user.getToken() != null ? user.getToken() : 0) + 500);
                 // type を 3 (企業) に設定
                 user.setType(3);
+
+                // ✅ 企業情報を作成して companyId を設定
+                if (user.getCompanyId() == null) {
+                    Company company = new Company();
+                    company.setName(companyName != null ? companyName : companyEmail);
+                    company.setAddress(metadata != null && metadata.get("companyAddress") != null ? metadata.get("companyAddress") : "");
+                    company.setPhoneNumber(metadata != null && metadata.get("companyPhone") != null ? metadata.get("companyPhone") : "");
+                    company.setDescription("");
+                    company.setPlanStatus(1); // 1=プレミアム、2=無料
+                    company.setIsWithdrawn(false);
+                    company.setCreatedAt(java.time.LocalDateTime.now());
+
+                    Company savedCompany = companyRepository.save(company);
+                    user.setCompanyId(savedCompany.getId());
+                    System.out.println("✅ Created company for existing user: companyId=" + savedCompany.getId());
+                }
+
                 userRepository.save(user);
 
                 // サブスクリプションを作成
@@ -280,9 +295,10 @@ public class PaymentService {
                 subscription.setIsPlanStatus(true);
                 subscription.setCreatedAt(java.time.LocalDateTime.now());
                 subscriptionRepository.save(subscription);
-                System.out.println("Updated existing user and created subscription for email: " + companyEmail);
-            });
-            return;
+                System.out.println("✅ Updated existing user and created subscription for email: " + companyEmail + ", userId=" + user.getId());
+                return user.getId();
+            }).orElse(null);
+            return userId;
         }
 
         // 新規ユーザー作成: UserService#createUser を利用する
@@ -307,8 +323,9 @@ public class PaymentService {
             }
 
             User created = userService.createUser(dto);
-            System.out.println("Created new company user id=" + created.getId() + " email=" + created.getEmail());
+            System.out.println("✅ Created new company user id=" + created.getId() + " email=" + created.getEmail());
             System.out.println("Temporary password (please deliver securely): " + tempPassword);
+            return created.getId();
         } catch (Exception e) {
             System.err.println("Error creating company account: " + e.getMessage());
             throw e;

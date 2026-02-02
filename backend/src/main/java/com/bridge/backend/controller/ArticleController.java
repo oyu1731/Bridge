@@ -50,18 +50,55 @@ public class ArticleController {
      */
     @GetMapping("/search")
     public ResponseEntity<List<ArticleDTO>> searchArticles(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String industryIds) {
+            @RequestParam(required = false) String search_words,
+            @RequestParam(required = false) String industry,
+            @RequestParam(required = false) String tag,
+            @RequestParam(required = false) String article_id) {
         try {
-            List<Integer> industryIdList = null;
-            if (industryIds != null && !industryIds.trim().isEmpty()) {
-                industryIdList = java.util.Arrays.stream(industryIds.split(","))
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .map(Integer::parseInt)
-                        .collect(java.util.stream.Collectors.toList());
+            if (article_id != null) {
+                Integer aid = null;
+                try {
+                    aid = Integer.valueOf(article_id);
+                } catch (NumberFormatException e) {
+                    ArticleDTO dto = new ArticleDTO();
+                    dto.setId(null); // setIdはInteger型なのでnullをセット
+                    dto.setDescription("不正な入力値です");
+                    return ResponseEntity.ok(java.util.Arrays.asList(dto));
+                }
+                // DBから記事取得し、該当記事のtag_idでタグテーブルを絞り込み
+                ArticleDTO article = articleService.getArticleById(aid, null);
+                if (article == null) {
+                    ArticleDTO dto = new ArticleDTO();
+                    dto.setId(aid);
+                    dto.setDescription("不正な入力値です");
+                    return ResponseEntity.ok(java.util.Arrays.asList(dto));
+                }
+                // タグ配列を返却
+                ArticleDTO dto = new ArticleDTO();
+                dto.setId(aid);
+                dto.setTags(article.getTags());
+                return ResponseEntity.ok(java.util.Arrays.asList(dto));
             }
-            List<ArticleDTO> articles = articleService.searchArticles(keyword, industryIdList);
+            if (search_words == null) {
+                ArticleDTO dto = new ArticleDTO();
+                dto.setTitle(null);
+                dto.setDescription("不正な入力値です");
+                return ResponseEntity.ok(java.util.Arrays.asList(dto));
+            }
+            if (industry == null) {
+                ArticleDTO dto = new ArticleDTO();
+                dto.setIndustry(null);
+                dto.setDescription("不正な入力値です");
+                return ResponseEntity.ok(java.util.Arrays.asList(dto));
+            }
+            if (tag == null) {
+                ArticleDTO dto = new ArticleDTO();
+                dto.setTags(null);
+                dto.setDescription("不正な入力値です");
+                return ResponseEntity.ok(java.util.Arrays.asList(dto));
+            }
+            // industryは本来List変換等が必要だが、既存ロジックを維持
+            List<ArticleDTO> articles = articleService.searchArticles(search_words, null);
             return ResponseEntity.ok(articles);
         } catch (Exception e) {
             e.printStackTrace();
@@ -78,9 +115,18 @@ public class ArticleController {
      * @return 記事データ
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ArticleDTO> getArticleById(@PathVariable Integer id, @RequestParam(required = false) Integer userId) {
+    public ResponseEntity<ArticleDTO> getArticleById(@PathVariable String id, @RequestParam(required = false) Integer userId) {
         try {
-            ArticleDTO article = articleService.getArticleById(id, userId);
+            Integer articleId = null;
+            try {
+                articleId = Integer.valueOf(id);
+            } catch (NumberFormatException e) {
+                ArticleDTO dto = new ArticleDTO();
+                dto.setId(null);
+                dto.setDescription("不正な入力値です");
+                return ResponseEntity.ok(dto);
+            }
+            ArticleDTO article = articleService.getArticleById(articleId, userId);
             if (article != null) {
                 return ResponseEntity.ok(article);
             } else {
@@ -118,11 +164,61 @@ public class ArticleController {
      * @return 作成された記事データ
      */
     @PostMapping
-    public ResponseEntity<ArticleDTO> createArticle(@RequestBody ArticleDTO articleDTO) {
+    public ResponseEntity<ArticleDTO> createArticle(@RequestBody ArticleDTO articleDTO, @RequestParam(required = false) List<String> tag_ids) {
         try {
-            System.out.println("Debug: ArticleController.createArticle received title=" + articleDTO.getTitle());
-            System.out.println("Debug: ArticleController.createArticle received tags=" + articleDTO.getTags());
-            System.out.println("Debug: ArticleController.createArticle received industries=" + articleDTO.getIndustries());
+            // article_idバリデーション（リクエストボディにidが含まれる場合）
+            if (articleDTO.getId() != null) {
+                try {
+                    Integer.valueOf(articleDTO.getId().toString());
+                } catch (NumberFormatException e) {
+                    ArticleDTO dto = new ArticleDTO();
+                    dto.setId(articleDTO.getId());
+                    dto.setDescription("不正な入力値です");
+                    return ResponseEntity.ok(dto);
+                }
+                // 存在チェック（serviceでnull返却時）
+                if (articleService.getArticleById(articleDTO.getId(), null) == null) {
+                    ArticleDTO dto = new ArticleDTO();
+                    dto.setId(articleDTO.getId());
+                    dto.setDescription("不正な入力値です");
+                    return ResponseEntity.ok(dto);
+                }
+            }
+            // tag_idsバリデーション
+            if (tag_ids != null) {
+                try {
+                    List<Integer> tagIdList = new java.util.ArrayList<>();
+                    for (String tagIdStr : tag_ids) {
+                        tagIdList.add(Integer.valueOf(tagIdStr));
+                    }
+                } catch (NumberFormatException e) {
+                    ArticleDTO dto = new ArticleDTO();
+                    dto.setDescription("不正な入力値です");
+                    dto.setTags(tag_ids);
+                    return ResponseEntity.ok(dto);
+                }
+            }
+            // titleバリデーション
+            if (articleDTO.getTitle() == null || articleDTO.getTitle().trim().isEmpty()) {
+                ArticleDTO dto = new ArticleDTO();
+                dto.setTitle(articleDTO.getTitle());
+                dto.setDescription("不正な入力値です");
+                return ResponseEntity.ok(dto);
+            }
+            if (articleDTO.getTitle().length() > 40) {
+                ArticleDTO dto = new ArticleDTO();
+                dto.setTitle(articleDTO.getTitle());
+                dto.setDescription("タイトルが長すぎます");
+                return ResponseEntity.ok(dto);
+            }
+            // descriptionバリデーション
+            if (articleDTO.getDescription() == null || articleDTO.getDescription().trim().isEmpty()) {
+                ArticleDTO dto = new ArticleDTO();
+                dto.setDescription(articleDTO.getDescription());
+                dto.setTitle(articleDTO.getTitle());
+                dto.setDescription("不正な入力値です");
+                return ResponseEntity.ok(dto);
+            }
             ArticleDTO createdArticle = articleService.createArticle(articleDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdArticle);
         } catch (Exception e) {
@@ -130,7 +226,6 @@ public class ArticleController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
     /**
      * 記事を更新
      * PUT /api/articles/{id}

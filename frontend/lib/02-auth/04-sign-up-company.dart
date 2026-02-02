@@ -1,8 +1,10 @@
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bridge/config/postcodejp_api.dart';
 
 import 'package:bridge/main.dart';
 import 'package:bridge/03-home/09-company-home.dart';
@@ -42,17 +44,9 @@ class PhoneNumberFormatter extends TextInputFormatter {
     }
 
     int selectionIndex = newValue.selection.baseOffset;
-
-    if (digits.length >= 4 && selectionIndex > 3) {
-      selectionIndex++;
-    }
-    if (digits.length >= 7 && selectionIndex > 8) {
-      selectionIndex++;
-    }
-
-    if (selectionIndex > formatted.length) {
-      selectionIndex = formatted.length;
-    }
+    if (digits.length >= 4 && selectionIndex > 3) selectionIndex++;
+    if (digits.length >= 7 && selectionIndex > 8) selectionIndex++;
+    if (selectionIndex > formatted.length) selectionIndex = formatted.length;
 
     return TextEditingValue(
       text: formatted,
@@ -69,6 +63,9 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _phoneNumberController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _postcodeController = TextEditingController();
+
+  bool _isFetchingAddress = false;
 
   List<Map<String, dynamic>> _industries = [];
   List<int> _selectedIndustryIds = [];
@@ -90,12 +87,12 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
     _fetchIndustries();
   }
 
+  // 業界リストを取得
   Future<void> _fetchIndustries() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:8080/api/industries'),
+        Uri.parse('${ApiConfig.baseUrl}/api/industries'),
       );
-
       if (!mounted) return;
 
       if (response.statusCode == 200) {
@@ -129,7 +126,15 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
     _passwordController.dispose();
     _phoneNumberController.dispose();
     _addressController.dispose();
+    _postcodeController.dispose();
     super.dispose();
+  }
+
+  // 郵便番号から住所を取得
+  Future<Map<String, dynamic>?> _fetchAddressFromPostcode(
+    String postcode,
+  ) async {
+    return await PostcodeJPApi.fetchAddress(postcode);
   }
 
   @override
@@ -164,6 +169,8 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                       style: AppTheme.subTextStyle,
                     ),
                     const SizedBox(height: 20),
+
+                    // 企業名
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -181,7 +188,7 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                             ),
                             validator:
                                 (v) =>
-                                    v == null || v.isEmpty
+                                    (v == null || v.isEmpty)
                                         ? '企業名を入力してください'
                                         : null,
                           ),
@@ -189,6 +196,8 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                       ],
                     ),
                     const SizedBox(height: 20),
+
+                    // メールアドレス
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -205,12 +214,10 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                               labelText: 'メールアドレス',
                             ),
                             validator: (v) {
-                              if (v == null || v.isEmpty) {
+                              if (v == null || v.isEmpty)
                                 return 'メールアドレスを入力してください';
-                              }
-                              if (!v.contains('@')) {
+                              if (!v.contains('@'))
                                 return '正しいメールアドレスを入力してください';
-                              }
                               return null;
                             },
                           ),
@@ -218,6 +225,8 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                       ],
                     ),
                     const SizedBox(height: 20),
+
+                    // パスワード
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -249,7 +258,7 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                             ),
                             validator:
                                 (v) =>
-                                    v == null || v.length < 8
+                                    (v == null || v.length < 8)
                                         ? '8文字以上で入力してください'
                                         : null,
                           ),
@@ -257,6 +266,8 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                       ],
                     ),
                     const SizedBox(height: 20),
+
+                    // 電話番号
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -278,9 +289,8 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                               PhoneNumberFormatter(),
                             ],
                             validator: (value) {
-                              if (value == null || value.isEmpty) {
+                              if (value == null || value.isEmpty)
                                 return '電話番号を入力してください';
-                              }
                               if (!RegExp(
                                 r'^\d{3}-\d{4}-\d{4}$',
                               ).hasMatch(value)) {
@@ -293,6 +303,102 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                       ],
                     ),
                     const SizedBox(height: 20),
+
+                    // 郵便番号入力 + 住所自動入力ボタン
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(top: 14),
+                          child: Icon(
+                            Icons.markunread_mailbox_outlined,
+                            color: cyanDark,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _postcodeController,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: '郵便番号（例: 1000001）',
+                            ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            validator: (v) {
+                              if (v == null || v.isEmpty)
+                                return '郵便番号を入力してください';
+                              if (v.length != 7) return '7桁の郵便番号を入力してください';
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          margin: const EdgeInsets.only(top: 6),
+                          child: ElevatedButton(
+                            onPressed:
+                                _isFetchingAddress
+                                    ? null
+                                    : () async {
+                                      final postcode = _postcodeController.text;
+                                      if (postcode.length != 7) return;
+
+                                      setState(() {
+                                        _isFetchingAddress = true;
+                                      });
+
+                                      try {
+                                        final address =
+                                            await _fetchAddressFromPostcode(
+                                              postcode,
+                                            );
+                                        if (address != null) {
+                                          _addressController.text =
+                                              address['allAddress'] ??
+                                              '${address['prefecture'] ?? ''}${address['city'] ?? ''}${address['town'] ?? ''}';
+                                        } else {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('住所が見つかりませんでした'),
+                                            ),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text('住所取得エラー: $e'),
+                                          ),
+                                        );
+                                      }
+
+                                      setState(() {
+                                        _isFetchingAddress = false;
+                                      });
+                                    },
+                            child:
+                                _isFetchingAddress
+                                    ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                    : const Text('住所自動入力'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // 所在地（自動入力）
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -311,17 +417,17 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                               border: OutlineInputBorder(),
                               labelText: '所在地',
                             ),
-                            validator: (v) {
-                              if (v == null || v.isEmpty) {
-                                return '所在地を入力してください';
-                              }
-                              return null;
-                            },
+                            validator:
+                                (v) =>
+                                    (v == null || v.isEmpty)
+                                        ? '所在地を入力してください'
+                                        : null,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
+
                     Row(
                       children: [
                         Padding(
@@ -426,7 +532,7 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                           // 1) 一時サインアップを作成して tempId を取得
                           final tempRes = await http.post(
                             Uri.parse(
-                              'http://localhost:8080/api/v1/temp-signups',
+                              '${ApiConfig.baseUrl}/api/v1/temp-signups',
                             ),
                             headers: {
                               'Content-Type': 'application/json; charset=UTF-8',

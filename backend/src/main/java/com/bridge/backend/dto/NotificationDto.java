@@ -21,9 +21,11 @@ public class NotificationDto {
     @JsonFormat(pattern="yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime sendFlag;
 
+    private Integer sendFlagInt;
+
     public NotificationDto() {}
 
-    public NotificationDto(Integer id, Integer type, String title, String content, Integer category, Integer userId, LocalDateTime reservationTime, LocalDateTime sendFlag) {
+    public NotificationDto(Integer id, Integer type, String title, String content, Integer category, Integer userId, LocalDateTime reservationTime, LocalDateTime sendFlag, Integer sendFlagInt) {
         this.id = id;
         this.type = type;
         this.title = title;
@@ -32,6 +34,7 @@ public class NotificationDto {
         this.userId = userId;
         this.reservationTime = reservationTime;
         this.sendFlag = sendFlag;
+        this.sendFlagInt = sendFlagInt;
     }
 
     // --- ゲッターとセッター ---
@@ -97,5 +100,13 @@ public class NotificationDto {
 
     public void setSendFlag(LocalDateTime sendFlag) {
         this.sendFlag = sendFlag;
+    }
+
+    public Integer getSendFlagInt() {
+        return sendFlagInt;
+    }
+
+    public void setSendFlagInt(Integer sendFlagInt) {
+        this.sendFlagInt = sendFlagInt;
     }
 }

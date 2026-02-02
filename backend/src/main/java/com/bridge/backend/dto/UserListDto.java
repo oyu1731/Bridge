@@ -4,13 +4,13 @@ public class UserListDto {
     private int id;
     private String nickname;
     private int type;
-    private int icon;
+    private Integer icon; // nullable: allows API to return null when not set
     private String photoPath;
     private int reportCount;
 
     public UserListDto() {}
 
-    public UserListDto(int id, String nickname, int type, int icon, String photoPath, int reportCount) {
+    public UserListDto(int id, String nickname, int type, Integer icon, String photoPath, int reportCount) {
         this.id = id;
         this.nickname = nickname;
         this.type = type;
@@ -44,11 +44,11 @@ public class UserListDto {
         this.type = type;
     }
 
-    public int getIcon() {
+    public Integer getIcon() {
         return icon;
     }
 
-    public void setIcon(int icon) {
+    public void setIcon(Integer icon) {
         this.icon = icon;
     }
 
