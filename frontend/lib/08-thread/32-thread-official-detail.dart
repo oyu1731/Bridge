@@ -140,9 +140,12 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
       Uri.parse('ws://localhost:8080/ws/chat/${widget.thread['id']}'),
     );
 
-    _channel.stream.listen((data) {
+    _channel.stream.listen((data) async{
       try {
         final msg = Map<String, dynamic>.from(jsonDecode(data));
+        final userId = msg['userId'].toString();
+        //新規ユーザーも名前を表示できるようになる
+        await _loadUserInfo(userId);
         if (!_messages.any((m) => m['id'] == msg['id'])) {
           _messages.add({
             'id': msg['id'],
@@ -500,7 +503,13 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
 
         //自動スクロール
         _scrollToBottom(); 
-      } else if (response.statusCode == 404 || response.statusCode == 410) { _showThreadDeletedDialog(); } else { print("Send failed: ${response.statusCode}"); }
+      } else if (response.statusCode == 410) {
+        _showThreadDeletedDialog();
+      } else if (response.statusCode == 404) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('スレッドが見つかりません')),
+        );
+      }
     } catch (e) {
       print("Send error: $e");
     } finally {

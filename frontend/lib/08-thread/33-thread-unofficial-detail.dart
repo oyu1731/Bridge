@@ -139,9 +139,12 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
       Uri.parse('ws://localhost:8080/ws/chat/${widget.thread['id']}'),
     );
 
-    _channel.stream.listen((data) {
+    _channel.stream.listen((data) async{
       try {
         final msg = Map<String, dynamic>.from(jsonDecode(data));
+        final userId = msg['userId'].toString();
+        // ★ これを追加
+        await _loadUserInfo(userId);
         if (!_messages.any((m) => m['id'] == msg['id'])) {
           _messages.add({
             'id': msg['id'],
