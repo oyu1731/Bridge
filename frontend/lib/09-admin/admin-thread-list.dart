@@ -1,27 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import '39-admin-thread-detail.dart';
-
-// Thread モデル
-class Thread {
-  final int id;
-  final String title;
-  final String timeAgo;
-
-  Thread({
-    required this.id,
-    required this.title,
-    required this.timeAgo,
-  });
-
-  factory Thread.fromJson(Map<String, dynamic> json) {
-    return Thread(
-      id: json['id'],
-      title: json['title'] as String,
-      timeAgo: json['timeAgo'] as String,
-    );
-  }
-}
+import 'package:bridge/08-thread/thread_api_client.dart';
+import 'package:bridge/08-thread/thread_model.dart';
 
 class ThreadUnofficialList extends StatefulWidget {
   @override
@@ -33,151 +14,175 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
   List<Thread> filteredThreads = [];
   final TextEditingController _searchController = TextEditingController();
 
+  bool _hasChanged = false;
+
   @override
   void initState() {
     super.initState();
-    _loadDummyThreads();
+    _fetchUnofficialThreads();
   }
 
-  // 初回に最新更新順で取得（疑似通信）
-  Future<void> _loadDummyThreads() async {
-    await Future.delayed(Duration(milliseconds: 300)); // 疑似通信待ち
+  Future<void> _fetchUnofficialThreads() async {
+    try {
+      final allThreads = await ThreadApiClient.getAllThreads();
 
-    setState(() {
-      unofficialThreads = [
-        Thread(id: 1, title: '業界別の面接対策', timeAgo: '3分前'),
-        Thread(id: 2, title: '社会人一年目の過ごし方', timeAgo: '10分前'),
-        Thread(id: 3, title: 'おすすめの資格', timeAgo: '25分前'),
-        Thread(id: 4, title: '働きながら転職活動するには', timeAgo: '50分前'),
-        Thread(id: 5, title: '就活で意識すべきこと', timeAgo: '1時間前'),
-      ];
-
-      filteredThreads = List.from(unofficialThreads);
-    });
-  }
-
-  // タイトル検索
-  void _searchThreads() {
-    final query = _searchController.text.trim();
-    setState(() {
-      if (query.isEmpty) {
+      setState(() {
+        unofficialThreads = allThreads.where((t) => t.type == 2).toList();
         filteredThreads = List.from(unofficialThreads);
-      } else {
-        filteredThreads = unofficialThreads
-            .where((t) => t.title.contains(query))
-            .toList();
-      }
-    });
+      });
+    } catch (e) {
+      debugPrint('管理者 非公式スレッド取得失敗: $e');
+    }
   }
 
-  // 削除申請ダイアログ
-  void _showDeleteDialog(Thread thread) {
-    showDialog(
+  Future<void> _confirmDeleteThread(Thread thread) async {
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('削除確認'),
-        content: Text('${thread.title} を削除しますか？'),
+        content: const Text('このスレッドを削除しますか？'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             child: const Text('キャンセル'),
           ),
           TextButton(
-            onPressed: () {
-              setState(() {
-                unofficialThreads.remove(thread);
-                filteredThreads.remove(thread);
-              });
-              Navigator.pop(context);
-            },
+            onPressed: () => Navigator.pop(context, true),
             child: const Text('削除'),
           ),
         ],
       ),
     );
+
+    if (confirm == true) {
+      await _deleteThread(thread.id);
+    }
+  }
+
+  Future<void> _deleteThread(String threadId) async {
+    try {
+      await ThreadApiClient.deleteThread(threadId);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('スレッドを削除しました')),
+      );
+
+      await _fetchUnofficialThreads();
+      _hasChanged = true;
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('削除に失敗しました')),
+      );
+    }
+  }
+
+  void _searchThreads() {
+    final query = _searchController.text.trim();
+
+    setState(() {
+      if (query.isEmpty) {
+        filteredThreads = List.from(unofficialThreads);
+      } else {
+        filteredThreads =
+            unofficialThreads.where((t) => t.title.contains(query)).toList();
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: BridgeHeader(),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                const Text(
-                  '非公式スレッド一覧',
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: '検索',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.search),
-                        onPressed: _searchThreads,
-                      ),
-                    ),
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pop(context, _hasChanged);
+        return false;
+      },
+      child: Scaffold(
+        appBar: BridgeHeader(),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // タイトル
+              const Text(
+                '非公式スレッド一覧',
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+              ),
+
+              const SizedBox(height: 12),
+
+              // 検索バー（タイトルの下）
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: '検索',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 12,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: _searchThreads,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: ListView.builder(
-                itemCount: filteredThreads.length,
-                itemBuilder: (context, index) {
-                  final thread = filteredThreads[index];
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                            AdminThreadDetail(
-                                threadId: thread.id,
+                onSubmitted: (_) => _searchThreads(),
+              ),
+
+              const SizedBox(height: 20),
+
+              // スレッド一覧
+              Expanded(
+                child: ListView.builder(
+                  itemCount: filteredThreads.length,
+                  itemBuilder: (context, index) {
+                    final thread = filteredThreads[index];
+
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AdminThreadDetail(
+                              threadId: thread.id,
+                              title: thread.title,
                             ),
-                        ),
-                      );
-                    },
-                    child: Card(
-                      color: Colors.white, // ← 白背景に変更
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      elevation: 2,
-                      child: ListTile(
-                        title: Text(thread.title),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              thread.timeAgo,
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () => _showDeleteDialog(thread),
-                              child: const Icon(
-                                Icons.delete_outline,
-                                color: Colors.black, // ← 黒に固定
+                          ),
+                        );
+                      },
+                      child: Card(
+                        color: Colors.white,
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        elevation: 2,
+                        child: ListTile(
+                          title: Text(thread.title),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                thread.timeAgo,
+                                style:
+                                    const TextStyle(color: Colors.grey),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 8),
+                              IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () =>
+                                    _confirmDeleteThread(thread),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

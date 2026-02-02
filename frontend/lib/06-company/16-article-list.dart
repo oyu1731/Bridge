@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../11-common/58-header.dart';
-import '18-article-detail.dart';
+import '18-article-detail.dart' hide PhotoDTO, PhotoApiClient; // 両方を非表示に
 import 'article_api_client.dart';
 import 'filter_api_client.dart';
+import 'photo_api_client.dart';
 
 class ArticleListPage extends StatefulWidget {
   final String? companyName;
 
-  const ArticleListPage({
-    Key? key,
-    this.companyName,
-  }) : super(key: key);
+  const ArticleListPage({Key? key, this.companyName}) : super(key: key);
 
   @override
   _ArticleListPageState createState() => _ArticleListPageState();
@@ -29,21 +28,30 @@ class _ArticleListPageState extends State<ArticleListPage> {
   List<ArticleDTO> _filteredArticles = [];
   List<String> _availableTags = []; // 動的タグリスト
   List<String> _availableIndustries = []; // 動的業界リスト
-  Map<String, int> _industryIdMap = {}; // 業界名かIDのマッピング
+  Map<String, int> _industryIdMap = {}; // 業界名とIDのマッピング
   bool _isLoading = true;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    
+    _checkLoginStatus();
     // 企業名が渡された場合は検索バーに設定
     if (widget.companyName != null && widget.companyName!.isNotEmpty) {
       _searchController.text = widget.companyName!;
     }
-    
     _loadFilterData();
     _loadArticles();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('current_user');
+    if (userJson == null) {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/signin');
+      }
+    }
   }
 
   Future<void> _loadFilterData() async {
@@ -51,12 +59,13 @@ class _ArticleListPageState extends State<ArticleListPage> {
       // タグデータを取得
       final tags = await FilterApiClient.getAllTags();
       final industries = await FilterApiClient.getAllIndustries();
-      
+
       setState(() {
         _availableTags = tags.map((tag) => tag.tag).toList();
-        _availableIndustries = industries.map((industry) => industry.industry).toList();
-        
-        // 業界名かIDのマッピングを作成
+        _availableIndustries =
+            industries.map((industry) => industry.industry).toList();
+
+        // 業界名とIDのマッピングを作成
         _industryIdMap = {};
         for (final industry in industries) {
           _industryIdMap[industry.industry] = industry.id;
@@ -79,18 +88,15 @@ class _ArticleListPageState extends State<ArticleListPage> {
         _isLoading = true;
         _error = null;
       });
-      
       final articles = await ArticleApiClient.getAllArticles();
+      // 削除済み記事のみ除外（退会企業の判定は現状不可）
+      final filtered = articles.where((a) => (a.isDeleted != true)).toList();
       setState(() {
-        _allArticles = articles;
-        _filteredArticles = articles;
+        _allArticles = filtered;
+        _filteredArticles = filtered;
         _isLoading = false;
       });
-      
-      // 初期ロード時もソートを適用
       _applySorting();
-      
-      // 企業名が指定されている場合は検索を実行
       if (widget.companyName != null && widget.companyName!.isNotEmpty) {
         _searchArticlesFromAPI();
       }
@@ -110,8 +116,13 @@ class _ArticleListPageState extends State<ArticleListPage> {
         _error = null;
       });
 
-      String? keyword = _searchController.text.isEmpty ? null : _searchController.text;
-      List<int> industryIds = _selectedIndustries.map((name) => _industryIdMap[name]).whereType<int>().toList();
+      String? keyword =
+          _searchController.text.isEmpty ? null : _searchController.text;
+      List<int> industryIds =
+          _selectedIndustries
+              .map((name) => _industryIdMap[name])
+              .whereType<int>()
+              .toList();
 
       final articles = await ArticleApiClient.searchArticles(
         keyword: keyword,
@@ -124,7 +135,7 @@ class _ArticleListPageState extends State<ArticleListPage> {
         _isLoading = false;
       });
 
-      // Apply remaining local filters (tags) and sorting after getting API results
+      // 残りのローカルフィルター（タグ）とソートを適用
       _applyLocalFilters();
     } catch (e) {
       setState(() {
@@ -142,46 +153,56 @@ class _ArticleListPageState extends State<ArticleListPage> {
   }
 
   void _filterArticles() {
-    // If there's a search keyword or industry filter, use API search
+    // 検索キーワードまたは業界フィルターがある場合はAPI検索を使用
     if (_searchController.text.isNotEmpty || _selectedIndustries.isNotEmpty) {
       _searchArticlesFromAPI();
       return;
     }
 
-    // Otherwise, filter locally by tags only
+    // それ以外の場合はタグのみでローカルフィルター
     _applyLocalFilters();
   }
-  
+
   void _applyLocalFilters() {
     setState(() {
-      _filteredArticles = _allArticles.where((article) {
-        bool matchesTag = true;
-        bool matchesIndustry = true;
+      _filteredArticles =
+          _allArticles.where((article) {
+            bool matchesTag = true;
+            bool matchesIndustry = true;
 
-        // タグでフィルタ
-        if (_selectedTags.isNotEmpty && article.tags != null) {
-          if (_isStrictMode) {
-            matchesTag = _selectedTags.every((tag) => article.tags!.contains(tag));
-          } else {
-            matchesTag = _selectedTags.any((tag) => article.tags!.contains(tag));
-          }
-        } else if (_selectedTags.isNotEmpty && article.tags == null) {
-          matchesTag = false;
-        }
+            // タグでフィルタ
+            if (_selectedTags.isNotEmpty && article.tags != null) {
+              if (_isStrictMode) {
+                matchesTag = _selectedTags.every(
+                  (tag) => article.tags!.contains(tag),
+                );
+              } else {
+                matchesTag = _selectedTags.any(
+                  (tag) => article.tags!.contains(tag),
+                );
+              }
+            } else if (_selectedTags.isNotEmpty && article.tags == null) {
+              matchesTag = false;
+            }
 
-        // 業界でローカルフィルタ（APIで取得した場合は不要だが、念のため）
-        if (_selectedIndustries.isNotEmpty) {
-          if (article.industries != null && article.industries!.isNotEmpty) {
-            matchesIndustry = _selectedIndustries.any((ind) => article.industries!.contains(ind));
-          } else if (article.industry != null) {
-            matchesIndustry = _selectedIndustries.contains(article.industry);
-          } else {
-            matchesIndustry = false;
-          }
-        }
+            // 業界でローカルフィルタ（APIで取得した場合は不要だが、念のため）
+            if (_selectedIndustries.isNotEmpty) {
+              if (article.industries != null &&
+                  article.industries!.isNotEmpty) {
+                matchesIndustry = _selectedIndustries.any(
+                  (ind) => article.industries!.contains(ind),
+                );
+              } else if (article.industry != null) {
+                matchesIndustry = _selectedIndustries.contains(
+                  article.industry,
+                );
+              } else {
+                matchesIndustry = false;
+              }
+            }
 
-        return matchesTag && matchesIndustry;
-      }).toList();
+            return matchesTag && matchesIndustry;
+          }).toList();
 
       // ソート適用
       _applySorting();
@@ -270,7 +291,9 @@ class _ArticleListPageState extends State<ArticleListPage> {
                                     fontSize: 14,
                                   ),
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
                                 ),
                                 onChanged: (value) {
                                   // 入力時には検索しない
@@ -334,13 +357,28 @@ class _ArticleListPageState extends State<ArticleListPage> {
                       child: DropdownButton<String>(
                         value: _sortOrder,
                         underline: SizedBox(),
-                        icon: Icon(Icons.arrow_drop_down, color: Color(0xFF757575)),
-                        style: TextStyle(fontSize: 14, color: Color(0xFF424242)),
+                        icon: Icon(
+                          Icons.arrow_drop_down,
+                          color: Color(0xFF757575),
+                        ),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF424242),
+                        ),
                         items: [
-                          DropdownMenuItem(value: 'newest', child: Text('新しい順')),
+                          DropdownMenuItem(
+                            value: 'newest',
+                            child: Text('新しい順'),
+                          ),
                           DropdownMenuItem(value: 'oldest', child: Text('古い順')),
-                          DropdownMenuItem(value: 'mostLiked', child: Text('いいね数が多い順')),
-                          DropdownMenuItem(value: 'leastLiked', child: Text('いいね数が少ない順')),
+                          DropdownMenuItem(
+                            value: 'mostLiked',
+                            child: Text('いいね数が多い順'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'leastLiked',
+                            child: Text('いいね数が少ない順'),
+                          ),
                         ],
                         onChanged: (value) {
                           if (value != null) {
@@ -386,35 +424,48 @@ class _ArticleListPageState extends State<ArticleListPage> {
                                     height: 200,
                                     padding: EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      border: Border.all(color: Color(0xFFE0E0E0)),
+                                      border: Border.all(
+                                        color: Color(0xFFE0E0E0),
+                                      ),
                                       borderRadius: BorderRadius.circular(8),
                                       color: Colors.white,
                                     ),
                                     child: SingleChildScrollView(
                                       child: Column(
-                                        children: _availableIndustries.map((industry) {
-                                          return CheckboxListTile(
-                                            title: Text(
+                                        children:
+                                            _availableIndustries.map((
                                               industry,
-                                              style: TextStyle(fontSize: 13),
-                                            ),
-                                            value: _selectedIndustries.contains(industry),
-                                            onChanged: (bool? value) {
-                                              setState(() {
-                                                if (value == true) {
-                                                  _selectedIndustries.add(industry);
-                                                } else {
-                                                  _selectedIndustries.remove(industry);
-                                                }
-                                              });
-                                              // 検索ボタンを押すまで検索しない
-                                            },
-                                            controlAffinity: ListTileControlAffinity.leading,
-                                            dense: true,
-                                            contentPadding: EdgeInsets.zero,
-                                            activeColor: Color(0xFF1976D2),
-                                          );
-                                        }).toList(),
+                                            ) {
+                                              return CheckboxListTile(
+                                                title: Text(
+                                                  industry,
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                                value: _selectedIndustries
+                                                    .contains(industry),
+                                                onChanged: (bool? value) {
+                                                  setState(() {
+                                                    if (value == true) {
+                                                      _selectedIndustries.add(
+                                                        industry,
+                                                      );
+                                                    } else {
+                                                      _selectedIndustries
+                                                          .remove(industry);
+                                                    }
+                                                  });
+                                                  // 検索ボタンを押すまで検索しない
+                                                },
+                                                controlAffinity:
+                                                    ListTileControlAffinity
+                                                        .leading,
+                                                dense: true,
+                                                contentPadding: EdgeInsets.zero,
+                                                activeColor: Color(0xFF1976D2),
+                                              );
+                                            }).toList(),
                                       ),
                                     ),
                                   ),
@@ -439,35 +490,44 @@ class _ArticleListPageState extends State<ArticleListPage> {
                                     height: 200,
                                     padding: EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      border: Border.all(color: Color(0xFFE0E0E0)),
+                                      border: Border.all(
+                                        color: Color(0xFFE0E0E0),
+                                      ),
                                       borderRadius: BorderRadius.circular(8),
                                       color: Colors.white,
                                     ),
                                     child: SingleChildScrollView(
                                       child: Column(
-                                        children: _availableTags.map((tag) {
-                                          return CheckboxListTile(
-                                            title: Text(
-                                              tag,
-                                              style: TextStyle(fontSize: 13),
-                                            ),
-                                            value: _selectedTags.contains(tag),
-                                            onChanged: (bool? value) {
-                                              setState(() {
-                                                if (value == true) {
-                                                  _selectedTags.add(tag);
-                                                } else {
-                                                  _selectedTags.remove(tag);
-                                                }
-                                              });
-                                              // 検索ボタンを押すまで検索しない
-                                            },
-                                            controlAffinity: ListTileControlAffinity.leading,
-                                            dense: true,
-                                            contentPadding: EdgeInsets.zero,
-                                            activeColor: Color(0xFF1976D2),
-                                          );
-                                        }).toList(),
+                                        children:
+                                            _availableTags.map((tag) {
+                                              return CheckboxListTile(
+                                                title: Text(
+                                                  tag,
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                                value: _selectedTags.contains(
+                                                  tag,
+                                                ),
+                                                onChanged: (bool? value) {
+                                                  setState(() {
+                                                    if (value == true) {
+                                                      _selectedTags.add(tag);
+                                                    } else {
+                                                      _selectedTags.remove(tag);
+                                                    }
+                                                  });
+                                                  // 検索ボタンを押すまで検索しない
+                                                },
+                                                controlAffinity:
+                                                    ListTileControlAffinity
+                                                        .leading,
+                                                dense: true,
+                                                contentPadding: EdgeInsets.zero,
+                                                activeColor: Color(0xFF1976D2),
+                                              );
+                                            }).toList(),
                                       ),
                                     ),
                                   ),
@@ -485,7 +545,9 @@ class _ArticleListPageState extends State<ArticleListPage> {
                             decoration: BoxDecoration(
                               color: Color(0xFFE3F2FD),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Color(0xFF1976D2).withOpacity(0.3)),
+                              border: Border.all(
+                                color: Color(0xFF1976D2).withOpacity(0.3),
+                              ),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -502,41 +564,47 @@ class _ArticleListPageState extends State<ArticleListPage> {
                                 Wrap(
                                   spacing: 8,
                                   runSpacing: 4,
-                                  children: _selectedTags.map((tag) {
-                                    return Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFF1976D2),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            tag,
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: Colors.white,
+                                  children:
+                                      _selectedTags.map((tag) {
+                                        return Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Color(0xFF1976D2),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
                                             ),
                                           ),
-                                          SizedBox(width: 4),
-                                          InkWell(
-                                            onTap: () {
-                                              setState(() {
-                                                _selectedTags.remove(tag);
-                                              });
-                                              // 検索ボタンを押すまで検索しない
-                                            },
-                                            child: Icon(
-                                              Icons.close,
-                                              size: 14,
-                                              color: Colors.white,
-                                            ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                tag,
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              SizedBox(width: 4),
+                                              InkWell(
+                                                onTap: () {
+                                                  setState(() {
+                                                    _selectedTags.remove(tag);
+                                                  });
+                                                  // 検索ボタンを押すまで検索しない
+                                                },
+                                                child: Icon(
+                                                  Icons.close,
+                                                  size: 14,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
+                                        );
+                                      }).toList(),
                                 ),
                               ],
                             ),
@@ -575,8 +643,13 @@ class _ArticleListPageState extends State<ArticleListPage> {
                                   OutlinedButton(
                                     onPressed: _resetFilters,
                                     style: OutlinedButton.styleFrom(
-                                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                      side: BorderSide(color: Color(0xFF757575)),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 8,
+                                      ),
+                                      side: BorderSide(
+                                        color: Color(0xFF757575),
+                                      ),
                                     ),
                                     child: Text(
                                       'リセット',
@@ -591,7 +664,8 @@ class _ArticleListPageState extends State<ArticleListPage> {
                             } else {
                               // PC/タブレット幅: 横並び
                               return Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Row(
                                     children: [
@@ -616,8 +690,13 @@ class _ArticleListPageState extends State<ArticleListPage> {
                                   OutlinedButton(
                                     onPressed: _resetFilters,
                                     style: OutlinedButton.styleFrom(
-                                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                      side: BorderSide(color: Color(0xFF757575)),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 8,
+                                      ),
+                                      side: BorderSide(
+                                        color: Color(0xFF757575),
+                                      ),
                                     ),
                                     child: Text(
                                       'リセット',
@@ -656,82 +735,84 @@ class _ArticleListPageState extends State<ArticleListPage> {
 
           // 記事一覧
           Expanded(
-            child: _isLoading
-                ? Center(
-                    child: CircularProgressIndicator(),
-                  )
-                : _error != null
+            child:
+                _isLoading
+                    ? Center(child: CircularProgressIndicator())
+                    : _error != null
                     ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'エラーが発生しました',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF757575),
-                              ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'エラーが発生しました',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF757575),
                             ),
-                            SizedBox(height: 8),
-                            Text(
-                              _error!,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF757575),
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadArticles,
-                              child: Text('再試行'),
-                            ),
-                          ],
-                        ),
-                      )
-                    : _filteredArticles.isEmpty
-                        ? Center(
-                            child: Text(
-                              '該当する記事が見つかりません',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Color(0xFF757575),
-                              ),
-                            ),
-                          )
-                        : LayoutBuilder(
-                            builder: (context, constraints) {
-                              // スマートフォンサイズ（幅600px以下）の場合は1列、タブレット（幅800px以下）は2列、それ以上は3列
-                              int crossAxisCount;
-                              if (constraints.maxWidth <= 600) {
-                                crossAxisCount = 1; // スマートフォン: 1列
-                              } else if (constraints.maxWidth <= 800) {
-                                crossAxisCount = 2; // タブレット: 2列
-                              } else {
-                                crossAxisCount = 3; // デスクトップ: 3列
-                              }
-                              
-                              // スマートフォンの場合は横間隔を狭くする
-                              double crossAxisSpacing = constraints.maxWidth <= 800 ? 12 : 16;
-                              // 記事カードの縦横比を調整（値が大きいほど横長、小さいほど縦長）
-                              double childAspectRatio = constraints.maxWidth <= 600 ? 2.2 : (constraints.maxWidth <= 800 ? 1.4 : 1.6);
-                              
-                              return GridView.builder(
-                                padding: EdgeInsets.symmetric(horizontal: 24),
-                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: crossAxisCount,
-                                  crossAxisSpacing: crossAxisSpacing,
-                                  mainAxisSpacing: 16,
-                                  childAspectRatio: childAspectRatio,
-                                ),
-                                itemCount: _filteredArticles.length,
-                                itemBuilder: (context, index) {
-                                  final article = _filteredArticles[index];
-                                  return _buildArticleCard(article);
-                                },
-                              );
-                            },
                           ),
+                          SizedBox(height: 8),
+                          Text(
+                            _error!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF757575),
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadArticles,
+                            child: Text('再試行'),
+                          ),
+                        ],
+                      ),
+                    )
+                    : _filteredArticles.isEmpty
+                    ? Center(
+                      child: Text(
+                        '該当する記事が見つかりません',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF757575),
+                        ),
+                      ),
+                    )
+                    : LayoutBuilder(
+                      builder: (context, constraints) {
+                        int crossAxisCount;
+                        double childAspectRatio;
+
+                        if (constraints.maxWidth <= 600) {
+                          crossAxisCount = 1; // スマートフォン
+                          childAspectRatio = 1.25; // 高さを確保してオーバーフローを防ぐ
+                        } else if (constraints.maxWidth <= 1000) {
+                          crossAxisCount = 2; // タブレット
+                          childAspectRatio = 1.4;
+                        } else {
+                          crossAxisCount = 3; // デスクトップ
+                          childAspectRatio = 1.8; // 比率を上げて下の余白を詰める
+                        }
+
+                        double crossAxisSpacing =
+                            constraints.maxWidth <= 800 ? 12 : 16;
+
+                        return GridView.builder(
+                          padding: EdgeInsets.symmetric(horizontal: 24),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: crossAxisCount,
+                                crossAxisSpacing: crossAxisSpacing,
+                                mainAxisSpacing: 16,
+                                childAspectRatio: childAspectRatio,
+                              ),
+                          itemCount: _filteredArticles.length,
+                          itemBuilder: (context, index) {
+                            final article = _filteredArticles[index];
+                            return _buildArticleCard(article);
+                          },
+                        );
+                      },
+                    ),
           ),
         ],
       ),
@@ -739,152 +820,169 @@ class _ArticleListPageState extends State<ArticleListPage> {
   }
 
   Widget _buildArticleCard(ArticleDTO article) {
-    // 新着判定（作成日から7日以内）
-    bool isNew = false;
-    if (article.createdAt != null) {
-      try {
-        final createdDate = DateTime.parse(article.createdAt!);
-        final now = DateTime.now();
-        isNew = now.difference(createdDate).inDays <= 7;
-      } catch (e) {
-        // 日付解析エラーの場合は新着扱いしない
-        isNew = false;
-      }
-    }
-
-    // 最初のタグを取得（表示用）
-    String displayTag = '';
-    if (article.tags != null && article.tags!.isNotEmpty) {
-      displayTag = article.tags!.first;
-    }
-
     return InkWell(
       onTap: () {
-        // 記事詳細ページへの遷移
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ArticleDetailPage(
-              articleTitle: article.title,
-              articleId: article.id?.toString() ?? '0',
-              companyName: article.companyName ?? '会社名不明',
-              description: article.description,
-            ),
+            builder:
+                (context) => ArticleDetailPage(
+                  articleTitle: article.title,
+                  articleId: article.id?.toString() ?? '0',
+                  companyName: article.companyName ?? '会社名不明',
+                  description: article.description,
+                ),
           ),
         );
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Color(0xFFE0E0E0)),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 12), // タグ上部の余白
-            // タグ表示
-            if (article.tags != null && article.tags!.isNotEmpty)
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: article.tags!.map((tag) => Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFE3F2FD),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Color(0xFF1976D2), width: 0.5),
-                    ),
-                    child: Text(
-                      '# $tag',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF1976D2),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  )).toList(),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double cardHeight = constraints.maxHeight;
+          // 画像を65%に抑え、残りの35%をテキストといいね表示に割り当てる
+          final double imageHeight = cardHeight * 0.65;
+
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: const Color(0xFFE0E0E0)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 画像部分 (65%)
+                SizedBox(
+                  height: imageHeight,
+                  width: double.infinity,
+                  child:
+                      article.photo1Id != null
+                          ? FutureBuilder<PhotoDTO?>(
+                            future: PhotoApiClient.getPhotoById(
+                              article.photo1Id!,
+                            ),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return Container(
+                                  color: Colors.grey[200],
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                );
+                              }
+                              return ClipRRect(
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(11),
+                                  topRight: Radius.circular(11),
+                                ),
+                                child: Image.network(
+                                  snapshot.data?.photoPath ?? '',
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (context, error, stackTrace) => Container(
+                                        color: Colors.grey[200],
+                                        child: const Icon(
+                                          Icons.broken_image,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                ),
+                              );
+                            },
+                          )
+                          : Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(11),
+                                topRight: Radius.circular(11),
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.broken_image,
+                              color: Colors.grey,
+                            ),
+                          ),
                 ),
-              ),
-            if (article.tags != null && article.tags!.isNotEmpty)
-              SizedBox(height: 8),
 
-            // 会社名と業界名
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      article.companyName ?? '会社名不明',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF424242),
-                      ),
+                // 情報部分 + いいね表示 (残り35%を Expanded で自動調整)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // タグと会社名を1行にまとめるか、高さを節約する
+                        if (article.tags != null && article.tags!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Text(
+                              article.tags!.map((t) => '#$t').join(' '),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Color(0xFF1976D2),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+
+                        Text(
+                          article.companyName ?? '会社名不明',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+
+                        const SizedBox(height: 2),
+
+                        // タイトルを Expanded で包み、溢れないようにする
+                        Expanded(
+                          child: Text(
+                            article.title,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF1976D2),
+                              fontWeight: FontWeight.w600,
+                              height: 1.2,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+
+                        // いいね表示を最下部に固定
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            const Icon(
+                              Icons.favorite,
+                              color: Colors.red,
+                              size: 12,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${article.totalLikes ?? 0}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  if ((article.industries != null && article.industries!.isNotEmpty) || (article.industry != null && article.industry!.isNotEmpty))
-                    Text(
-                      (article.industries != null && article.industries!.isNotEmpty)
-                          ? article.industries!.join(', ')
-                          : article.industry ?? '',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF757575),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            SizedBox(height: 8),
-
-            // 記事タイトル
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                article.title,
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Color(0xFF1976D2),
-                  fontWeight: FontWeight.w600,
-                  height: 1.4,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+              ],
             ),
-            Spacer(),
-
-            // いいね数表示
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Icon(
-                    Icons.favorite,
-                    color: Colors.red,
-                    size: 16,
-                  ),
-                  SizedBox(width: 6),
-                  Text(
-                    '${article.totalLikes ?? 0}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF424242),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 12),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

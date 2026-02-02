@@ -3,7 +3,7 @@ import 'package:bridge/11-common/58-header.dart';
 import '37-admin-report-log-list.dart';
 import '38-admin-thread-list.dart';
 import '42-admin-account-list.dart';
-import 'package:bridge/05-notice/45-admin-mail-send.dart';
+import 'package:bridge/05-notice/44-admin-mail-list.dart';
 import '40-admin-company-column-list.dart';
 
 class AdminHome extends StatefulWidget {
@@ -17,6 +17,7 @@ class _AdminHomeState extends State<AdminHome> {
     // 画面サイズ取得
     final screenWidth = MediaQuery.of(context).size.width;
     final buttonWidth = (screenWidth - 80) / 2; // 2列で左右マージン
+    final buttonWidth2 = screenWidth -60;
     final buttonHeight = 100.0;
 
     return Scaffold(
@@ -31,7 +32,7 @@ class _AdminHomeState extends State<AdminHome> {
                 _buildButton('スレッド一覧', buttonWidth, buttonHeight, () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => AdminCompanyColumnList()),
+                    MaterialPageRoute(builder: (context) => AdminThreadList()),
                   );
                 }),
                 SizedBox(width: 20),
@@ -56,14 +57,21 @@ class _AdminHomeState extends State<AdminHome> {
                   );
                 }),
                 SizedBox(width: 20),
-                _buildButton('メール送信', buttonWidth, buttonHeight, () {
+                _buildButton('メール一覧', buttonWidth, buttonHeight, () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => AdminMailSend()),
+                    MaterialPageRoute(builder: (context) => AdminMailList()),
                   );
                 }),
               ],
             ),
+            SizedBox(height: 20),
+            _buildButton('企業情報一覧', buttonWidth2, buttonHeight, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AdminCompanyColumnList()),
+              );
+            })
           ],
         ),
       ),

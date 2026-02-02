@@ -147,6 +147,17 @@ public class ThreadController {
     //     body.put("error", "サーバーでエラーが発生しました");
     //     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     // }
+    
+    @GetMapping("/admin/threads/reported")
+    public List<Map<String, Object>> getReportedThreads() {
+        return threadService.getThreadsOrderByLastReportedAt();
+    }
+
+    @PutMapping("admin/delete/{id}")
+    public ResponseEntity<Void> deleteThread(@PathVariable Integer id) {
+        threadService.deleteThread(id);
+        return ResponseEntity.ok().build();
+    }
 }
 
 

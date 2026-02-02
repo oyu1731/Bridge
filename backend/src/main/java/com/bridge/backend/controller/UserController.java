@@ -29,6 +29,9 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private com.bridge.backend.repository.IndustryRepository industryRepository;
+
     @GetMapping(value = "/list", produces = "application/json; charset=UTF-8")
     public ResponseEntity<List<UserListDto>> getUsers() {
         try {
@@ -47,21 +50,60 @@ public class UserController {
     ) {
         return ResponseEntity.ok(userService.searchUsers(keyword, type));
     }
-
+    
     @GetMapping("/{id}/comments")
     public List<UserCommentHistoryDto> getUserCommentHistory(@PathVariable Integer id) {
         return userService.getUserCommentHistory(id);
     }
 
     @PostMapping(produces = "application/json; charset=UTF-8")
-    public User createUser(@RequestBody UserDto userDto) {
+    public ResponseEntity<?> createUser(@RequestBody UserDto userDto) {
+        Map<String, Object> response = new java.util.HashMap<>();
+        Map<String, String> errors = new java.util.HashMap<>();
+        response.put("input", userDto);
+        // typeバリデーション
+        Integer type = userDto.getType();
+        if (type == null) {
+            errors.put("type", "不正な入力値です");
+        } else if (type != 1 && type != 2 && type != 3) {
+            errors.put("type", "不正な入力値です");
+        }
+
+        // user_idバリデーション（idは自動採番のため、ここでは不要。もし外部から指定する場合はここでチェック）
+        // target_idバリデーション（desiredIndustriesの各ID）
+        if (userDto.getDesiredIndustries() != null) {
+            for (Integer industryId : userDto.getDesiredIndustries()) {
+                if (industryId == null) {
+                    errors.put("target_id", "不正な入力値です");
+                    break;
+                }
+                // DB存在チェック
+                if (!industryRepository.existsById(industryId)) {
+                    errors.put("target_id", "不正な入力値です");
+                    break;
+                }
+            }
+        }
+
+        // user_idのDB存在チェック（もし外部から指定する場合のみ）
+        // if (userDto.getId() != null && !userRepository.existsById(userDto.getId())) {
+        //     errors.put("user_id", "不正な入力値です");
+        // }
+
+        if (!errors.isEmpty()) {
+            response.put("errors", errors);
+            return ResponseEntity.badRequest().body(response);
+        }
         try {
             ObjectMapper mapper = new ObjectMapper();
             System.out.println("受け取ったJSON: " + mapper.writeValueAsString(userDto));
+            User created = userService.createUser(userDto);
+            return ResponseEntity.ok(created);
         } catch (Exception e) {
             e.printStackTrace();
+            response.put("errors", Map.of("system", "Internal Server Error"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
-        return userService.createUser(userDto);
     }
 
     @PutMapping("/{id}/delete")
@@ -77,22 +119,30 @@ public class UserController {
      * @return UserDtoオブジェクト (存在しない場合は404 Not Found)
      */
     @GetMapping("/{id}")
-    public ResponseEntity<UserDto> getUserById(@PathVariable("id") Integer id) {
-        // --- デバッグ用ログ追加 ---
-        System.out.println("[API] ユーザー情報取得リクエストを受信。ID: " + id);
+    public ResponseEntity<?> getUserById(@PathVariable("id") String idStr) {
+        Map<String, Object> response = new java.util.HashMap<>();
+        Map<String, String> errors = new java.util.HashMap<>();
+        response.put("input", idStr);
+        Integer id = null;
+        try {
+            id = Integer.valueOf(idStr);
+        } catch (NumberFormatException e) {
+            errors.put("user_id", "不正な入力値です");
+            response.put("errors", errors);
+            return ResponseEntity.badRequest().body(response);
+        }
         try {
             UserDto userDto = userService.getUserById(id);
             if (userDto != null) {
-                System.out.println("[API] ユーザーID: " + id + " の情報を正常に取得しました。");
-                return new ResponseEntity<>(userDto, HttpStatus.OK);
+                return ResponseEntity.ok(userDto);
             } else {
-                System.out.println("[API] ユーザーID: " + id + " は見つかりませんでした (404)。");
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
         } catch (Exception e) {
-            System.err.println("[API] ユーザーID: " + id + " の取得中にサーバーエラーが発生しました: " + e.getMessage());
             e.printStackTrace();
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            errors.put("system", "Internal Server Error");
+            response.put("errors", errors);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
@@ -171,4 +221,43 @@ public class UserController {
         UserDto updated = userService.updateUserIcon(id, photoId);
         return ResponseEntity.ok(updated);
     }
+
+    /**
+     * ログイン中のアカウントのサブスク確認・更新
+     * サブスクテーブルからアカウントタイプを確認し、
+     * 切れていた場合はusersテーブルを更新するエンドポイント
+     */
+    @PostMapping("/{id}/check-subscription")
+    public ResponseEntity<Map<String, Object>> checkAndUpdateSubscriptionStatus(@PathVariable Integer id) {
+        try {
+            Map<String, Object> result = userService.checkAndUpdateSubscriptionStatus(id);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * ユーザーの現在のプランステータスのみを取得する
+     * GET /api/users/{id}/plan-status
+     */
+    @GetMapping("/{id}/plan-status")
+    public ResponseEntity<Map<String, String>> getUserPlanStatus(@PathVariable Integer id) {
+        try {
+            // UserServiceに作成するメソッドを呼び出す
+            String planStatus = userService.getPlanStatusById(id);
+            
+            if (planStatus != null) {
+                return ResponseEntity.ok(Map.of("planStatus", planStatus));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
 }

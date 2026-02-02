@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -20,6 +21,7 @@ import '../04-profile/12-worker-profile-edit.dart';
 import '../04-profile/13-company-profile-edit.dart';
 
 // 認証
+import '../02-auth/05-sign-in.dart';
 import '../02-auth/50-password-update.dart';
 import '../02-auth/06-delete-account.dart';
 
@@ -44,13 +46,48 @@ import '../09-admin/37-admin-report-log-list.dart';
 import '../09-admin/38-admin-thread-list.dart';
 import '../09-admin/40-admin-company-column-list.dart';
 import '../09-admin/42-admin-account-list.dart';
-import '../05-notice/45-admin-mail-send.dart';
 
 // アイコン取得
 import '../06-company/photo_api_client.dart';
 
 // 隠しページ
 import '99-hidden-page.dart';
+
+class SimpleNotification {
+  final int id;
+  final String title;
+  final String content;
+  final int type;
+  final int category;
+  final DateTime? sendFlag;
+  final int? userId;
+  final int sendFlagInt;
+
+  SimpleNotification({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.type,
+    required this.category,
+    required this.sendFlagInt,
+    this.sendFlag,
+    this.userId,
+  });
+
+  factory SimpleNotification.fromJson(Map<String, dynamic> json) {
+    return SimpleNotification(
+      id: json['id'],
+      title: json['title'],
+      content: json['content'],
+      type: json['type'],
+      category: json['category'],
+      userId: json['userId'],
+      sendFlagInt: json['sendFlagInt'],
+      sendFlag:
+          json['sendFlag'] != null ? DateTime.parse(json['sendFlag']) : null,
+    );
+  }
+}
 
 class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
   const BridgeHeader({Key? key}) : super(key: key);
@@ -60,6 +97,93 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
 
   static int _logoTapCount = 0;
   static DateTime? _lastTapTime;
+  static Set<String> _shownAlertUserIds = {}; // format: "userId_planStatus"
+  static Map<int, String> _cachedPlanStatus = {};
+
+  // =========================
+  // 🔧 プラン状態取得
+  // =========================
+  static void clearPlanStatusCache() {
+    print('🗑️ プラン状態キャッシュをクリア');
+    _cachedPlanStatus.clear();
+  }
+
+  static void resetAlertHistory(int userId) {
+    print('🗑️ ユーザー $userId のアラート表示履歴をリセット');
+    // このユーザーのすべてのプラン状態に対するアラート履歴をリセット
+    _shownAlertUserIds.removeWhere((key) => key.startsWith('${userId}_'));
+  }
+
+  Future<String?> _fetchPlanStatus(int userId) async {
+    print('🔍 プラン状態取得開始: userId=$userId');
+    try {
+      final response = await http.get(
+        Uri.parse("${ApiConfig.baseUrl}/api/users/$userId/plan-status"),
+      );
+
+      print('📶 APIレスポンスコード: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        print("📡 APIレスポンス: $data");
+        print("📡 レスポンス型: ${data.runtimeType}");
+
+        // レスポンスが直接文字列の場合と、オブジェクトの場合の両対応
+        if (data is String) {
+          print("✅ 文字列として受け取った: $data");
+          return data;
+        } else if (data is Map) {
+          final planStatus = data['planStatus'] as String?;
+          print("✅ Mapから取得: $planStatus");
+          return planStatus;
+        }
+      } else {
+        print("❌ ステータスコード異常: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("❌ プラン状態取得エラー: $e");
+    }
+    print("🛑 プラン状態取得失敗: nullを返却");
+    return null;
+  }
+
+  // =========================
+  // ⚠️ 無料プラン警告ダイアログ
+  // =========================
+  void _showUpgradeAlert(BuildContext context) {
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (_) => AlertDialog(
+            title: const Text('プランのご案内'),
+            content: const Text(
+              '現在のプランは「無料」です。\n\n'
+              '企業機能をすべて利用するには有料プランへのアップグレードが必要です。',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('あとで'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PlanStatusScreen(userType: '企業'),
+                    ),
+                  );
+                },
+                child: const Text('プランを確認'),
+              ),
+            ],
+          ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,10 +195,66 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         final nickname = userInfo['nickname'] ?? '';
         final iconPath = userInfo['iconPath'] ?? '';
         final isAdmin = userInfo['isAdmin'] == true;
+        final userId = userInfo['userId'];
 
         final greetings = ['こんにちは', 'いらっしゃいませ', 'ようこそ', 'お帰りなさい'];
         final greeting =
             greetings[DateTime.now().millisecond % greetings.length];
+
+        // =========================
+        // 🏢 企業アカウントならプランチェック
+        // =========================
+        print('🔍 ヘッダー: プランチェック開始');
+        print('   accountType=$accountType, userId=$userId');
+        print('   _shownAlertUserIds=$_shownAlertUserIds');
+
+        if (accountType == '企業' &&
+            userId != null &&
+            !_shownAlertUserIds.contains(userId)) {
+          print('✅ 企業ユーザー確認: プランステータスを取得中...');
+          _fetchPlanStatus(userId)
+              .then((status) {
+                print('📊 プランステータス取得完了: status=$status, userId=$userId');
+                final alertKey = '${userId}_$status';
+                if (!_shownAlertUserIds.contains(alertKey)) {
+                  if (status == null) {
+                    // ❌ DB登録なし → トップに戻す
+                    print('❌ プラン状態がnull（DB登録なし）');
+                    _shownAlertUserIds.add(alertKey);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      print('❌ DB登録なし → トップに戻します');
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const SignInPage()),
+                        (route) => false,
+                      );
+                    });
+                  } else if (status == '無料' || status == '無料' || status == '') {
+                    // ⚠️ 無料プラン → プラン確認画面へ直接遷移
+                    print('⚠️ 無料プラン検出: status=$status → プラン確認画面へ遷移');
+                    _shownAlertUserIds.add(alertKey);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      print('🚀 プラン確認画面へ遷移中...');
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder:
+                              (_) => const PlanStatusScreen(userType: '企業'),
+                        ),
+                        (route) => false,
+                      );
+                    });
+                  } else {
+                    print('✅ プレミアムプラン: $status');
+                  }
+                } else {
+                  print('⏭️ アラート既に表示済み (key=$alertKey)');
+                }
+              })
+              .catchError((error) {
+                print('❌ プランステータス取得エラー: $error');
+              });
+        } else {
+          print('⏭️ プランチェック条件未満(企業以外またはアラート済み)');
+        }
 
         return Container(
           height: 120,
@@ -100,7 +280,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                     final isSmallScreen = constraints.maxWidth < 600;
 
                     if (isSmallScreen) {
-                      // スマホ：1行コンパクトレイアウト
+                      // スマホ：1行コンパクトレイアウト（ロゴは左、他は右寄せ）
                       return SizedBox(
                         height: 58,
                         child: Row(
@@ -109,17 +289,13 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                             GestureDetector(
                               onTap: () {
                                 final now = DateTime.now();
-
-                                // 1.5秒以上空いたらリセット
                                 if (_lastTapTime == null ||
                                     now.difference(_lastTapTime!) >
                                         const Duration(seconds: 1)) {
                                   _logoTapCount = 0;
                                 }
-
                                 _lastTapTime = now;
                                 _logoTapCount++;
-
                                 if (_logoTapCount >= 3) {
                                   _logoTapCount = 0;
                                   Navigator.push(
@@ -149,19 +325,24 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 8),
                             Flexible(
-                              child: Text(
-                                '$greeting、$nicknameさん。',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF424242),
-                                  fontWeight: FontWeight.w500,
+                              flex: 3,
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  '$greeting、$nicknameさん。',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF424242),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            const Spacer(),
                             const SizedBox(width: 2),
                             SizedBox(
                               width: 28,
@@ -194,49 +375,40 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                                     (_) => _buildProfileMenu(accountType),
                               ),
                             ),
-                            SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: IconButton(
-                                tooltip: 'メール一覧',
-                                onPressed: () {
-                                  if (isAdmin) {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => AdminMailList(),
-                                      ),
-                                    );
-                                  }
-                                },
-                                icon: const Icon(
-                                  Icons.notifications_outlined,
-                                  size: 16,
-                                  color: Color(0xFF1976D2),
+                            if (!isAdmin)
+                              SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: IconButton(
+                                  tooltip: 'メール一覧',
+                                  onPressed: () {
+                                    _showNotificationDialog(context);
+                                  },
+                                  icon: const Icon(
+                                    Icons.notifications_outlined,
+                                    size: 16,
+                                    color: Color(0xFF1976D2),
+                                  ),
+                                  padding: EdgeInsets.zero,
                                 ),
-                                padding: EdgeInsets.zero,
                               ),
-                            ),
                           ],
                         ),
                       );
                     } else {
-                      // PC：1行レイアウト（従来通り）
+                      // PC
                       return Row(
                         children: [
                           GestureDetector(
                             onTap: () {
                               final now = DateTime.now();
-
-                              // 1.5秒以上空いたらリセット
                               if (_lastTapTime == null ||
                                   now.difference(_lastTapTime!) >
                                       const Duration(seconds: 1)) {
                                 _logoTapCount = 0;
                               }
-
                               _lastTapTime = now;
                               _logoTapCount++;
-
                               if (_logoTapCount >= 3) {
                                 _logoTapCount = 0;
                                 Navigator.push(
@@ -278,7 +450,6 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                                 ),
                               ),
                               const SizedBox(width: 16),
-                              // プロフィール
                               PopupMenuButton<String>(
                                 onSelected:
                                     (v) =>
@@ -306,22 +477,17 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                                     (_) => _buildProfileMenu(accountType),
                               ),
                               const SizedBox(width: 8),
-                              IconButton(
-                                tooltip: 'メール一覧',
-                                onPressed: () {
-                                  if (isAdmin) {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => AdminMailList(),
-                                      ),
-                                    );
-                                  }
-                                },
-                                icon: const Icon(
-                                  Icons.notifications_none_outlined,
-                                  color: Color(0xFF1976D2),
+                              if (!isAdmin)
+                                IconButton(
+                                  tooltip: 'メール一覧',
+                                  onPressed: () {
+                                    _showNotificationDialog(context);
+                                  },
+                                  icon: const Icon(
+                                    Icons.notifications_none_outlined,
+                                    color: Color(0xFF1976D2),
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
                         ],
@@ -399,7 +565,6 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                     }
 
                     if (isAdmin) {
-                      // 管理者用ナビ
                       buttons.add(
                         _nav('スレッド', () {
                           Navigator.push(
@@ -423,10 +588,10 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                       );
                       buttons.add(SizedBox(width: space));
                       buttons.add(
-                        _nav('メール送信', () {
+                        _nav('メール一覧', () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => AdminMailSend()),
+                            MaterialPageRoute(builder: (_) => AdminMailList()),
                           );
                         }, isSmall),
                       );
@@ -512,7 +677,6 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
 
   // ===== プロフィールメニュー =====
   List<PopupMenuEntry<String>> _buildProfileMenu(String accountType) {
-    // 管理者は一部メニュー非表示
     if (accountType == '管理者') {
       return <PopupMenuEntry<String>>[
         _menu('password_change', Icons.lock, 'パスワード変更'),
@@ -574,7 +738,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
 
     try {
       final res = await http.get(
-        Uri.parse('http://localhost:8080/api/users/$userId'),
+        Uri.parse('${ApiConfig.baseUrl}/api/users/$userId'),
       );
       if (res.statusCode == 200) {
         final api = jsonDecode(res.body);
@@ -599,6 +763,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         }
 
         return {
+          'userId': userId,
           'accountType': typeStr,
           'nickname': nickname,
           'iconPath': iconPath,
@@ -608,6 +773,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
     } catch (_) {}
 
     return {
+      'userId': userId,
       'accountType': 'unknown',
       'nickname': nickname,
       'iconPath': '',
@@ -701,5 +867,118 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         );
         break;
     }
+  }
+
+  Future<void> _showNotificationDialog(BuildContext context) async {
+    final userInfo = await _getUserInfo();
+    final accountType = userInfo['accountType'];
+
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = jsonDecode(prefs.getString('current_user')!);
+    final userId = userJson['id'];
+
+    int? type;
+    if (accountType == '学生') type = 1;
+    if (accountType == '社会人') type = 2;
+    if (accountType == '企業') type = 3;
+
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/notifications'),
+    );
+    if (res.statusCode != 200) return;
+
+    final List list = jsonDecode(res.body);
+
+    final notifications =
+        list.map((e) => SimpleNotification.fromJson(e)).where((n) {
+          if (n.sendFlagInt != 2) return false;
+          // 全員
+          if (n.type == 7) return true;
+
+          // 個人宛
+          if (n.type == 8 && n.userId == userId) return true;
+
+          // 学生
+          if (type == 1) {
+            return n.type == 1 || n.type == 4 || n.type == 5;
+          }
+
+          // 社会人
+          if (type == 2) {
+            return n.type == 2 || n.type == 4 || n.type == 6;
+          }
+
+          // 企業
+          if (type == 3) {
+            return n.type == 3 || n.type == 5 || n.type == 6;
+          }
+
+          return false;
+        }).toList();
+
+    showDialog(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: const Text('お知らせ'),
+            content: SizedBox(
+              width: 420,
+              child:
+                  notifications.isEmpty
+                      ? const Center(child: Text('お知らせはありません'))
+                      : ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: notifications.length,
+                        separatorBuilder: (_, __) => const Divider(),
+                        itemBuilder: (_, i) {
+                          final n = notifications[i];
+                          return ListTile(
+                            title: Text(n.title),
+                            subtitle: Text(n.category == 1 ? '運営情報' : '重要'),
+                            onTap: () {
+                              Navigator.pop(context);
+                              _showNotificationDetail(context, n);
+                            },
+                          );
+                        },
+                      ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('閉じる'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _showNotificationDetail(BuildContext context, SimpleNotification n) {
+    showDialog(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: Text(n.title),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(n.content),
+                const SizedBox(height: 12),
+                Text(
+                  '送信日：${n.sendFlag != null ? '${n.sendFlag!.year}/${n.sendFlag!.month.toString().padLeft(2, '0')}/${n.sendFlag!.day.toString().padLeft(2, '0')} '
+                          '${n.sendFlag!.hour.toString().padLeft(2, '0')}:${n.sendFlag!.minute.toString().padLeft(2, '0')}' : '-'}',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('閉じる'),
+              ),
+            ],
+          ),
+    );
   }
 }

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../11-common/58-header.dart';
-import '../06-company/api_config.dart';
+import '../11-common/api_config.dart';
 import 'admin_article_dto.dart';
 
 /* ------------------ 写真DTO（企業側と同一ロジック） ------------------ */
@@ -107,14 +107,21 @@ class _AdminCompanyArticleDetailState extends State<AdminCompanyArticleDetail> {
   Future<void> _delete() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('削除確認'),
-        content: const Text('この記事を削除しますか？'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('キャンセル')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('削除')),
-        ],
-      ),
+      builder:
+          (_) => AlertDialog(
+            title: const Text('削除確認'),
+            content: const Text('この記事を削除しますか？'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('キャンセル'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('削除'),
+              ),
+            ],
+          ),
     );
 
     if (ok == true) {
@@ -145,8 +152,16 @@ class _AdminCompanyArticleDetailState extends State<AdminCompanyArticleDetail> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(appBar: BridgeHeader(), body: Center(child: CircularProgressIndicator()));
-    if (_error != null) return Scaffold(appBar: const BridgeHeader(), body: Center(child: Text(_error!)));
+    if (_loading)
+      return const Scaffold(
+        appBar: BridgeHeader(),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    if (_error != null)
+      return Scaffold(
+        appBar: const BridgeHeader(),
+        body: Center(child: Text(_error!)),
+      );
 
     final a = _article!;
     return Scaffold(
@@ -156,7 +171,15 @@ class _AdminCompanyArticleDetailState extends State<AdminCompanyArticleDetail> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: Text(a.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
+            Center(
+              child: Text(
+                a.title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             _buildTagsAndCompany(a),
             const SizedBox(height: 24),
@@ -189,53 +212,68 @@ class _AdminCompanyArticleDetailState extends State<AdminCompanyArticleDetail> {
 
   // ★ タグを企業側と同一デザインへ修正
   Widget _buildTagsAndCompany(AdminArticleDTO a) => Row(
-        children: [
-          Expanded(
-            child: Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              children: a.tags.map((t) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE3F2FD),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF90CAF9)),
-                ),
-                child: Text("#$t", style: const TextStyle(color: Color(0xFF1565C0), fontWeight: FontWeight.w500)),
-              )).toList(),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(a.companyName, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: _delete,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1976D2),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              elevation: 2,
-              shadowColor: const Color(0xFF1976D2).withOpacity(0.3),
-            ),
-            child: const Text(
-              '削除',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      );
+    children: [
+      Expanded(
+        child: Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          children:
+              a.tags
+                  .map(
+                    (t) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3F2FD),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFF90CAF9)),
+                      ),
+                      child: Text(
+                        "#$t",
+                        style: const TextStyle(
+                          color: Color(0xFF1565C0),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+        ),
+      ),
+      const SizedBox(width: 12),
+      Text(a.companyName, style: const TextStyle(fontWeight: FontWeight.bold)),
+      const SizedBox(width: 12),
+      ElevatedButton(
+        onPressed: _delete,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF1976D2),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          elevation: 2,
+          shadowColor: const Color(0xFF1976D2).withOpacity(0.3),
+        ),
+        child: const Text(
+          '削除',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+      ),
+    ],
+  );
 
   /* -------------------- 企業側と同一ロジック -------------------- */
   Widget _buildImageSection() {
     final isWide = MediaQuery.of(context).size.width >= 900;
     List<Widget> imageWidgets = [];
 
-    if (_photos.length > 0 && _photos[0] != null) imageWidgets.add(_buildPhotoWidget(0));
-    if (_photos.length > 1 && _photos[1] != null) imageWidgets.add(_buildPhotoWidget(1));
-    if (_photos.length > 2 && _photos[2] != null) imageWidgets.add(_buildPhotoWidget(2));
+    if (_photos.length > 0 && _photos[0] != null)
+      imageWidgets.add(_buildPhotoWidget(0));
+    if (_photos.length > 1 && _photos[1] != null)
+      imageWidgets.add(_buildPhotoWidget(1));
+    if (_photos.length > 2 && _photos[2] != null)
+      imageWidgets.add(_buildPhotoWidget(2));
 
     if (imageWidgets.isEmpty) return const SizedBox.shrink();
 
@@ -246,27 +284,61 @@ class _AdminCompanyArticleDetailState extends State<AdminCompanyArticleDetail> {
     double maxSingle = isWide ? 675 : double.infinity;
 
     if (imageWidgets.length == 1) {
-      return Center(child: ConstrainedBox(constraints: BoxConstraints(maxHeight: h1, maxWidth: maxSingle), child: imageWidgets[0]));
+      return Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: h1, maxWidth: maxSingle),
+          child: imageWidgets[0],
+        ),
+      );
     }
     if (imageWidgets.length == 2) {
       return Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: h2, maxWidth: maxRow),
-          child: Row(children: [
-            Expanded(child: Padding(padding: const EdgeInsets.only(right: 8), child: imageWidgets[0])),
-            Expanded(child: Padding(padding: const EdgeInsets.only(left: 8), child: imageWidgets[1])),
-          ]),
+          child: Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: imageWidgets[0],
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: imageWidgets[1],
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: h3, maxWidth: maxRow),
-        child: Row(children: [
-          Expanded(child: Padding(padding: const EdgeInsets.only(right: 8), child: imageWidgets[0])),
-          Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: imageWidgets[1])),
-          Expanded(child: Padding(padding: const EdgeInsets.only(left: 8), child: imageWidgets[2])),
-        ]),
+        child: Row(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: imageWidgets[0],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: imageWidgets[1],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: imageWidgets[2],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -293,8 +365,11 @@ class _AdminCompanyArticleDetailState extends State<AdminCompanyArticleDetail> {
             fit: BoxFit.contain,
             child: Image.network(
               photo.filePath!,
-              loadingBuilder: (c, w, p) =>
-                  p == null ? w : const Center(child: CircularProgressIndicator()),
+              loadingBuilder:
+                  (c, w, p) =>
+                      p == null
+                          ? w
+                          : const Center(child: CircularProgressIndicator()),
               errorBuilder: (context, error, stackTrace) {
                 return Center(
                   child: Column(
@@ -331,7 +406,10 @@ class _AdminCompanyArticleDetailState extends State<AdminCompanyArticleDetail> {
       children: [
         const Icon(Icons.favorite, color: Colors.red),
         const SizedBox(width: 6),
-        Text('${a.totalLikes}', style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(
+          '${a.totalLikes}',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
       ],
     );
   }
@@ -340,43 +418,69 @@ class _AdminCompanyArticleDetailState extends State<AdminCompanyArticleDetail> {
     showDialog(
       context: context,
       barrierColor: Colors.black87,
-      builder: (_) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(16),
-        child: Stack(
-          children: [
-            Center(
-              child: InteractiveViewer(
-                minScale: 0.5,
-                maxScale: 4.0,
-                child: Image.network(
-                  url,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (c, w, p) =>
-                      p == null ? w : const Center(child: CircularProgressIndicator(color: Colors.white)),
-                  errorBuilder: (_, __, ___) => Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.broken_image, color: Colors.white, size: 64),
-                      SizedBox(height: 16),
-                      Text('画像を読み込めませんでした', style: TextStyle(color: Colors.white, fontSize: 16)),
-                    ],
+      builder:
+          (_) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.all(16),
+            child: Stack(
+              children: [
+                Center(
+                  child: InteractiveViewer(
+                    minScale: 0.5,
+                    maxScale: 4.0,
+                    child: Image.network(
+                      url,
+                      fit: BoxFit.contain,
+                      loadingBuilder:
+                          (c, w, p) =>
+                              p == null
+                                  ? w
+                                  : const Center(
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                      errorBuilder:
+                          (_, __, ___) => Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(
+                                Icons.broken_image,
+                                color: Colors.white,
+                                size: 64,
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                '画像を読み込めませんでした',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                    ),
                   ),
                 ),
-              ),
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black54,
+                      padding: const EdgeInsets.all(8),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ],
             ),
-            Positioned(
-              top: 16,
-              right: 16,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 32),
-                style: IconButton.styleFrom(backgroundColor: Colors.black54, padding: const EdgeInsets.all(8)),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 }

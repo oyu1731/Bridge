@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:html' as html;
+import '../11-common/api_config.dart';
+import '../11-common/url.dart' as url;
 
 /// Web版 Stripe Checkout
 Future<void> startWebCheckout({
@@ -9,35 +11,41 @@ Future<void> startWebCheckout({
   required String planType,
   required String userType,
   required int userId,
-  String successUrl = "http://localhost:5000/#/payment-success",
-  String cancelUrl = "http://localhost:5000/#/payment-cancel",
+  String? successUrl,
+  String? cancelUrl,
 }) async {
   // 注: DB更新は Webhook の handleSuccessfulPayment() で処理されるため、ここでは不要
+
+  // Set default URLs if not provided
+  final String effectiveSuccessUrlBase =
+      successUrl ?? "${url.ApiConfig.frontendUrl}/#/payment-success";
+  final String effectiveCancelUrl =
+      cancelUrl ?? "${url.ApiConfig.frontendUrl}/#/payment-cancel";
 
   final payload = {
     "amount": amount,
     "currency": currency,
     "userType": userType,
     "userId": userId,
-    "successUrl": successUrl,
-    "cancelUrl": cancelUrl,
+    "successUrl": effectiveSuccessUrlBase,
+    "cancelUrl": effectiveCancelUrl,
   };
 
   // successUrl に userType と session_id プレースホルダを付与しておく
   final String effectiveSuccessUrl =
-      successUrl.contains('?')
-          ? '$successUrl&userType=${Uri.encodeComponent(userType)}&session_id={CHECKOUT_SESSION_ID}'
-          : '$successUrl?userType=${Uri.encodeComponent(userType)}&session_id={CHECKOUT_SESSION_ID}';
+      effectiveSuccessUrlBase.contains('?')
+          ? '$effectiveSuccessUrlBase&userType=${Uri.encodeComponent(userType)}&session_id={CHECKOUT_SESSION_ID}'
+          : '$effectiveSuccessUrlBase?userType=${Uri.encodeComponent(userType)}&session_id={CHECKOUT_SESSION_ID}';
 
   payload['successUrl'] = effectiveSuccessUrl;
 
   print("===== Stripe Checkout リクエスト開始 =====");
-  print("送信先: http://localhost:8080/api/v1/payment/checkout-session");
+  print("送信先: ${ApiConfig.baseUrl}/api/v1/payment/checkout-session");
   print("送信データ(JSON): ${jsonEncode(payload)}");
 
   try {
     final response = await http.post(
-      Uri.parse("http://localhost:8080/api/v1/payment/checkout-session"),
+      Uri.parse("${ApiConfig.baseUrl}/api/v1/payment/checkout-session"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(payload),
     );

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'api_config.dart';
-
+import '../11-common/api_config.dart';
 
 class ArticleDTO {
   final int? id;
@@ -42,7 +41,8 @@ class ArticleDTO {
     List<String>? industries;
     if (json['industries'] != null) {
       if (json['industries'] is List) {
-        industries = (json['industries'] as List).map((e) => e.toString()).toList();
+        industries =
+            (json['industries'] as List).map((e) => e.toString()).toList();
       } else if (json['industries'] is String) {
         industries = (json['industries'] as String).split(',');
       }
@@ -93,7 +93,7 @@ class ArticleApiClient {
   static Future<List<ArticleDTO>> getAllArticles() async {
     try {
       final response = await http.get(Uri.parse(baseUrl));
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(response.body);
         return jsonList.map((json) => ArticleDTO.fromJson(json)).toList();
@@ -108,26 +108,26 @@ class ArticleApiClient {
   static Future<List<ArticleDTO>> searchArticles({
     int? companyId,
     String? keyword,
-      List<int>? industryIds,
+    List<int>? industryIds,
   }) async {
     try {
       final uri = Uri.parse('$baseUrl/search');
       final Map<String, String> queryParams = {};
-      
+
       if (companyId != null) {
         queryParams['companyId'] = companyId.toString();
       }
       if (keyword != null && keyword.isNotEmpty) {
         queryParams['keyword'] = keyword;
       }
-        if (industryIds != null && industryIds.isNotEmpty) {
-          // 複数業界IDをカンマ区切りで送信
-          queryParams['industryIds'] = industryIds.join(',');
+      if (industryIds != null && industryIds.isNotEmpty) {
+        // 複数業界IDをカンマ区切りで送信
+        queryParams['industryIds'] = industryIds.join(',');
       }
-      
+
       final searchUri = uri.replace(queryParameters: queryParams);
       final response = await http.get(searchUri);
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(response.body);
         return jsonList.map((json) => ArticleDTO.fromJson(json)).toList();
@@ -146,7 +146,7 @@ class ArticleApiClient {
         uri = uri.replace(queryParameters: {'userId': userId.toString()});
       }
       final response = await http.get(uri);
-      
+
       if (response.statusCode == 200) {
         return ArticleDTO.fromJson(json.decode(response.body));
       } else if (response.statusCode == 404) {
@@ -166,7 +166,7 @@ class ArticleApiClient {
         headers: {'Content-Type': 'application/json'},
         body: json.encode(article.toJson()),
       );
-      
+
       if (response.statusCode == 201 || response.statusCode == 200) {
         return ArticleDTO.fromJson(json.decode(response.body));
       } else {
@@ -184,7 +184,7 @@ class ArticleApiClient {
         headers: {'Content-Type': 'application/json'},
         body: json.encode(article.toJson()),
       );
-      
+
       if (response.statusCode == 200) {
         return ArticleDTO.fromJson(json.decode(response.body));
       } else {
@@ -198,7 +198,7 @@ class ArticleApiClient {
   static Future<void> deleteArticle(int id) async {
     try {
       final response = await http.delete(Uri.parse('$baseUrl/$id'));
-      
+
       if (response.statusCode != 204 && response.statusCode != 200) {
         throw Exception('Failed to delete article: ${response.statusCode}');
       }
@@ -212,12 +212,9 @@ class ArticleApiClient {
       final response = await http.post(
         Uri.parse('$baseUrl/$id/like'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'userId': userId,
-          'liking': isLiking,
-        }),
+        body: json.encode({'userId': userId, 'liking': isLiking}),
       );
-      
+
       if (response.statusCode != 200) {
         throw Exception('Failed to like article: ${response.statusCode}');
       }
@@ -226,17 +223,17 @@ class ArticleApiClient {
     }
   }
 
-
-
   static Future<List<ArticleDTO>> getArticlesByCompanyId(int companyId) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/company/$companyId'));
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(response.body);
         return jsonList.map((json) => ArticleDTO.fromJson(json)).toList();
       } else {
-        throw Exception('Failed to load company articles: ${response.statusCode}');
+        throw Exception(
+          'Failed to load company articles: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Error fetching company articles: $e');
