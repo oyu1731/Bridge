@@ -25,7 +25,7 @@ class _ThreadListState extends State<ThreadList> {
     if (jsonString == null) return;
     final userData = jsonDecode(jsonString);
     setState(() {
-      userType = userData['type']+1;
+      userType = userData['type'];
     });
   }
   @override
@@ -41,25 +41,35 @@ class _ThreadListState extends State<ThreadList> {
   Future<void> _fetchThreads() async {
   try {
     final threads = await ThreadApiClient.getAllThreads();
+    //スレッド表示絞り込み
+    bool canView(Thread t) {
+      // 全員
+      if (t.entryCriteria == 1) return true;
+      // 学生
+      if (userType == 1 && t.entryCriteria == 2) return true;
+      // 社会人
+      if (userType == 2 && t.entryCriteria == 3) return true;
+      return false;
+    }
 
-    // ---- 公式スレッド ----
-    final official = threads.where((t) => t.type == 1).toList();
 
-    // ---- 非公式フィルタ ----
+    //公式スレッド
+    final official = threads
+      .where((t) => t.type == 1 && canView(t))
+      .toList();
+    //非公式スレッド
     final filtered = threads
-        .where((t) =>
-            t.type == 2 &&
-            (t.entryCriteria == userType || t.entryCriteria == 1))
-        .toList();
+      .where((t) => t.type == 2 && canView(t))
+      .toList();
 
-    // 並び替え（新しい順）
+    //並び替え（新しい順）
     filtered.sort((a, b) {
       final aDate = a.lastCommentDate ?? DateTime(2000);
       final bDate = b.lastCommentDate ?? DateTime(2000);
       return bDate.compareTo(aDate);
     });
 
-    // 上位5件
+    //上位5件
     final top5 = filtered.take(5).toList();
 
     setState(() {
