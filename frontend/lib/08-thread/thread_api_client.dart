@@ -1,12 +1,12 @@
 import 'dart:convert';
+import 'package:bridge/11-common/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'thread_model.dart';
-import 'thread_api_config.dart';
 import 'package:bridge/09-admin/admin_reported_thread.dart';
 
 class ThreadApiClient {
   static Future<List<Thread>> getAllThreads() async {
-    final url = Uri.parse(ThreadApiConfig.threadsUrl);
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/threads');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -19,7 +19,7 @@ class ThreadApiClient {
 
   static Future<List<AdminReportedThread>> getReportedThreads() async {
     final url = Uri.parse(
-      '${ThreadApiConfig.threadsUrl}/admin/threads/reported',
+      '${ApiConfig.baseUrl}/admin/threads/reported',
     );
 
     final response = await http.get(url);
@@ -36,7 +36,7 @@ class ThreadApiClient {
 
   static Future<void> deleteThread(String threadId) async {
     final res = await http.put(
-      Uri.parse('${ThreadApiConfig.threadsUrl}/admin/delete/$threadId'),
+      Uri.parse('${ApiConfig.baseUrl}/admin/delete/$threadId'),
     );
 
     if (res.statusCode != 200) {

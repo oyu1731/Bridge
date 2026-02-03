@@ -54,7 +54,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
       if (res2.statusCode == 200) {
         final path = json.decode(res2.body)['photoPath'];
         if (path != null && path.toString().isNotEmpty) {
-          _userIconCache[userId] = "$baseUrl$path";
+          _userIconCache[userId] = "$img_baseurl$path";
         } else {
           _userIconCache[userId] = null;
         }
@@ -99,7 +99,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
         final res2 = await http.get(Uri.parse('$baseUrl/photos/$iconId'));
         if (res2.statusCode == 200) {
           final path = json.decode(res2.body)['photoPath'];
-          _currentUserIconUrl = "$baseUrl$path";
+          _currentUserIconUrl = "$img_baseurl$path";
         }
       }
     }
@@ -206,7 +206,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
   Future<int?> uploadImage() async {
     if (_selectedImage == null && _webImageBytes == null) return null;
     setState(() => _isUploading = true);
-    final uri = Uri.parse('$img_baseurl/photos/upload');
+    final uri = Uri.parse('$baseUrl/photos/upload');
     final request = http.MultipartRequest('POST', uri);
     //ここは絶対にユーザーidを文字列にする
     request.fields['userId'] = currentUserId.toString();
@@ -258,7 +258,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
     final res = await http.get(Uri.parse('$baseUrl/photos/$photoId'));
     if (res.statusCode == 200) {
       final path = json.decode(res.body)['photoPath'];
-      final url = "$baseUrl$path";
+      final url = "$img_baseurl$path";
       _photoUrlCache[photoId] = url;
       return url;
     }
@@ -296,7 +296,8 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
           print("これでアイコンの写真のパスが取得できる");
           print(json.decode(response2.body)['photoPath']);
           final iconPath = json.decode(response2.body)['photoPath'];
-          userIconUrl = "$baseUrl$iconPath";
+          //img_baseurlを使う
+          userIconUrl = "$img_baseurl$iconPath";
           if (!_messages.any((m) => m['id'] == msg['id'])) {
             _messages.add({
               'id': msg['id'],
@@ -321,21 +322,40 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
     }
   }
 
-  void _scrollToBottom() {
-    // スクロール対象があるか確認
+  Future<void> _scrollToBottom() async {
     if (!_scrollController.hasClients) return;
 
-    // 描画後にスクロール
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: Duration(milliseconds: 500),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+    // ① フレーム完了待ち
+    await Future.delayed(Duration.zero);
+
+    // ② 画像描画の揺れ対策（超重要）
+    for (int i = 0; i < 3; i++) {
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      if (!_scrollController.hasClients) return;
+
+      _scrollController.jumpTo(
+        _scrollController.position.maxScrollExtent,
+      );
+    }
   }
+
+
+  // void _scrollToBottom() {
+  //   // スクロール対象があるか確認
+  //   if (!_scrollController.hasClients) return;
+
+  //   // 描画後にスクロール
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     if (_scrollController.hasClients) {
+  //       _scrollController.animateTo(
+  //         _scrollController.position.maxScrollExtent,
+  //         duration: Duration(milliseconds: 500),
+  //         curve: Curves.easeOut,
+  //       );
+  //     }
+  //   });
+  // }
 
   //スレッド内にいる時にスレッドが削除された場合スレッド一覧ページに戻す
   void _showThreadDeletedDialog() {

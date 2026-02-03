@@ -83,28 +83,47 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
     final userData = jsonDecode(jsonString);
 
     setState(() {
-      userType = userData['type'] + 1;
+      userType = userData['type']; // 1=学生,2=社会人,3=企業;
     });
   }
 
   Future<void> _fetchUnofficialThreads() async {
+    bool canViewThread(Thread t, int? userType) {
+      if (t.entryCriteria == 1) {
+        // 全員OK
+        return true;
+      }
+
+      if (t.entryCriteria == 2 && userType == 1) {
+        // 学生のみ
+        return true;
+      }
+
+      if (t.entryCriteria == 3 && userType == 2) {
+        // 社会人のみ
+        return true;
+      }
+
+      return false;
+    }
     try {
       await _loadUserData(); // ← await を付ける（超重要）
 
       final allThreads = await ThreadApiClient.getAllThreads();
 
       setState(() {
-        unofficialThreads =
-            allThreads
-                .where(
-                  (t) =>
-                      t.type == 2 &&
-                      (t.entryCriteria == userType || t.entryCriteria == 1),
-                )
-                .toList();
+      unofficialThreads =
+          allThreads
+              .where(
+                (t) =>
+                    t.type == 2 &&
+                    userType != null &&
+                    canViewThread(t, userType),
+              )
+              .toList();
 
-        filteredThreads = List.from(unofficialThreads);
-      });
+      filteredThreads = List.from(unofficialThreads);
+    });
     } catch (e) {
       print("非公式スレッドの取得に失敗: $e");
     }
