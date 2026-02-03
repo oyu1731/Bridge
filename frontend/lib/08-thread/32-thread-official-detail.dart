@@ -52,7 +52,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
       if (res2.statusCode == 200) {
         final path = json.decode(res2.body)['photoPath'];
         if (path != null && path.toString().isNotEmpty) {
-          _userIconCache[userId] = "$baseUrl$path";
+          _userIconCache[userId] = "$img_baseurl$path";
         } else {
           _userIconCache[userId] = null;
         }
@@ -98,7 +98,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
         final res2 = await http.get(Uri.parse('$baseUrl/photos/$iconId'));
         if (res2.statusCode == 200) {
           final path = json.decode(res2.body)['photoPath'];
-          _currentUserIconUrl = "$baseUrl$path";
+          _currentUserIconUrl = "$img_baseurl$path";
         }
       }
     }
@@ -118,7 +118,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   late final StreamController<List<Map<String, dynamic>>>
   _messageStreamController;
   late final WebSocketChannel _channel;
-  final String baseUrl = '${ApiConfig.baseUrl}';
+  final String baseUrl = '${ApiConfig.baseUrl}/api';
   final String img_baseurl = '${ApiConfig.baseUrl}';
 
   File? _selectedImage;
@@ -209,7 +209,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
   Future<int?> uploadImage() async {
     if (_selectedImage == null && _webImageBytes == null) return null;
     setState(() => _isUploading = true);
-    final uri = Uri.parse('$img_baseurl/photos/upload');
+    final uri = Uri.parse('$baseUrl/photos/upload');
     final request = http.MultipartRequest('POST', uri);
     request.fields['userId'] = currentUserId;
     if (kIsWeb) {
@@ -263,7 +263,7 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     final res = await http.get(Uri.parse('$baseUrl/photos/$photoId'));
     if (res.statusCode == 200) {
       final path = json.decode(res.body)['photoPath'];
-      final url = "$baseUrl$path";
+      final url = "$img_baseurl$path";
       _photoUrlCache[photoId] = url;
       return url;
     }
@@ -352,21 +352,23 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
     }
   }
 
-  //読み込める場所までスクロール
-  void _scrollToBottom() {
-    // スクロール対象があるか確認
+  //スクロール
+  Future<void> _scrollToBottom() async {
     if (!_scrollController.hasClients) return;
 
-    // 描画後にスクロール
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: Duration(milliseconds: 500),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+    // ① フレーム完了待ち
+    await Future.delayed(Duration.zero);
+
+    // ② 画像描画の揺れ対策（超重要）
+    for (int i = 0; i < 3; i++) {
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      if (!_scrollController.hasClients) return;
+
+      _scrollController.jumpTo(
+        _scrollController.position.maxScrollExtent,
+      );
+    }
   }
 
   //スレッド内にいる時にスレッドが削除された場合スレッド一覧ページに戻す

@@ -132,11 +132,13 @@ class _ThreadListState extends State<ThreadList> {
     final threads = await ThreadApiClient.getAllThreads();
     //スレッド表示絞り込み
     bool canView(Thread t) {
-      // 全員
+      // userType 未取得（未ログイン or セッション不整合）
+      if (userType == null) {
+        return t.entryCriteria == 1; // 全員OKのみ表示
+      }
+
       if (t.entryCriteria == 1) return true;
-      // 学生
       if (userType == 1 && t.entryCriteria == 2) return true;
-      // 社会人
       if (userType == 2 && t.entryCriteria == 3) return true;
       return false;
     }
@@ -217,7 +219,7 @@ class _ThreadListState extends State<ThreadList> {
                           ),
                           //スレッドの説明文
                           subtitle: Text(
-                            thread.description,
+                            thread.description ?? '',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(color: Colors.grey[700]),
@@ -286,7 +288,8 @@ class _ThreadListState extends State<ThreadList> {
                         ),
                         child: ListTile(
                           title: Text(
-                            thread.title,
+                            //タイトルなし保険
+                            thread.title.isNotEmpty ? thread.title : '（タイトルなし）',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -294,7 +297,7 @@ class _ThreadListState extends State<ThreadList> {
                           ),
                           //スレッドの説明文
                           subtitle: Text(
-                            thread.description,
+                            thread.description ?? '',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(color: Colors.grey[700]),
