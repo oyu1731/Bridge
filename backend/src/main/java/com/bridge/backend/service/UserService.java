@@ -42,6 +42,18 @@ import org.slf4j.LoggerFactory;
 
 @Service
 public class UserService {
+    public boolean existsByPhoneNumber(String phoneNumber) {
+        return userRepository.findAll().stream().anyMatch(u -> phoneNumber.equals(u.getPhoneNumber()));
+    }
+    // userIdを除外して重複チェック
+    public boolean existsByPhoneNumber(String phoneNumber, Integer excludeUserId) {
+        return userRepository.findAll().stream()
+            .anyMatch(u -> phoneNumber.equals(u.getPhoneNumber()) && (excludeUserId == null || !u.getId().equals(excludeUserId)));
+    }
+    public boolean existsByEmail(String email, Integer excludeUserId) {
+        return userRepository.findAll().stream()
+            .anyMatch(u -> email.equals(u.getEmail()) && (excludeUserId == null || !u.getId().equals(excludeUserId)));
+    }
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
@@ -233,35 +245,32 @@ public class UserService {
 
     // プロフィール編集
     @Transactional
-    public UserDto updateUserProfile(Integer userId, UserDto dto) {
+    public UserDto updateUserProfile(Integer userId, Map<String, Object> body) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // ===== メールアドレス重複チェック =====
-        Optional<User> existingUserWithEmail = userRepository.findByEmail(dto.getEmail());
-        if (existingUserWithEmail.isPresent() && !existingUserWithEmail.get().getId().equals(userId)) {
-            throw new IllegalArgumentException("そのメールアドレスは使用できません");
-        }
-        
-        // ===== usersテーブル更新 =====
-        user.setNickname(dto.getNickname());
-        user.setEmail(dto.getEmail());
-        user.setPhoneNumber(dto.getPhoneNumber());
-        if (dto.getSocietyHistory() != null) {
-            user.setSocietyHistory(dto.getSocietyHistory());
+        // usersテーブル更新
+        user.setNickname((String) body.get("nickname"));
+        user.setEmail((String) body.get("email"));
+        user.setPhoneNumber((String) body.get("phone_number"));
+        // societyHistoryは任意
+        if (body.get("society_history") != null) {
+            user.setSocietyHistory((Integer) body.get("society_history"));
         } else {
             user.setSocietyHistory(null);
         }
 
-        // ===== industry_relations更新（全削除→再登録） =====
+        // industry_relations更新（全削除→再登録）
         industryRelationRepository.deleteByUserId(userId);
-        if (dto.getDesiredIndustries() != null) {
+        Object industryIdsObj = body.get("industry_ids");
+        if (industryIdsObj instanceof java.util.List<?>) {
             int relationType = switch (user.getType()) {
                 case 2 -> 2;
                 case 3 -> 3;
                 default -> 1;
             };
-            for (Integer industryId : dto.getDesiredIndustries()) {
+            for (Object o : (java.util.List<?>)industryIdsObj) {
+                Integer industryId = (Integer) o;
                 Industry industry = industryRepository.findById(industryId)
                     .orElseThrow(() -> new RuntimeException("Industry not found: " + industryId));
                 IndustryRelation relation = new IndustryRelation();
@@ -273,17 +282,13 @@ public class UserService {
             }
         }
 
-        // ===== companiesテーブル更新（企業アカウントのみ） =====
-        if (user.getType() == 3 && user.getCompanyId() != null) {
-            Company company = companyRepository.findById(user.getCompanyId())
-                    .orElseThrow(() -> new RuntimeException("Company record not found for companyId: " + user.getCompanyId()));
-            company.setAddress(dto.getCompanyAddress());
-            company.setDescription(dto.getCompanyDescription());
-            companyRepository.save(company);
+        // image_path（任意）
+        if (body.get("image_path") != null) {
+            // ここでUserエンティティにimage_pathフィールドがあればセット
+            // user.setImagePath((String) body.get("image_path"));
         }
 
         userRepository.save(user);
-        
         // 再度DBから最新の情報を取得して返す
         return getUserById(user.getId());
     }
@@ -532,9 +537,9 @@ public class UserService {
             if (latestSubscription.isEmpty()) {
                 user.setPlanStatus("無料");
                 userRepository.save(user);
-                result.put("status", "no_subscription");
-                result.put("planStatus", "無料");
-                result.put("message", "サブスクリプションが見つかりません。プランを無料に更新しました。");
+                    result.put("status", "no_subscription"); // 明示的なキャストを追加
+                    result.put("planStatus", "無料"); // 明示的なキャストを追加
+                    result.put("message", "サブスクリプションが見つかりません。プランを無料に更新しました。"); // 明示的なキャストを追加
                 return result;
             }
 

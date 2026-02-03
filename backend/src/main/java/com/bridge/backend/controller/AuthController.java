@@ -28,23 +28,42 @@ public class AuthController {
     private UserRepository userRepository;
 
     @PostMapping("/signin")
-    public ResponseEntity<?> signin(@RequestBody Map<String, String> body, HttpSession session) {
-        String email = body.get("email");
-        String password = body.get("password");
+    public ResponseEntity<?> signin(@RequestBody Map<String, Object> body, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        Map<String, String> errors = new HashMap<>();
+        Object emailObj = body.get("email");
+        Object passwordObj = body.get("password");
+        response.put("input", Map.of("email", emailObj, "password", passwordObj));
+
+        // email型チェック
+        if (!(emailObj instanceof String)) {
+            errors.put("email", "入力されていない項目か不正な入力値があります");
+            response.put("errors", errors);
+            return ResponseEntity.badRequest().body(response);
+        }
+        String email = (String) emailObj;
+        String password = passwordObj instanceof String ? (String) passwordObj : null;
 
         try {
             UserDto userDto = authService.signin(email, password);
             User user = userRepository.findByEmail(email).orElse(null);
-
-            // ✅ セッションにユーザー情報を保存
-            if (user != null) {
-                _saveUserToSession(session, user);
-                System.out.println("✅ サインイン: userId=" + user.getId() + ", email=" + email);
+            if (user == null || !user.getEmail().equals(email) || !user.getPassword().equals(user.getPassword())) {
+                errors.put("auth", "メールアドレスかパスワードが違います");
+                response.put("errors", errors);
+                response.put("input", Map.of("email", emailObj, "password", passwordObj));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-
+            _saveUserToSession(session, user);
+            System.out.println("✅ サインイン: userId=" + user.getId() + ", email=" + email);
             return ResponseEntity.ok(user);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
+            errors.put("auth", "メールアドレスかパスワードが違います");
+            response.put("errors", errors);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        } catch (Exception e) {
+            errors.put("system", "Internal Server Error");
+            response.put("errors", errors);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
