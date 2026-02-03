@@ -23,7 +23,7 @@ import java.util.Optional;
 //@CrossOrigin(origins = "*")
 //@CrossOrigin(allowedOriginPatterns = "*", allowCredentials = "true") ←バージョンが古くて使えないワイルドカード
 //ここはデプロイした後に変わるかもしれないンゴ～
-@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
+// @CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
 public class UserController {
     
     @Autowired
@@ -61,34 +61,86 @@ public class UserController {
         Map<String, Object> response = new java.util.HashMap<>();
         Map<String, String> errors = new java.util.HashMap<>();
         response.put("input", userDto);
-        // typeバリデーション
-        Integer type = userDto.getType();
-        if (type == null) {
-            errors.put("type", "不正な入力値です");
-        } else if (type != 1 && type != 2 && type != 3) {
-            errors.put("type", "不正な入力値です");
-        }
 
-        // user_idバリデーション（idは自動採番のため、ここでは不要。もし外部から指定する場合はここでチェック）
-        // target_idバリデーション（desiredIndustriesの各ID）
-        if (userDto.getDesiredIndustries() != null) {
-            for (Integer industryId : userDto.getDesiredIndustries()) {
-                if (industryId == null) {
-                    errors.put("target_id", "不正な入力値です");
-                    break;
-                }
-                // DB存在チェック
-                if (!industryRepository.existsById(industryId)) {
-                    errors.put("target_id", "不正な入力値です");
-                    break;
+        // --- 企業ユーザー(type=3)専用バリデーション ---
+        if (userDto.getType() != null && userDto.getType() == 3) {
+            // phone_number型・重複
+            if (userDto.getPhoneNumber() == null || !(userDto.getPhoneNumber() instanceof String)) {
+                errors.put("phone_number", "入力されていない項目か不正な入力値があります");
+            } else {
+                String phoneNumberStr = (String) userDto.getPhoneNumber();
+                if (userService.existsByPhoneNumber(phoneNumberStr)) {
+                    errors.put("phone_number", "すでに登録されている項目があります");
                 }
             }
+            // nickname型
+            if (userDto.getNickname() == null || !(userDto.getNickname() instanceof String)) {
+                errors.put("nickname", "入力されていない項目か不正な入力値があります");
+            }
+            // company_name型・長さ
+            if (userDto.getCompanyName() == null || !(userDto.getCompanyName() instanceof String)) {
+                errors.put("company_name", "入力されていない項目か不正な入力値があります");
+            } else {
+                String companyNameStr = (String) userDto.getCompanyName();
+                if (companyNameStr.length() > 100) {
+                    errors.put("company_name", "文字数が長すぎます");
+                }
+            }
+            // password型・長さ
+            if (userDto.getPassword() == null || !(userDto.getPassword() instanceof String)) {
+                errors.put("password", "入力されていない項目か不正な入力値があります");
+            } else {
+                String passwordStr = (String) userDto.getPassword();
+                if (passwordStr.length() > 255) {
+                    errors.put("password", "文字数が長すぎます");
+                }
+            }
+            // email型
+            if (userDto.getEmail() == null || !(userDto.getEmail() instanceof String)) {
+                errors.put("email", "入力されていない項目か不正な入力値があります");
+            }
+            // address型
+            if (userDto.getCompanyAddress() == null || !(userDto.getCompanyAddress() instanceof String)) {
+                errors.put("address", "入力されていない項目か不正な入力値があります");
+            }
+        } else {
+            // --- 一般ユーザー用バリデーション（従来通り） ---
+            // phone_number型・重複チェック
+            if (userDto.getPhoneNumber() == null || !(userDto.getPhoneNumber() instanceof String)) {
+                errors.put("phone_number", "入力されていない項目か不正な入力値があります");
+            } else {
+                String phoneNumberStr = (String) userDto.getPhoneNumber();
+                if (userService.existsByPhoneNumber(phoneNumberStr)) {
+                    errors.put("phone_number", "すでに登録されている項目があります");
+                }
+            }
+            // nickname型・長さ
+            if (userDto.getNickname() == null || !(userDto.getNickname() instanceof String)) {
+                errors.put("nickname", "入力されていない項目か不正な入力値があります");
+            } else {
+                String nicknameStr = (String) userDto.getNickname();
+                if (nicknameStr.length() > 100) {
+                    errors.put("nickname", "文字数が長すぎます");
+                }
+            }
+            // type型
+            if (userDto.getType() == null) {
+                errors.put("type", "入力されていない項目か不正な入力値があります");
+            }
+            // password型・長さ
+            if (userDto.getPassword() == null || !(userDto.getPassword() instanceof String)) {
+                errors.put("password", "入力されていない項目か不正な入力値があります");
+            } else {
+                String passwordStr = (String) userDto.getPassword();
+                if (passwordStr.length() > 255) {
+                    errors.put("password", "文字数が長すぎます");
+                }
+            }
+            // email型
+            if (userDto.getEmail() == null || !(userDto.getEmail() instanceof String)) {
+                errors.put("email", "入力されていない項目か不正な入力値があります");
+            }
         }
-
-        // user_idのDB存在チェック（もし外部から指定する場合のみ）
-        // if (userDto.getId() != null && !userRepository.existsById(userDto.getId())) {
-        //     errors.put("user_id", "不正な入力値です");
-        // }
 
         if (!errors.isEmpty()) {
             response.put("errors", errors);
@@ -159,16 +211,136 @@ public class UserController {
      * @return 更新後のUserオブジェクト
      */
     @PutMapping("/{id}/deduct-tokens")
-    public User deductTokens(@PathVariable Integer id, @RequestParam int tokensToDeduct) {
-        return userService.deductUserTokens(id, tokensToDeduct);
+    public ResponseEntity<?> deductTokens(@PathVariable("id") String idStr, @RequestParam int tokensToDeduct) {
+        Map<String, Object> response = new java.util.HashMap<>();
+        Map<String, String> errors = new java.util.HashMap<>();
+        response.put("input", idStr);
+        Integer id = null;
+        try {
+            id = Integer.valueOf(idStr);
+        } catch (NumberFormatException e) {
+            errors.put("message", "入力されていない項目か不正な入力値があります");
+            response.put("errors", errors);
+            return ResponseEntity.badRequest().body(response);
+        }
+        try {
+            User user = userService.deductUserTokens(id, tokensToDeduct);
+            if (user == null) {
+                errors.put("message", "ユーザーの登録情報がありません");
+                response.put("errors", errors);
+                response.put("data", null);
+                return ResponseEntity.ok(response);
+            }
+            response.put("data", user);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("User not found")) {
+                errors.put("message", "ユーザーの登録情報がありません");
+                response.put("errors", errors);
+                response.put("data", null);
+                return ResponseEntity.ok(response);
+            }
+            e.printStackTrace();
+            errors.put("message", "Internal Server Error");
+            response.put("errors", errors);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     @PutMapping("/{id}/profile")
-    public ResponseEntity<UserDto> updateProfile(
-            @PathVariable Integer id,
-            @RequestBody UserDto userDto) {
-        UserDto updatedUser = userService.updateUserProfile(id, userDto);
-        return ResponseEntity.ok(updatedUser);
+    public ResponseEntity<?> updateProfile(
+            @PathVariable String id,
+            @RequestBody Map<String, Object> body) {
+        Map<String, Object> response = new java.util.HashMap<>();
+        Map<String, String> errors = new java.util.HashMap<>();
+        response.put("input", body);
+
+        // id型チェック
+        Integer userId = null;
+        try {
+            userId = Integer.valueOf(id);
+        } catch (Exception e) {
+            errors.put("message", "入力されていない項目か不正な入力値があります");
+            response.put("errors", errors);
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        // nickname型
+        Object nicknameObj = body.get("nickname");
+        if (!(nicknameObj instanceof String)) {
+            errors.put("message", "入力されていない項目か不正な入力値があります");
+            response.put("errors", errors);
+            return ResponseEntity.badRequest().body(response);
+        }
+        // email型
+        Object emailObj = body.get("email");
+        if (!(emailObj instanceof String)) {
+            errors.put("message", "入力されていない項目か不正な入力値があります");
+            response.put("errors", errors);
+            return ResponseEntity.badRequest().body(response);
+        }
+        // phone_number型
+        Object phoneObj = body.get("phone_number");
+        if (!(phoneObj instanceof String)) {
+            errors.put("message", "入力されていない項目か不正な入力値があります");
+            response.put("errors", errors);
+            return ResponseEntity.badRequest().body(response);
+        }
+        // industry_ids型
+        Object industryIdsObj = body.get("industry_ids");
+        if (!(industryIdsObj instanceof java.util.List)) {
+            errors.put("message", "入力されていない項目か不正な入力値があります");
+            response.put("errors", errors);
+            return ResponseEntity.badRequest().body(response);
+        } else {
+            for (Object o : (java.util.List<?>)industryIdsObj) {
+                if (!(o instanceof Integer)) {
+                    errors.put("message", "入力されていない項目か不正な入力値があります");
+                    response.put("errors", errors);
+                    return ResponseEntity.badRequest().body(response);
+                }
+            }
+        }
+        // image_path型
+        Object imagePathObj = body.get("image_path");
+        if (imagePathObj != null && !(imagePathObj instanceof String)) {
+            errors.put("message", "入力されていない項目か不正な入力値があります");
+            response.put("errors", errors);
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        // email/phone_number重複チェック
+        try {
+            if (userService.existsByEmail((String)emailObj, userId)) {
+                errors.put("message", "すでに登録されているアカウントがあるのでこの情報は使えません");
+                response.put("errors", errors);
+                return ResponseEntity.badRequest().body(response);
+            }
+            if (userService.existsByPhoneNumber((String)phoneObj, userId)) {
+                errors.put("message", "すでに登録されているアカウントがあるのでこの情報は使えません");
+                response.put("errors", errors);
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            errors.put("message", "Internal Server Error");
+            response.put("errors", errors);
+            return ResponseEntity.status(500).body(response);
+        }
+
+        // DB更新
+        try {
+            UserDto updatedUser = userService.updateUserProfile(userId, body);
+            return ResponseEntity.ok(updatedUser);
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("User not found")) {
+                errors.put("message", "ユーザーの登録情報がありません");
+                response.put("errors", errors);
+                return ResponseEntity.badRequest().body(response);
+            }
+            errors.put("message", "Internal Server Error");
+            response.put("errors", errors);
+            return ResponseEntity.status(500).body(response);
+        }
     }
 
     @PutMapping("/{id}/industries")
@@ -197,17 +369,36 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Integer id, HttpSession session) {
+    public ResponseEntity<?> deleteUser(@PathVariable("id") String idStr, HttpSession session) {
+        Map<String, Object> response = new java.util.HashMap<>();
+        Map<String, String> errors = new java.util.HashMap<>();
+        response.put("input", idStr);
+        Integer id = null;
+        try {
+            id = Integer.valueOf(idStr);
+        } catch (NumberFormatException e) {
+            errors.put("message", "入力されていない項目か不正な入力値があります");
+            response.put("errors", errors);
+            return ResponseEntity.badRequest().body(response);
+        }
         try {
             // ===== ユーザー削除 =====
             userService.deleteUser(id);
-
             // ===== セッション削除 =====
             session.invalidate();
-
-            return ResponseEntity.ok("User deleted successfully and session invalidated");
+            response.put("data", "User deleted successfully and session invalidated");
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            if (e.getMessage() != null && e.getMessage().contains("User not found")) {
+                errors.put("message", "ユーザーの登録情報がありません");
+                response.put("errors", errors);
+                response.put("data", null);
+                return ResponseEntity.ok(response);
+            }
+            e.printStackTrace();
+            errors.put("message", "Internal Server Error");
+            response.put("errors", errors);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
     @PutMapping("/{id}/icon")
