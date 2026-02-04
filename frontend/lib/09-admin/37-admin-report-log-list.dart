@@ -25,6 +25,8 @@ class NoticeData {
   final bool? threadDeleted;
   final bool? chatDeleted;
   final int? totalCount;
+  final bool? fromUserDeleted;
+  final bool? toUserDeleted;
 
   NoticeData({
     required this.id,
@@ -39,6 +41,8 @@ class NoticeData {
     this.threadDeleted,
     this.chatDeleted,
     this.totalCount,
+    this.fromUserDeleted,
+    this.toUserDeleted,
   });
 
   factory NoticeData.fromJson(Map<String, dynamic> json) {
@@ -56,6 +60,8 @@ class NoticeData {
       threadDeleted: json['threadDeleted'],
       chatDeleted: json['chatDeleted'],
       totalCount: json['totalCount'],
+      fromUserDeleted: json['fromUserDeleted'],
+      toUserDeleted: json['toUserDeleted'],
     );
   }
 }
@@ -200,8 +206,8 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
       child: Row(
         children: [
           Expanded(flex: 3, child: Center(child: Text(date))),
-          Expanded(flex: 2, child: _userLink(n.fromUserId)),
-          Expanded(flex: 2, child: _userLink(n.toUserId)),
+          Expanded(flex: 2, child: _userLink(n.fromUserId, n.fromUserDeleted)),
+          Expanded(flex: 2, child: _userLink(n.toUserId, n.toUserDeleted)),
           Expanded(flex: 3, child: _threadLink(n)),
           Expanded(flex: 4, child: _chatLink(n)),
           Expanded(
@@ -225,18 +231,27 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
     );
   }
 
-  Widget _userLink(int? id) => Center(
-    child:
-        id == null
-            ? const Text('—')
-            : GestureDetector(
-              onTap:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AdminAccountDetail(userId: id),
-                    ),
+  Widget _userLink(int? id, bool? deleted) => Column(
+    children: [
+      id == null
+          ? const Text('—')
+          : GestureDetector(
+              onTap: () {
+                if (deleted == true) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text("このアカウントは削除されています")),
+                  );
+                  return;
+                }
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AdminAccountDetail(userId: id),
                   ),
+                );
+              },
               child: Text(
                 id.toString(),
                 style: const TextStyle(
@@ -245,6 +260,13 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
                 ),
               ),
             ),
+
+      if (deleted == true)
+        const Text(
+          "削除済み",
+          style: TextStyle(color: Colors.red, fontSize: 12),
+        ),
+    ],
   );
 
   Widget _threadLink(NoticeData n) => Column(
@@ -290,7 +312,12 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
           ? const Text('—')
           : GestureDetector(
             onTap: () {
-              if (n.chatDeleted == false && n.threadDeleted == true) {
+              if (n.chatDeleted == false && n.threadTitle == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("スレッド情報がないため遷移できません")),
+                );
+                return;
+              } else if (n.chatDeleted == false && n.threadDeleted == true) {
                 ScaffoldMessenger.of(
                   context,
                 ).showSnackBar(const SnackBar(content: Text("スレッドが削除されています")));

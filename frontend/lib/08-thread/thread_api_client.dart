@@ -19,7 +19,7 @@ class ThreadApiClient {
 
   static Future<List<AdminReportedThread>> getReportedThreads() async {
     final url = Uri.parse(
-      '${ApiConfig.baseUrl}/admin/threads/reported',
+      '${ApiConfig.baseUrl}/api/threads/admin/threads/reported',
     );
 
     final response = await http.get(url);
@@ -36,7 +36,7 @@ class ThreadApiClient {
 
   static Future<void> deleteThread(String threadId) async {
     final res = await http.put(
-      Uri.parse('${ApiConfig.baseUrl}/admin/delete/$threadId'),
+      Uri.parse('${ApiConfig.baseUrl}/api/threads/admin/delete/$threadId'),
     );
 
     if (res.statusCode != 200) {
