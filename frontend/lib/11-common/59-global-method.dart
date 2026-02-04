@@ -1,17 +1,15 @@
 import 'dart:convert';
-
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/material.dart'; // ota1128
-import 'dart:js' as js; // ota1128
-import 'package:http/http.dart' as http; // ota1128
-import 'package:bridge/06-company/api_config.dart'; // ota1128
-import 'package:share_plus/share_plus.dart'; // ota1128
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:cross_file/cross_file.dart';
-
-// Web専用API（画像を新しいタブで開く、クリップボードにコピー）
+import 'dart:async';
 import 'dart:typed_data';
 import 'dart:html' as html;
+
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:bridge/06-company/api_config.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:cross_file/cross_file.dart';
 
 class GlobalActions {
   /// ユーザーセッション情報をSharedPreferencesから取得
@@ -540,71 +538,126 @@ Future<void> speakWeb(
   String? voiceName,
   double? pitch,
   double? rate,
-  double? volume, // volume パラメータを追加
+  double? volume,
 }) async {
+  print(
+    '[SpeakWeb] speakWeb() called with text: ${text.substring(0, text.length > 50 ? 50 : text.length)}...',
+  );
+  print('[SpeakWeb] kIsWeb: $kIsWeb');
+
+  if (!kIsWeb) {
+    print('[SpeakWeb] Not on web platform, returning');
+    return;
+  }
+
   try {
+    print('[SpeakWeb] Loading voice settings...');
     final GlobalActions globalActions = GlobalActions();
-    // 引数で指定がない場合はSharedPreferencesからロード
+
     final String? targetVoiceName =
         voiceName ?? await globalActions.loadVoiceSetting();
     final double targetPitch =
-        pitch ?? await globalActions.loadVoicePitch() ?? 1.0; // デフォルト値 1.0
+        pitch ?? await globalActions.loadVoicePitch() ?? 1.0;
     final double targetRate =
-        rate ?? await globalActions.loadVoiceRate() ?? 0.5; // デフォルト値 0.5
+        rate ?? await globalActions.loadVoiceRate() ?? 0.5;
     final double targetVolume =
-        volume ?? await globalActions.loadVoiceVolume() ?? 1.0; // デフォルト値 1.0
+        volume ?? await globalActions.loadVoiceVolume() ?? 1.0;
 
-    var jsCode = """
-var textToSpeak = "$text";
-var selectedVoiceName = ${targetVoiceName != null ? '"$targetVoiceName"' : 'null'};
-var selectedPitch = $targetPitch;
-var selectedRate = $targetRate;
-var selectedVolume = $targetVolume; // JavaScript変数にvolumeを追加
+    print(
+      '[SpeakWeb] Voice settings loaded: rate=$targetRate, pitch=$targetPitch, volume=$targetVolume',
+    );
 
-var voices = speechSynthesis.getVoices();
-var selectedVoice = null;
+    final completer = Completer<void>();
 
-if (selectedVoiceName) {
+    late html.EventListener listener;
+    listener = (event) {
+      print('[SpeakWeb] Event received: flutterSpeechDone');
+      html.window.removeEventListener('flutterSpeechDone', listener);
+      if (!completer.isCompleted) completer.complete();
+    };
+
+    html.window.addEventListener('flutterSpeechDone', listener);
+    print('[SpeakWeb] Event listener registered for flutterSpeechDone');
+
+    // Create a script element to execute JavaScript
+    final script = html.ScriptElement();
+    script.text = """
+(function() {
+  console.log('[JS] speakWeb script executing');
+  var textToSpeak = ${jsonEncode(text)};
+  var selectedVoiceName = ${targetVoiceName != null ? jsonEncode(targetVoiceName) : 'null'};
+  var selectedPitch = $targetPitch;
+  var selectedRate = $targetRate;
+  var selectedVolume = $targetVolume;
+
+  console.log('[JS] Text to speak:', textToSpeak);
+  console.log('[JS] Voice settings:', selectedPitch, selectedRate, selectedVolume);
+
+  var voices = speechSynthesis.getVoices();
+  console.log('[JS] Available voices:', voices.length);
+  var selectedVoice = null;
+
+  if (selectedVoiceName) {
     selectedVoice = voices.find(v => v.name === selectedVoiceName);
-}
+    console.log('[JS] Selected voice by name:', selectedVoice ? selectedVoice.name : 'null');
+  }
 
-// 保存された音声が見つからない場合や、デフォルトの日本語音声がない場合
-if (!selectedVoice) {
-    // 日本語のデフォルト音声を検索 (以前のロジック)
+  if (!selectedVoice) {
     var japaneseVoiceNames = [
-        'Microsoft Ayumi - Japanese (Japan)',
-        'Microsoft Haruka - Japanese (Japan)',
-        'Microsoft Ichiro - Japanese (Japan)',
-        'Microsoft Sayaka - Japanese (Japan)',
-        'Google 日本語'
+      'Microsoft Ayumi - Japanese (Japan)',
+      'Microsoft Haruka - Japanese (Japan)',
+      'Microsoft Ichiro - Japanese (Japan)',
+      'Microsoft Sayaka - Japanese (Japan)',
+      'Google 日本語'
     ];
     for (var i = 0; i < japaneseVoiceNames.length; i++) {
-        var defaultVoiceName = japaneseVoiceNames[i];
-        selectedVoice = voices.find(v => v.name === defaultVoiceName);
-        if (selectedVoice) {
-            break;
-        }
+      selectedVoice = voices.find(v => v.name === japaneseVoiceNames[i]);
+      if (selectedVoice) {
+        console.log('[JS] Found Japanese voice:', selectedVoice.name);
+        break;
+      }
     }
-}
+  }
 
-
-if (selectedVoice) {
+  if (selectedVoice) {
+    console.log('[JS] Creating SpeechSynthesisUtterance');
     var utterThis = new SpeechSynthesisUtterance(textToSpeak);
     utterThis.lang = "ja-JP";
     utterThis.voice = selectedVoice;
     utterThis.rate = selectedRate;
     utterThis.pitch = selectedPitch;
-    utterThis.volume = selectedVolume; // utterThisにvolumeを設定
+    utterThis.volume = selectedVolume;
 
+    utterThis.onend = function() {
+      console.log('[JS] onend event fired');
+      window.dispatchEvent(new Event("flutterSpeechDone"));
+    };
+    utterThis.onerror = function(error) {
+      console.error('[JS] onerror event:', error);
+      window.dispatchEvent(new Event("flutterSpeechDone"));
+    };
+
+    console.log('[JS] Calling speechSynthesis.speak()');
     speechSynthesis.cancel();
     speechSynthesis.speak(utterThis);
-} else {
-    console.error('利用可能な日本語音声が見つかりませんでした。');
-}
+  } else {
+    console.error("[JS] 日本語音声が見つかりませんでした");
+    window.dispatchEvent(new Event("flutterSpeechDone"));
+  }
+})();
 """;
+    html.document.body?.append(script);
+    print('[SpeakWeb] Script element appended to body');
 
-    js.context.callMethod('eval', [jsCode]);
+    print('[SpeakWeb] Waiting for flutterSpeechDone event...');
+    await completer.future.timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        print('[SpeakWeb] Timeout waiting for voice to complete');
+      },
+    );
+    print('[SpeakWeb] speakWeb() completed');
   } catch (e) {
-    print("Error内容:" + e.toString());
+    print('[SpeakWeb] Error: $e');
   }
 }

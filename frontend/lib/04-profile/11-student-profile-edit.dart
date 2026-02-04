@@ -30,6 +30,7 @@ class StudentProfileEditPage extends StatefulWidget {
 }
 
 class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
+  final _formKey = GlobalKey<FormState>();
   Map<String, dynamic> userData = {};
   List<Industry> industries = [];
   final _nicknameController = TextEditingController();
@@ -149,10 +150,12 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: BridgeHeader(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text("プロフィールアイコン",
               style: TextStyle(
@@ -201,13 +204,18 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
             ),
             const SizedBox(height: 30),
             _buildLabel("ニックネーム"),
-            _buildTextField(_nicknameController),
+            _buildTextField(_nicknameController, validator: (v) => v == null || v.trim().isEmpty ? 'ニックネームを入力してください' : null),
             const SizedBox(height: 20),
             _buildLabel("メールアドレス"),
-            _buildTextField(_emailController),
+            _buildTextField(_emailController, validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'メールアドレスを入力してください';
+              final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+              if (!emailRegex.hasMatch(v)) return '有効なメールアドレスを入力してください';
+              return null;
+            }),
             const SizedBox(height: 20),
             _buildLabel("電話番号"),
-            _buildTextField(_phoneNumberController),
+            _buildTextField(_phoneNumberController, validator: (v) => v == null || v.trim().isEmpty ? '電話番号を入力してください' : null),
             const SizedBox(height: 20),
             _buildLabel("希望業界"),
             Column(
@@ -233,6 +241,7 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
                 onPressed: _isSaving
                     ? null
                     : () async {
+                        if (!_formKey.currentState!.validate()) return;
                         setState(() => _isSaving = true);
                         await _updateUserProfile();
                         setState(() => _isSaving = false);
@@ -249,6 +258,7 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -263,10 +273,11 @@ class _StudentProfileEditPageState extends State<StudentProfileEditPage> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, {int maxLines = 1}) {
+  Widget _buildTextField(TextEditingController controller, {int maxLines = 1, String? Function(String?)? validator}) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
+      validator: validator,
       decoration: InputDecoration(
         border: OutlineInputBorder(),
         contentPadding: const EdgeInsets.all(12),

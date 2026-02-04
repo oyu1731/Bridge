@@ -1,31 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import '39-admin-thread-detail.dart';
+import 'package:bridge/08-thread/thread_api_client.dart';
+import 'package:bridge/08-thread/thread_model.dart';
 import 'admin-thread-list.dart';
-
-// Thread モデル
-class Thread {
-  final int id;
-  final String title;
-  final String? lastComment;
-  final String timeAgo;
-
-  Thread({
-    required this.id,
-    required this.title,
-    this.lastComment,
-    required this.timeAgo,
-  });
-
-  factory Thread.fromJson(Map<String, dynamic> json) {
-    return Thread(
-      id: json['id'],
-      title: json['title'] as String,
-      lastComment: json['lastComment'] as String?,
-      timeAgo: json['timeAgo'] as String,
-    );
-  }
-}
 
 class AdminThreadList extends StatefulWidget {
   @override
@@ -39,117 +17,76 @@ class _AdminThreadListState extends State<AdminThreadList> {
   @override
   void initState() {
     super.initState();
-    _loadDummyThreads();
+    _fetchThreads();
   }
 
-  Future<void> _loadDummyThreads() async {
-    await Future.delayed(Duration(milliseconds: 300));
-    setState(() {
-      officialThreads = [
-        Thread(
-            id: 1,
-            title: '学生・社会人',
-            lastComment: '最近忙しいけど頑張ってる！',
-            timeAgo: '3分前'),
-        Thread(
-            id: 2,
-            title: '学生',
-            lastComment: 'テスト期間でやばいです…',
-            timeAgo: '15分前'),
-        Thread(
-            id: 3,
-            title: '社会人',
-            lastComment: '残業が多くてつらい…',
-            timeAgo: '42分前'),
-      ];
+  Future<void> _fetchThreads() async {
+    try {
+      final threads = await ThreadApiClient.getReportedThreads();
 
-      unofficialThreads = [
-        Thread(id: 4, title: '業界別の面接対策', timeAgo: '3分前'),
-        Thread(id: 5, title: '社会人一年目の過ごし方', timeAgo: '10分前'),
-        Thread(id: 6, title: 'おすすめの資格', timeAgo: '25分前'),
-        Thread(id: 7, title: '働きながら転職活動するには', timeAgo: '50分前'),
-        Thread(id: 8, title: '就活で意識すべきこと', timeAgo: '1時間前'),
-      ];
-    });
+      // ---- 公式スレッド ----
+      final official = threads.where((t) => t.type == 1).toList();
+
+      // ---- 非公式スレッド ----
+      final unofficial = threads.where((t) => t.type == 2).toList();
+
+      // 通報順
+      unofficial.sort((a, b) {
+        final aDate = a.lastReportedAt ?? DateTime(2000);
+        final bDate = b.lastReportedAt ?? DateTime(2000);
+        return bDate.compareTo(aDate);
+      });
+
+      // 上位5件
+      final top5 = unofficial.take(5).toList();
+
+      setState(() {
+        officialThreads = official;
+        unofficialThreads = top5;
+      });
+    } catch (e) {
+      print('管理者スレッド取得失敗: $e');
+    }
   }
 
-  void _deleteThread(List<Thread> threadList, int index) async {
-    bool confirm = await showDialog(
+  Future<void> _confirmDeleteThread(Thread thread) async {
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('削除確認'),
-        content: Text('このスレッドを削除しますか？'),
+        title: const Text('削除確認'),
+        content: const Text('このスレッドを削除しますか？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('キャンセル'),
+            child: const Text('キャンセル'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('削除'),
+            child: const Text('削除'),
           ),
         ],
       ),
     );
 
-    if (confirm) {
-      setState(() {
-        threadList.removeAt(index);
-      });
+    if (confirm == true) {
+      await _deleteThread(thread.id);
     }
   }
 
-  Widget _buildThreadCard(Thread thread, List<Thread> threadList, int index,
-      {bool showLastComment = false}) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AdminThreadDetail(
-              threadId: thread.id,
-            ),
-          ),
-        );
-      },
-      child: Card(
-        color: Colors.white, // 背景を白に
-        margin: EdgeInsets.symmetric(vertical: 6),
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: ListTile(
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          title: Text(
-            thread.title,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          subtitle: showLastComment && thread.lastComment != null
-              ? Text(
-                  thread.lastComment!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.black87, fontSize: 14),
-                )
-              : null,
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                thread.timeAgo,
-                style: TextStyle(color: Colors.grey),
-              ),
-              SizedBox(width: 8),
-              IconButton(
-                icon: Icon(Icons.delete, color: Colors.black),
-                onPressed: () => _deleteThread(threadList, index),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  Future<void> _deleteThread(String threadId) async {
+    try {
+      await ThreadApiClient.deleteThread(threadId);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('スレッドを削除しました')),
+      );
+
+      _fetchThreads();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('削除に失敗しました')),
+      );
+    }
   }
 
   @override
@@ -157,16 +94,16 @@ class _AdminThreadListState extends State<AdminThreadList> {
     return Scaffold(
       appBar: BridgeHeader(),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 公式スレッド
-            Text(
+            // ===== 公式スレッド =====
+            const Text(
               '公式スレッド',
               style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Column(
               children: officialThreads.map((thread) {
                 return GestureDetector(
@@ -174,64 +111,80 @@ class _AdminThreadListState extends State<AdminThreadList> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => AdminThreadDetail(threadId: thread.id),
+                        builder: (_) => AdminThreadDetail(
+                          threadId: int.parse(thread.id),
+                          title: thread.title,
+                        ),
                       ),
                     );
                   },
                   child: Card(
-                    margin: EdgeInsets.symmetric(vertical: 6),
+                    color: Colors.white,
+                    margin: const EdgeInsets.symmetric(vertical: 6),
                     elevation: 2,
                     child: ListTile(
                       title: Text(
                         thread.title,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                      subtitle: thread.lastComment != null
-                          ? Text(
-                              thread.lastComment!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  color: Colors.black87, fontSize: 14),
-                            )
-                          : null,
-                      trailing: Text(
-                        thread.timeAgo,
-                        style: TextStyle(color: Colors.grey),
+                      subtitle: Text(
+                        thread.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.grey[700]),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            thread.timeAgo,
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: null,
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 );
               }).toList(),
             ),
-            SizedBox(height: 30),
 
-            // 非公式スレッド
-            Row(
-              children: [
-                Text(
-                  '直近に通報のあったスレッド',
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-                ),
-                Spacer(),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ThreadUnofficialList(),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    'もっと見る',
-                    style: TextStyle(fontSize: 16, color: Colors.black),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 30),
+
+            // ===== 非公式スレッド =====
+            const Text(
+              '直近に通報のあったスレッド',
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () async {
+                  // ★追加：戻ってきたら再取得
+                  final changed = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ThreadUnofficialList(),
+                    ),
+                  );
+
+                  if (changed == true) {
+                    _fetchThreads();
+                  }
+                },
+                child: const Text(
+                  'もっと見る',
+                  style: TextStyle(fontSize: 16, color: Colors.black),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
             Column(
               children: unofficialThreads.map((thread) {
                 return GestureDetector(
@@ -239,22 +192,42 @@ class _AdminThreadListState extends State<AdminThreadList> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => AdminThreadDetail(threadId: thread.id),
+                        builder: (_) => AdminThreadDetail(
+                          threadId: int.parse(thread.id),
+                          title: thread.title,
+                        ),
                       ),
                     );
                   },
                   child: Card(
-                    margin: EdgeInsets.symmetric(vertical: 6),
+                    color: Colors.white,
+                    margin: const EdgeInsets.symmetric(vertical: 6),
                     elevation: 2,
                     child: ListTile(
                       title: Text(
                         thread.title,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                      trailing: Text(
-                        thread.timeAgo,
-                        style: TextStyle(color: Colors.grey),
+                      subtitle: Text(
+                        thread.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.grey[700]),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            thread.adminTimeAgo ?? '',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () => _confirmDeleteThread(thread),
+                          ),
+                        ],
                       ),
                     ),
                   ),

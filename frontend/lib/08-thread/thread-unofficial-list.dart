@@ -170,7 +170,7 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: '検索',
+                hintText: 'スレッドタイトル検索',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -187,37 +187,44 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
 
             // 非公式スレッドの一覧
             Expanded(
-              child: ListView.builder(
-                itemCount: filteredThreads.length,
-                itemBuilder: (context, index) {
-                  final thread = filteredThreads[index];
-
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ThreadUnOfficialDetail(
-                            thread: {'id': thread.id, 'title': thread.title},
-                          ),
-                        ),
-                      );
-                    },
-                    child: Card(
-                      color: Colors.white,
-                      margin: EdgeInsets.symmetric(vertical: 6),
-                      elevation: 2,
-                      child: ListTile(
-                        title: Text(thread.title),
-                        trailing: Text(
-                          thread.timeAgo,
-                          style: TextStyle(color: Colors.grey),
-                        ),
+              child: filteredThreads.isEmpty
+                  ? Center(
+                      child: Text(
+                        'スレッドが見つかりません',
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
                       ),
+                    )
+                  : ListView.builder(
+                      itemCount: filteredThreads.length,
+                      itemBuilder: (context, index) {
+                        final thread = filteredThreads[index];
+
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ThreadUnOfficialDetail(
+                                  thread: {'id': thread.id, 'title': thread.title},
+                                ),
+                              ),
+                            );
+                          },
+                          child: Card(
+                            color: Colors.white,
+                            margin: EdgeInsets.symmetric(vertical: 6),
+                            elevation: 2,
+                            child: ListTile(
+                              title: Text(thread.title),
+                              trailing: Text(
+                                thread.timeAgo,
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),

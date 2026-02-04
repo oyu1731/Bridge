@@ -30,6 +30,7 @@ class WorkerProfileEditPage extends StatefulWidget {
 }
 
 class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
+  final _formKey = GlobalKey<FormState>();
   Map<String, dynamic> userData = {};
   List<Industry> industries = [];
   final _nicknameController = TextEditingController();
@@ -152,10 +153,12 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: BridgeHeader(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text("プロフィールアイコン",
               style: TextStyle(
@@ -204,16 +207,26 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
             ),
             const SizedBox(height: 30),
             _buildLabel("ニックネーム"),
-            _buildTextField(_nicknameController),
+            _buildTextField(_nicknameController, validator: (v) => v == null || v.trim().isEmpty ? 'ニックネームを入力してください' : null),
             const SizedBox(height: 20),
             _buildLabel("メールアドレス"),
-            _buildTextField(_emailController),
+            _buildTextField(_emailController, validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'メールアドレスを入力してください';
+              final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+              if (!emailRegex.hasMatch(v)) return '有効なメールアドレスを入力してください';
+              return null;
+            }),
             const SizedBox(height: 20),
             _buildLabel("電話番号"),
-            _buildTextField(_phoneNumberController),
+            _buildTextField(_phoneNumberController, validator: (v) => v == null || v.trim().isEmpty ? '電話番号を入力してください' : null),
             const SizedBox(height: 20),
             _buildLabel("社会人歴（年）"),
-            _buildTextField(_societyHistoryController),
+            _buildTextField(_societyHistoryController, validator: (v) {
+              if (v == null || v.trim().isEmpty) return '社会人歴を入力してください';
+              final num = int.tryParse(v);
+              if (num == null || num < 0) return '有効な数値を入力してください';
+              return null;
+            }),
             const SizedBox(height: 20),
             _buildLabel("現職業界"),
             Column(
@@ -239,6 +252,7 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
                 onPressed: _isSaving
                     ? null
                     : () async {
+                        if (!_formKey.currentState!.validate()) return;
                         setState(() => _isSaving = true);
                         await _updateUserProfile();
                         setState(() => _isSaving = false);
@@ -254,6 +268,7 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -268,10 +283,11 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, {int maxLines = 1}) {
+  Widget _buildTextField(TextEditingController controller, {int maxLines = 1, String? Function(String?)? validator}) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
+      validator: validator,
       decoration: InputDecoration(
         border: OutlineInputBorder(),
         contentPadding: const EdgeInsets.all(12),

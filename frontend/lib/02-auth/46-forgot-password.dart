@@ -124,7 +124,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       child: TextField(
                         controller: _emailController,
                         decoration: InputDecoration(
-                          hintText: 'example@mail.com',
+                          hintText: 'メールアドレスを入力してください',
                           hintStyle: TextStyle(color: Color(0xFF9E9E9E)),
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.symmetric(horizontal: 16),

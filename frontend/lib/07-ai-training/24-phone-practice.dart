@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:bridge/06-company/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/60-ScreenWrapper.dart';
@@ -29,6 +30,7 @@ class PhonePractice extends StatefulWidget {
 
 class _PhonePracticeState extends State<PhonePractice> {
   // --- Controllers ---
+  final GlobalActions _globalActions = GlobalActions();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController companyNameController = TextEditingController();
 
@@ -99,10 +101,16 @@ class _PhonePracticeState extends State<PhonePractice> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             bool isFree = (user?['planStatus'] ?? '無料') == '無料';
+            final isSmallScreen = MediaQuery.of(context).size.width < 600;
+            final modalHeight = isSmallScreen
+                ? MediaQuery.of(context).size.height * 0.95
+                : MediaQuery.of(context).size.height * 0.88;
+            final padding = isSmallScreen ? 16.0 : 20.0;
+            final headerFontSize = isSmallScreen ? 20.0 : 24.0;
 
             return Container(
-              padding: const EdgeInsets.all(20),
-              height: MediaQuery.of(context).size.height * 0.88,
+              padding: EdgeInsets.all(padding),
+              height: modalHeight,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
@@ -115,6 +123,7 @@ class _PhonePracticeState extends State<PhonePractice> {
                 ),
               ),
               child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -135,10 +144,10 @@ class _PhonePracticeState extends State<PhonePractice> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
+                          Text(
                             "電話設定",
                             style: TextStyle(
-                              fontSize: 24,
+                              fontSize: headerFontSize,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF1E293B),
                             ),
@@ -146,67 +155,121 @@ class _PhonePracticeState extends State<PhonePractice> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: isSmallScreen ? 12 : 20),
 
                     // トークン情報表示
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey.shade200),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.account_balance_wallet,
-                            color: Colors.blue.shade600,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
+                      child: isSmallScreen
+                          ? Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  "現在のトークン",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.account_balance_wallet,
+                                      color: Colors.blue.shade600,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      "現在のトークン",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      _availableTokens?.toString() ?? '未取得',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF10B981),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: const Text(
+                                        "20消費",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Icon(
+                                  Icons.account_balance_wallet,
+                                  color: Colors.blue.shade600,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "現在のトークン",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      Text(
+                                        _availableTokens?.toString() ?? '未取得',
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1E293B),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                Text(
-                                  _availableTokens?.toString() ?? '未取得',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1E293B),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Text(
+                                    "20トークン消費",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF10B981),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              "20トークン消費",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: isSmallScreen ? 12 : 20),
 
                     // あなたの情報
                     _buildSectionHeader(icon: Icons.person, title: "あなたの情報"),
@@ -347,6 +410,7 @@ class _PhonePracticeState extends State<PhonePractice> {
 
                           final url = Uri.parse(
                             'http://localhost:8080/api/phone/practice',
+                            // '${ApiConfig.baseUrl}/api/phone/practice',
                           );
                           final headers = {
                             'Content-Type': 'application/json; charset=UTF-8',
@@ -370,6 +434,24 @@ class _PhonePracticeState extends State<PhonePractice> {
                               final String memo = rawResponse['memo'] ?? "";
                               final String sessionId =
                                   rawResponse['sessionId'] ?? "";
+
+                              // トークンを消費（プレミアムユーザーは除外）
+                              if (user != null && user!['id'] != null) {
+                                final isPremium = (user?['planStatus'] ?? '無料') != '無料';
+                                if (!isPremium) {
+                                  final userId = user!['id'] as int;
+                                  final tokensToDeduct = 20;
+                                  final bool deducted = await _globalActions
+                                      .deductUserTokens(userId, tokensToDeduct);
+                                  if (deducted) {
+                                    print('$tokensToDeduct トークンを消費しました。');
+                                  } else {
+                                    print('トークン消費に失敗しました。');
+                                  }
+                                } else {
+                                  print('プレミアムユーザーのためトークン消費をスキップしました。');
+                                }
+                              }
 
                               Navigator.push(
                                 context,
@@ -438,6 +520,8 @@ class _PhonePracticeState extends State<PhonePractice> {
                       ),
                     ),
                     const SizedBox(height: 20),
+                    // キーボード表示時のスペース確保
+                    SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
                   ],
                 ),
               ),
@@ -707,6 +791,7 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
     }
 
     final url = Uri.parse('http://localhost:8080/api/phone/continue');
+    // final url = Uri.parse('${ApiConfig.baseUrl}/api/phone/continue');
     final headers = {'Content-Type': 'application/json; charset=UTF-8'};
     final payload = {"sessionId": widget.sessionId, "message": answer};
 
@@ -765,6 +850,7 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
 
   void _endCallAndNavigateToResult() async {
     final url = Uri.parse('http://localhost:8080/api/phone/end');
+    // final url = Uri.parse('${ApiConfig.baseUrl}/api/phone/end');
     final headers = {'Content-Type': 'application/json; charset=UTF-8'};
     final payload = {"sessionId": widget.sessionId};
 
@@ -781,16 +867,21 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
         print("評価データを受信: ${evaluationData['totalScore']}点");
 
         if (_userSession != null && _userSession!['id'] != null) {
-          final userId = _userSession!['id'] as int;
-          final tokensToDeduct = 20;
-          final bool deducted = await _globalActions.deductUserTokens(
-            userId,
-            tokensToDeduct,
-          );
-          if (deducted) {
-            print('$tokensToDeduct トークンを消費しました。');
+          final isPremium = (_userSession?['planStatus'] ?? '無料') != '無料';
+          if (!isPremium) {
+            final userId = _userSession!['id'] as int;
+            final tokensToDeduct = 20;
+            final bool deducted = await _globalActions.deductUserTokens(
+              userId,
+              tokensToDeduct,
+            );
+            if (deducted) {
+              print('$tokensToDeduct トークンを消費しました。');
+            } else {
+              print('トークン消費に失敗しました。');
+            }
           } else {
-            print('トークン消費に失敗しました。');
+            print('プレミアムユーザーのためトークン消費をスキップしました。');
           }
         }
 
@@ -832,91 +923,101 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
         color: const Color(0xFFF8FAFC),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              // メモ表示
-              if (widget.memo.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.yellow.shade50,
-                    border: Border.all(color: Colors.yellow.shade300),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info, color: Colors.orange.shade600, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          widget.memo,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF92400E),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // メモ表示
+                if (widget.memo.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.yellow.shade50,
+                      border: Border.all(color: Colors.yellow.shade300),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info,
+                          color: Colors.orange.shade600,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            widget.memo,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF92400E),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
 
-              // シナリオ表示
-              if (widget.scenario.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF6366F1).withOpacity(0.1),
-                          shape: BoxShape.circle,
+                // シナリオ表示
+                if (widget.scenario.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
-                        child: Icon(
-                          Icons.description,
-                          size: 18,
-                          color: const Color(0xFF6366F1),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "シナリオ: ${widget.scenario}",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF374151),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6366F1).withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.description,
+                            size: 18,
+                            color: const Color(0xFF6366F1),
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            "シナリオ: ${widget.scenario}",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF374151),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-              // AIメッセージ表示
-              Expanded(
-                child: Container(
+                // AIメッセージ表示
+                Container(
+                  constraints: BoxConstraints(
+                    minHeight: 200,
+                    maxHeight: MediaQuery.of(context).size.height * 0.4,
+                  ),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -932,6 +1033,7 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
                         children: [
@@ -959,8 +1061,9 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Expanded(
+                      Flexible(
                         child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
                           child: Text(
                             _currentAIMessage,
                             style: const TextStyle(
@@ -974,250 +1077,256 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // 会話終了理由の表示
-              if (_isConversationEnd && _endReason != null)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    border: Border.all(color: Colors.red.shade300),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.warning, color: Colors.red.shade600, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "会話終了理由: $_endReason",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.red.shade700,
+                // 会話終了理由の表示
+                if (_isConversationEnd && _endReason != null)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      border: Border.all(color: Colors.red.shade300),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.warning,
+                          color: Colors.red.shade600,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            "会話終了理由: $_endReason",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.red.shade700,
+                            ),
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+
+                // マイクボタン
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
-                ),
-
-              // マイクボタン
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color:
-                            _isMicOn
-                                ? const Color(0xFFFEF2F2)
-                                : const Color(0xFFF0F9FF),
-                        border: Border.all(
-                          color:
-                              _isMicOn
-                                  ? const Color(0xFFEF4444)
-                                  : const Color(0xFF0EA5E9),
-                          width: 2,
-                        ),
-                      ),
-                      child: IconButton(
-                        icon: Icon(
-                          _isMicOn ? Icons.mic : Icons.mic_off,
-                          size: 32,
-                          color:
-                              _isMicOn
-                                  ? const Color(0xFFEF4444)
-                                  : const Color(0xFF0EA5E9),
-                        ),
-                        onPressed: _isConversationEnd ? null : _toggleMic,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _isMicOn ? "マイクON - 音声入力中" : "マイクOFF - タップで音声入力開始",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color:
-                            _isMicOn
-                                ? const Color(0xFFEF4444)
-                                : const Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // 回答入力エリア
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "あなたの回答",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1E293B),
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              _isMicOn
+                                  ? const Color(0xFFFEF2F2)
+                                  : const Color(0xFFF0F9FF),
+                          border: Border.all(
+                            color:
+                                _isMicOn
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFF0EA5E9),
+                            width: 2,
+                          ),
+                        ),
+                        child: IconButton(
+                          icon: Icon(
+                            _isMicOn ? Icons.mic : Icons.mic_off,
+                            size: 32,
+                            color:
+                                _isMicOn
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFF0EA5E9),
+                          ),
+                          onPressed: _isConversationEnd ? null : _toggleMic,
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Container(
-                        height: 120,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: TextField(
-                          controller: _textEditingController,
-                          maxLines: null,
-                          expands: true,
-                          decoration: InputDecoration(
-                            hintText:
-                                _isMicOn
-                                    ? "音声認識中...話しかけてください"
-                                    : "回答を入力してください（音声入力の場合はマイクボタンをタップ）",
-                            hintStyle: const TextStyle(color: Colors.grey),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                          style: const TextStyle(fontSize: 14),
-                          enabled: !_isConversationEnd,
+                      Text(
+                        _isMicOn ? "マイクON - 音声入力中" : "マイクOFF - タップで音声入力開始",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color:
+                              _isMicOn
+                                  ? const Color(0xFFEF4444)
+                                  : const Color(0xFF64748B),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
-              // ボタンエリア
-              Row(
-                children: [
-                  // 送信ボタン
-                  Expanded(
-                    child: Container(
+                // 回答入力エリア
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "あなたの回答",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          height: 120,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: TextField(
+                            controller: _textEditingController,
+                            maxLines: null,
+                            expands: true,
+                            decoration: InputDecoration(
+                              hintText:
+                                  _isMicOn
+                                      ? "音声認識中...話しかけてください"
+                                      : "回答を入力してください（音声入力の場合はマイクボタンをタップ）",
+                              hintStyle: const TextStyle(color: Colors.grey),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            style: const TextStyle(fontSize: 14),
+                            enabled: !_isConversationEnd,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // ボタンエリア
+                Row(
+                  children: [
+                    // 送信ボタン
+                    Expanded(
+                      child: Container(
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF6366F1).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          onPressed: _isConversationEnd ? null : _submitAnswer,
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.send, color: Colors.white, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                "送信",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // 電話を切るボタン
+                    Container(
                       height: 56,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.red.shade400),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF6366F1).withOpacity(0.3),
+                            color: Colors.grey.withOpacity(0.1),
                             blurRadius: 8,
-                            offset: const Offset(0, 4),
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
+                          backgroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        onPressed: _isConversationEnd ? null : _submitAnswer,
+                        onPressed: _endCallAndNavigateToResult,
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.send, color: Colors.white, size: 20),
+                            Icon(Icons.call_end, color: Colors.red, size: 20),
                             SizedBox(width: 8),
                             Text(
-                              "送信",
+                              "電話を切る",
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: Colors.red,
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  // 電話を切るボタン
-                  Container(
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.red.shade400),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      onPressed: _endCallAndNavigateToResult,
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.call_end, color: Colors.red, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            "電話を切る",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.red,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+                // キーボード表示時のスペース確保
+                SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+              ],
+            ),
           ),
         ),
       ),

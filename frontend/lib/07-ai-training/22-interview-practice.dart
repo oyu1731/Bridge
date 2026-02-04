@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:bridge/06-company/api_config.dart';
 import 'package:bridge/11-common/60-ScreenWrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
@@ -29,7 +30,7 @@ class InterviewPractice extends StatefulWidget {
 }
 
 class _InterviewPracticeState extends State<InterviewPractice> {
-  // --- Controllers ---
+  final GlobalActions _globalActions = GlobalActions(); // --- Controllers ---
   final TextEditingController nameController = TextEditingController();
   final TextEditingController careerController = TextEditingController();
 
@@ -99,10 +100,17 @@ class _InterviewPracticeState extends State<InterviewPractice> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             bool isFree = (user?['planStatus'] ?? '無料') == '無料';
+            final isSmallScreen = MediaQuery.of(context).size.width < 600;
+            final modalHeight =
+                isSmallScreen
+                    ? MediaQuery.of(context).size.height * 0.95
+                    : MediaQuery.of(context).size.height * 0.88;
+            final padding = isSmallScreen ? 16.0 : 20.0;
+            final headerFontSize = isSmallScreen ? 20.0 : 24.0;
 
             return Container(
-              padding: const EdgeInsets.all(20),
-              height: MediaQuery.of(context).size.height * 0.88,
+              padding: EdgeInsets.all(padding),
+              height: modalHeight,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
@@ -115,7 +123,9 @@ class _InterviewPracticeState extends State<InterviewPractice> {
                 ),
               ),
               child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ヘッダー
@@ -135,10 +145,10 @@ class _InterviewPracticeState extends State<InterviewPractice> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
+                          Text(
                             "面接設定",
                             style: TextStyle(
-                              fontSize: 24,
+                              fontSize: headerFontSize,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF1E293B),
                             ),
@@ -146,67 +156,126 @@ class _InterviewPracticeState extends State<InterviewPractice> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: isSmallScreen ? 12 : 20),
 
                     // トークン情報表示
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey.shade200),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.account_balance_wallet,
-                            color: Colors.blue.shade600,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "現在のトークン",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
+                      child:
+                          isSmallScreen
+                              ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.account_balance_wallet,
+                                        color: Colors.blue.shade600,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Text(
+                                        "現在のトークン",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                Text(
-                                  _availableTokens?.toString() ?? '未取得',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1E293B),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        _availableTokens?.toString() ?? '未取得',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1E293B),
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF10B981),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          "20消費",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF10B981),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              "20トークン消費",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                                ],
+                              )
+                              : Row(
+                                children: [
+                                  Icon(
+                                    Icons.account_balance_wallet,
+                                    color: Colors.blue.shade600,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          "現在のトークン",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        Text(
+                                          _availableTokens?.toString() ?? '未取得',
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF1E293B),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Text(
+                                      "20トークン消費",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: isSmallScreen ? 12 : 20),
 
                     // あなたの情報
                     _buildSectionHeader(icon: Icons.person, title: "あなたの情報"),
@@ -372,6 +441,7 @@ class _InterviewPracticeState extends State<InterviewPractice> {
 
                           final url = Uri.parse(
                             'http://localhost:8080/api/interview',
+                            // '${ApiConfig.baseUrl}/api/interview',
                           );
                           final headers = {
                             'Content-Type': 'application/json; charset=UTF-8',
@@ -393,6 +463,25 @@ class _InterviewPracticeState extends State<InterviewPractice> {
                                   (q) => q['question'] ?? q.toString(),
                                 ),
                               );
+
+                              // トークンを消費（プレミアムユーザーは除外）
+                              if (user != null && user!['id'] != null) {
+                                final isPremium =
+                                    (user?['planStatus'] ?? '無料') != '無料';
+                                if (!isPremium) {
+                                  final userId = user!['id'] as int;
+                                  final tokensToDeduct = 20;
+                                  final bool deducted = await _globalActions
+                                      .deductUserTokens(userId, tokensToDeduct);
+                                  if (deducted) {
+                                    print('$tokensToDeduct トークンを消費しました。');
+                                  } else {
+                                    print('トークン消費に失敗しました。');
+                                  }
+                                } else {
+                                  print('プレミアムユーザーのためトークン消費をスキップしました。');
+                                }
+                              }
 
                               Navigator.push(
                                 context,
@@ -458,6 +547,8 @@ class _InterviewPracticeState extends State<InterviewPractice> {
                       ),
                     ),
                     const SizedBox(height: 20),
+                    // キーボード表示時のスペース確保
+                    SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
                   ],
                 ),
               ),
@@ -799,12 +890,12 @@ class _InterviewScreenState extends State<InterviewScreen> {
 
   // 面接官の画像リスト
   final List<String> _interviewerImages = [
-    '../lib/01-images/mensetukan1.png',
-    '../lib/01-images/mensetukan2.png',
-    '../lib/01-images/mensetukan3.png',
-    '../lib/01-images/mensetukan4.png',
-    '../lib/01-images/mensetukan5.png',
-    '../lib/01-images/mensetukan6.png',
+    'lib/01-images/mensetukan1.png',
+    'lib/01-images/mensetukan2.png',
+    'lib/01-images/mensetukan3.png',
+    'lib/01-images/mensetukan4.png',
+    'lib/01-images/mensetukan5.png',
+    'lib/01-images/mensetukan6.png',
   ];
 
   void _loadUserSession() async {
@@ -892,8 +983,7 @@ class _InterviewScreenState extends State<InterviewScreen> {
       setState(() {
         _currentQuestionIndex++;
         _textEditingController.clear();
-        // 次の質問で新しい面接官画像を選択
-        _selectRandomInterviewerImage();
+        // _selectRandomInterviewerImage();
         print("[Dart] InterviewPractice: テキストフィールドをクリア (次の質問へ)");
       });
       _speakCurrentQuestion();
@@ -923,16 +1013,21 @@ class _InterviewScreenState extends State<InterviewScreen> {
               apiResponse['choices']?[0]?['message']?['content'];
 
           if (_userSession != null && _userSession!['id'] != null) {
-            final userId = _userSession!['id'] as int;
-            final tokensToDeduct = 20;
-            final bool deducted = await _globalActions.deductUserTokens(
-              userId,
-              tokensToDeduct,
-            );
-            if (deducted) {
-              print('$tokensToDeduct トークンを消費しました。');
+            final isPremium = (_userSession?['planStatus'] ?? '無料') != '無料';
+            if (!isPremium) {
+              final userId = _userSession!['id'] as int;
+              final tokensToDeduct = 20;
+              final bool deducted = await _globalActions.deductUserTokens(
+                userId,
+                tokensToDeduct,
+              );
+              if (deducted) {
+                print('$tokensToDeduct トークンを消費しました。');
+              } else {
+                print('トークン消費に失敗しました。');
+              }
             } else {
-              print('トークン消費に失敗しました。');
+              print('プレミアムユーザーのためトークン消費をスキップしました。');
             }
           }
 
@@ -1014,62 +1109,64 @@ class _InterviewScreenState extends State<InterviewScreen> {
         color: const Color(0xFFF8FAFC),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              // 進捗表示
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "質問 ${_currentQuestionIndex + 1}/${widget.questions.length}",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                        Text(
-                          "${(progress * 100).round()}%",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: Colors.grey.shade200,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Color(0xFF6366F1),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 進捗表示
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                      borderRadius: BorderRadius.circular(4),
-                      minHeight: 6,
-                    ),
-                  ],
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "質問 ${_currentQuestionIndex + 1}/${widget.questions.length}",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          Text(
+                            "${(progress * 100).round()}%",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      LinearProgressIndicator(
+                        value: progress,
+                        backgroundColor: Colors.grey.shade200,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF6366F1),
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                        minHeight: 6,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              Expanded(
-                child: Row(
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 面接官の画像
@@ -1144,6 +1241,7 @@ class _InterviewScreenState extends State<InterviewScreen> {
                             const SizedBox(height: 16),
                             Expanded(
                               child: SingleChildScrollView(
+                                physics: const BouncingScrollPhysics(),
                                 child: Text(
                                   currentQuestion,
                                   style: const TextStyle(
@@ -1160,182 +1258,185 @@ class _InterviewScreenState extends State<InterviewScreen> {
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // マイクボタン
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color:
-                            _isMicOn
-                                ? const Color(0xFFFEF2F2)
-                                : const Color(0xFFF0F9FF),
-                        border: Border.all(
-                          color:
-                              _isMicOn
-                                  ? const Color(0xFFEF4444)
-                                  : const Color(0xFF0EA5E9),
-                          width: 2,
-                        ),
+                // マイクボタン
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                      child: IconButton(
-                        icon: Icon(
-                          _isMicOn ? Icons.mic : Icons.mic_off,
-                          size: 32,
-                          color:
-                              _isMicOn
-                                  ? const Color(0xFFEF4444)
-                                  : const Color(0xFF0EA5E9),
-                        ),
-                        onPressed: _toggleMic,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _isMicOn ? "マイクON - 音声入力中" : "マイクOFF - タップで音声入力開始",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color:
-                            _isMicOn
-                                ? const Color(0xFFEF4444)
-                                : const Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // 回答入力エリア
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
+                    ],
+                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "あなたの回答",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1E293B),
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              _isMicOn
+                                  ? const Color(0xFFFEF2F2)
+                                  : const Color(0xFFF0F9FF),
+                          border: Border.all(
+                            color:
+                                _isMicOn
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFF0EA5E9),
+                            width: 2,
+                          ),
+                        ),
+                        child: IconButton(
+                          icon: Icon(
+                            _isMicOn ? Icons.mic : Icons.mic_off,
+                            size: 32,
+                            color:
+                                _isMicOn
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFF0EA5E9),
+                          ),
+                          onPressed: _toggleMic,
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Container(
-                        height: 120,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: TextField(
-                          controller: _textEditingController,
-                          maxLines: null,
-                          expands: true,
-                          decoration: InputDecoration(
-                            hintText:
-                                _isMicOn
-                                    ? "音声認識中...話しかけてください"
-                                    : "回答を入力してください（音声入力の場合はマイクボタンをタップ）",
-                            hintStyle: const TextStyle(color: Colors.grey),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                          style: const TextStyle(fontSize: 14),
+                      Text(
+                        _isMicOn ? "マイクON - 音声入力中" : "マイクOFF - タップで音声入力開始",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color:
+                              _isMicOn
+                                  ? const Color(0xFFEF4444)
+                                  : const Color(0xFF64748B),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
-              // 送信ボタン
-              Container(
-                height: 56,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [const Color(0xFF6366F1), const Color(0xFF4F46E5)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF6366F1).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  onPressed: _submitAnswer,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        _currentQuestionIndex < widget.questions.length - 1
-                            ? Icons.arrow_forward
-                            : Icons.check,
-                        color: Colors.white,
+                // 回答入力エリア
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _currentQuestionIndex < widget.questions.length - 1
-                            ? "次の質問へ"
-                            : "面接を終了する",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                    ],
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "あなたの回答",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          height: 120,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: TextField(
+                            controller: _textEditingController,
+                            maxLines: null,
+                            expands: true,
+                            decoration: InputDecoration(
+                              hintText:
+                                  _isMicOn
+                                      ? "音声認識中...話しかけてください"
+                                      : "回答を入力してください（音声入力の場合はマイクボタンをタップ）",
+                              hintStyle: const TextStyle(color: Colors.grey),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // 送信ボタン
+                Container(
+                  height: 56,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF6366F1),
+                        const Color(0xFF4F46E5),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF6366F1).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: _submitAnswer,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _currentQuestionIndex < widget.questions.length - 1
+                              ? Icons.arrow_forward
+                              : Icons.check,
                           color: Colors.white,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        Text(
+                          _currentQuestionIndex < widget.questions.length - 1
+                              ? "次の質問へ"
+                              : "面接を終了する",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

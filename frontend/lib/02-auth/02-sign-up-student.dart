@@ -78,6 +78,17 @@ class _StudentInputPageState extends State<StudentInputPage> {
     _fetchIndustries();
   }
 
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'パスワードを入力してください';
+    }
+    final regex = RegExp(r'^[a-zA-Z0-9._]+$');
+    if (!regex.hasMatch(value)) {
+      return 'パスワードは英数字、ドット(.)、アンダースコア(_)のみ使用できます。';
+    }
+    return null;
+  }
+
   Future<void> _fetchIndustries() async {
     try {
       final response = await http.get(
@@ -195,8 +206,8 @@ class _StudentInputPageState extends State<StudentInputPage> {
                             ),
                             keyboardType: TextInputType.emailAddress,
                             validator: (v) {
-                              if (v == null || v.isEmpty) return '入力してください';
-                              if (!v.contains('@')) return '形式が不正です';
+                              if (v == null || v.isEmpty) return 'メールアドレスを入力してください';
+                              if (!v.contains('@')) return 'メールアドレスの形式が不正です';
                               return null;
                             },
                           ),
@@ -237,6 +248,13 @@ class _StudentInputPageState extends State<StudentInputPage> {
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'パスワードを入力してください';
+                              }
+                              if (value.length > 255) {
+                                return 'パスワードは255文字以内で入力してください';
+                              }
+                              final regex = RegExp(r'^[a-zA-Z0-9._]+$');
+                              if (!regex.hasMatch(value)) {
+                                return '使用できない文字が含まれています。\nパスワードに使用できるのは英数字、ピリオド、アンダースコアのみです。';
                               }
                               if (value.length < 8) {
                                 return 'パスワードは8文字以上で入力してください';

@@ -6,6 +6,7 @@ import '../06-company/16-article-list.dart';
 import '../06-company/18-article-detail.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart'; // セッション保存用
+import 'package:http/http.dart' as http;
 import '../08-thread/thread_api_client.dart';
 import '../08-thread/31-thread-list.dart';
 import 'package:bridge/08-thread/33-thread-unofficial-detail.dart';
@@ -20,38 +21,94 @@ class CompanyHome extends StatefulWidget {
 }
 
 class _CompanyHomeState extends State<CompanyHome>
-  with SingleTickerProviderStateMixin {
-    List<Thread> officialThreads = [];
-    List<Thread> hotUnofficialThreads = [];
-    static const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
-    // API呼び出し　並び替え　上位３件に絞り込み
-    Future<List<Thread>> fetchTop3UnofficialThreads() async {
-      final threads = await ThreadApiClient.getAllThreads();
-      final unofficial = threads.where((t) => t.type == 2 && (t.entryCriteria == userType || t.entryCriteria == 1)).toList();
-      unofficial.sort((a, b) {
-        final aTime = a.lastCommentDate ?? DateTime(2000);
-        final bTime = b.lastCommentDate ?? DateTime(2000);
-        return bTime.compareTo(aTime); // 新しい順
-      });
-      return unofficial.take(3).toList();
-    }
-     //ユーザ情報取得
-    int? userType;
-    Future<void> _loadUserData() async {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonString = prefs.getString('current_user');
-      if (jsonString == null) return;
-      final userData = jsonDecode(jsonString);
-      setState(() {
-        userType = userData['type']+1;
-      });
-    }
+    with SingleTickerProviderStateMixin {
+  List<Thread> officialThreads = [];
+  List<Thread> hotUnofficialThreads = [];
+  static const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
+  // API呼び出し　並び替え　上位３件に絞り込み
+  Future<List<Thread>> fetchTop3UnofficialThreads() async {
+    final threads = await ThreadApiClient.getAllThreads();
+    final unofficial =
+        threads
+            .where(
+              (t) =>
+                  t.type == 2 &&
+                  (t.entryCriteria == userType || t.entryCriteria == 1),
+            )
+            .toList();
+    unofficial.sort((a, b) {
+      final aTime = a.lastCommentDate ?? DateTime(2000);
+      final bTime = b.lastCommentDate ?? DateTime(2000);
+      return bTime.compareTo(aTime); // 新しい順
+    });
+    return unofficial.take(3).toList();
+  }
 
-    Future<void> _init() async {
-      await _loadUserData();   //ユーザ取得
-      print("iiiiiiiiii");
-      print(userType);
+  //ユーザ情報取得
+  int? userType;
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('current_user');
+    if (jsonString == null) return;
+    final userData = jsonDecode(jsonString);
+    setState(() {
+      userType = userData['type'] + 1;
+    });
+  }
+
+  /// ログイン中のアカウントのサブスク確認・更新
+  Future<void> _checkAndUpdateSubscriptionStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('current_user');
+    if (jsonString == null) return;
+
+    final userData = jsonDecode(jsonString);
+    final userId = userData['id'];
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse(
+              "http://localhost:8080/api/users/$userId/check-subscription",
+            ),
+          )
+          .timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('📋 サブスク確認完了: ${data['message']}');
+
+        // usersテーブルのplanStatusが更新されている場合、セッションも更新
+        if (data['planStatus'] != null) {
+          print('🔄 セッション更新: planStatus=${data['planStatus']}');
+          userData['planStatus'] = data['planStatus'];
+          await prefs.setString('current_user', jsonEncode(userData));
+
+          // 無料に変わった場合はヘッダーをリロード
+          if (data['planStatus'] == '無料') {
+            print('⚠️ プランが無料に変更されました - ヘッダーを再ロード');
+            // ヘッダーのキャッシュとアラート履歴をリセット
+            BridgeHeader.clearPlanStatusCache();
+            BridgeHeader.resetAlertHistory(userId);
+            print('🗑️ ヘッダーのキャッシュをクリア、アラート履歴をリセット');
+            // 状態を更新してリビルド
+            if (mounted) setState(() {});
+          }
+        }
+      } else {
+        print('❌ サブスク確認エラー: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ サブスク確認通信エラー: $e');
     }
+  }
+
+  Future<void> _init() async {
+    await _loadUserData(); //ユーザ取得
+    await _checkAndUpdateSubscriptionStatus(); // サブスク確認・更新
+    print("iiiiiiiiii");
+    print(userType);
+  }
 
   late TabController _tabController;
   @override
@@ -111,6 +168,7 @@ class _CompanyHomeState extends State<CompanyHome>
       ),
     );
   }
+
   // =====================
   // トップページタブ
   // =====================
@@ -125,7 +183,8 @@ class _CompanyHomeState extends State<CompanyHome>
         if (snapshot.hasError) {
           return Center(child: Text('記事の取得に失敗しました'));
         }
-        final articles = snapshot.data ?? [];
+        // 取得した記事のうち最大10件のみ表示
+        final articles = (snapshot.data ?? []).take(10).toList();
         return SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,8 +225,11 @@ class _CompanyHomeState extends State<CompanyHome>
                     FutureBuilder<List<Thread>>(
                       future: fetchTop3UnofficialThreads(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
                         }
                         if (snapshot.hasError) {
                           return Text('スレッド取得エラー');
@@ -177,47 +239,56 @@ class _CompanyHomeState extends State<CompanyHome>
                           return Text('表示できるスレッドがありません');
                         }
                         return Column(
-                          children: threads.map((t) {
-                            return Column(
-                               children: [
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ThreadUnOfficialDetail(
-                                        thread: {'id': t.id, 'title': t.title},
+                          children:
+                              threads.map((t) {
+                                return Column(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) =>
+                                                    ThreadUnOfficialDetail(
+                                                      thread: {
+                                                        'id': t.id,
+                                                        'title': t.title,
+                                                      },
+                                                    ),
+                                          ),
+                                        );
+                                      },
+                                      //説明文の表示
+                                      child: Card(
+                                        child: ListTile(
+                                          title: Text(
+                                            t.title,
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          subtitle: Text(
+                                            t.description,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                          trailing: Text(
+                                            t.timeAgo,
+                                            style: const TextStyle(
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  );
-                                },
-                                //説明文の表示
-                                child: Card(
-                                  child: ListTile(
-                                    title: Text(
-                                      t.title,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      t.description,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(color: Colors.grey[700]),
-                                    ),
-                                    trailing: Text(
-                                      t.timeAgo,
-                                      style: const TextStyle(color: Colors.grey),
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                            ],
-                            );
-                          }).toList(),
+                                  ],
+                                );
+                              }).toList(),
                         );
                       },
                     ),
@@ -265,7 +336,8 @@ class _CompanyHomeState extends State<CompanyHome>
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           itemCount: articles.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 16),
+                          separatorBuilder:
+                              (_, __) => const SizedBox(width: 16),
                           itemBuilder: (context, i) {
                             final a = articles[i];
                             return _buildArticleCard(
@@ -327,9 +399,7 @@ class _CompanyHomeState extends State<CompanyHome>
       },
     );
   }
-
 }
-
 
 // =====================
 // スレッドカード
@@ -482,20 +552,25 @@ class _ArticlePagerState extends State<_ArticlePager> {
               final end = (start + 3).clamp(0, widget.articles.length);
               final pageArticles = widget.articles.sublist(start, end);
 
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children:
-                    pageArticles
-                        .map(
-                          (a) => _buildArticleCard(
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: pageArticles
+                      .map(
+                        (a) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: _buildArticleCard(
                             title: a["title"] ?? '',
                             companyName: a["companyName"] ?? '',
                             totalLikes: a["totalLikes"] ?? 0,
                             link: a["link"] ?? '',
                             onTitleTap: a["onTitleTap"],
                           ),
-                        )
-                        .toList(),
+                        ),
+                      )
+                      .toList(),
+                ),
               );
             },
           ),

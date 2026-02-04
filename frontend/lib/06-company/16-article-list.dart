@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../11-common/58-header.dart';
 import '18-article-detail.dart';
 import 'article_api_client.dart';
@@ -36,14 +37,23 @@ class _ArticleListPageState extends State<ArticleListPage> {
   @override
   void initState() {
     super.initState();
-    
+    _checkLoginStatus();
     // 企業名が渡された場合は検索バーに設定
     if (widget.companyName != null && widget.companyName!.isNotEmpty) {
       _searchController.text = widget.companyName!;
     }
-    
     _loadFilterData();
     _loadArticles();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('current_user');
+    if (userJson == null) {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/signin');
+      }
+    }
   }
 
   Future<void> _loadFilterData() async {
@@ -774,6 +784,10 @@ class _ArticleListPageState extends State<ArticleListPage> {
         );
       },
       child: Container(
+        constraints: BoxConstraints(
+          minHeight: 180,
+          maxHeight: 240, // カードの最大高さを制限
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: Color(0xFFE0E0E0)),
@@ -782,84 +796,92 @@ class _ArticleListPageState extends State<ArticleListPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 12), // タグ上部の余白
-            // タグ表示
-            if (article.tags != null && article.tags!.isNotEmpty)
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: article.tags!.map((tag) => Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFE3F2FD),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Color(0xFF1976D2), width: 0.5),
-                    ),
-                    child: Text(
-                      '# $tag',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF1976D2),
-                        fontWeight: FontWeight.w500,
+            Expanded(
+              child: SingleChildScrollView(
+                physics: BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 12), // タグ上部の余白
+                    // タグ表示
+                    if (article.tags != null && article.tags!.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: article.tags!.map((tag) => Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFE3F2FD),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Color(0xFF1976D2), width: 0.5),
+                            ),
+                            child: Text(
+                              '# $tag',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Color(0xFF1976D2),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          )).toList(),
+                        ),
+                      ),
+                    if (article.tags != null && article.tags!.isNotEmpty)
+                      SizedBox(height: 8),
+
+                    // 会社名と業界名
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              article.companyName ?? '会社名不明',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF424242),
+                              ),
+                            ),
+                          ),
+                          if ((article.industries != null && article.industries!.isNotEmpty) || (article.industry != null && article.industry!.isNotEmpty))
+                            Text(
+                              (article.industries != null && article.industries!.isNotEmpty)
+                                  ? article.industries!.join(', ')
+                                  : article.industry ?? '',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF757575),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                  )).toList(),
+                    SizedBox(height: 8),
+
+                    // 記事タイトル
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        article.title,
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Color(0xFF1976D2),
+                          fontWeight: FontWeight.w600,
+                          height: 1.4,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            if (article.tags != null && article.tags!.isNotEmpty)
-              SizedBox(height: 8),
-
-            // 会社名と業界名
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      article.companyName ?? '会社名不明',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF424242),
-                      ),
-                    ),
-                  ),
-                  if ((article.industries != null && article.industries!.isNotEmpty) || (article.industry != null && article.industry!.isNotEmpty))
-                    Text(
-                      (article.industries != null && article.industries!.isNotEmpty)
-                          ? article.industries!.join(', ')
-                          : article.industry ?? '',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF757575),
-                      ),
-                    ),
-                ],
-              ),
             ),
-            SizedBox(height: 8),
-
-            // 記事タイトル
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                article.title,
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Color(0xFF1976D2),
-                  fontWeight: FontWeight.w600,
-                  height: 1.4,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Spacer(),
-
-            // いいね数表示
+            // いいね数表示（下部固定）
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: Row(

@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../11-common/58-header.dart';
 import '18-article-detail.dart';
@@ -16,16 +17,26 @@ class CompanyDetailPage extends StatefulWidget {
 }
 
 class _CompanyDetailPageState extends State<CompanyDetailPage> {
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+    _fetchData();
+  }
+
+    Future<void> _checkLoginStatus() async {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString('current_user');
+      if (userJson == null) {
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/signin');
+        }
+      }
+    }
   CompanyDTO? _company;
   List<ArticleDTO> _featuredArticles = [];
   bool _isLoading = true;
   String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchData();
-  }
 
   Future<void> _fetchData() async {
     setState(() { _isLoading = true; _error = null; });

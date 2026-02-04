@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/03-home/08-student-worker-home.dart';
 import 'package:bridge/03-home/09-company-home.dart';
+import 'package:bridge/09-admin/36-admin-home.dart';
 import 'package:bridge/main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -26,6 +27,9 @@ class _PasswordUpdatePageState extends State<PasswordUpdatePage> {
   bool _obscureNew = true;
   bool _obscureConfirm = true;
 
+  bool _isSaving = false;
+  String? _errorMessage;
+
   @override
   void dispose() {
     _currentController.dispose();
@@ -37,6 +41,20 @@ class _PasswordUpdatePageState extends State<PasswordUpdatePage> {
   void _toggleCurrent() => setState(() => _obscureCurrent = !_obscureCurrent);
   void _toggleNew() => setState(() => _obscureNew = !_obscureNew);
   void _toggleConfirm() => setState(() => _obscureConfirm = !_obscureConfirm);
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'パスワードを入力してください';
+    }
+    if (value.length > 255) {
+      return 'パスワードは255文字以内で入力してください';
+    }
+    final regex = RegExp(r'^[a-zA-Z0-9._]+$');
+    if (!regex.hasMatch(value)) {
+      return '使用できない文字が含まれています。\nパスワードに使用できるのは英数字、ピリオド、アンダースコアのみです。';
+    }
+    return null;
+  }
 
 Future<void> _onSubmit() async {
   if (_formKey.currentState?.validate() ?? false) {
@@ -80,8 +98,8 @@ Future<void> _onSubmit() async {
         context: context,
         builder: (ctx) {
           return AlertDialog(
-            title: const Text('パスワード変更'),
-            content: const Text('パスワードの変更が完了しました'),
+            title: const Text('パスワード変更', style: TextStyle(color: AppTheme.textCyanDark)),
+            content: const Text('パスワードの変更が完了しました', style: TextStyle(color: AppTheme.textCyanDark)),
             actions: [
               TextButton(
                 onPressed: () {
@@ -92,6 +110,8 @@ Future<void> _onSubmit() async {
                     homePage = const StudentWorkerHome();
                   } else if (userType == 3) {
                     homePage = const CompanyHome();
+                  } else if (userType == 4) {
+                    homePage = AdminHome();
                   } else {
                     homePage = const MyHomePage(title: 'Bridge');
                   }
@@ -107,9 +127,9 @@ Future<void> _onSubmit() async {
         },
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('エラー: ${response.body}')),
-      );
+      setState(() {
+        _errorMessage = '現在のパスワードが一致しません';
+      });
     }
   }
 }
@@ -132,11 +152,15 @@ Future<void> _onSubmit() async {
 
                   // --- タイトル ---
                   Text('パスワード変更',
-                    style: AppTheme.mainTextStyle,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textCyanDark,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   const Text('現在のパスワードと、新しいパスワードを入力してください。',
-                      style: TextStyle(color: Colors.black54)),
+                      style: TextStyle(color: AppTheme.textCyanDark)),
 
                   const SizedBox(height: 28),
 
@@ -160,8 +184,9 @@ Future<void> _onSubmit() async {
                           obscure: _obscureNew,
                           toggle: _toggleNew,
                           validator: (v) {
-                            if (v == null || v.isEmpty) return '入力してください';
-                            if (v.length < 8) return 'パスワードは8文字以上である必要があります';
+                            String? result = _validatePassword(v);
+                            if (result != null) return result;
+                            if (v!.length < 8) return 'パスワードは8文字以上である必要があります';
                             return null;
                           },
                         ),
@@ -174,13 +199,23 @@ Future<void> _onSubmit() async {
                           obscure: _obscureConfirm,
                           toggle: _toggleConfirm,
                           validator: (v) {
-                            if (v == null || v.isEmpty) return '再入力してください';
+                            String? result = _validatePassword(v);
+                            if (result != null) return result;
                             if (v != _newController.text) return 'パスワードが一致しません';
                             return null;
                           },
                         ),
 
                         const SizedBox(height: 28),
+
+                        if (_errorMessage != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(color: Colors.orange, fontSize: 14),
+                            ),
+                          ),
 
                         // --- ボタン群 ---
                         Row(
@@ -248,17 +283,29 @@ Future<void> _onSubmit() async {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label),
+        Text(label, style: const TextStyle(color: AppTheme.textCyanDark)),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           obscureText: obscure,
-          validator: validator ?? (v) => (v == null || v.isEmpty) ? '入力してください' : null,
+          style: const TextStyle(color: AppTheme.textCyanDark),
+          validator: validator ?? _validatePassword,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            border: OutlineInputBorder(
+              borderSide: const BorderSide(color: AppTheme.textCyanDark),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: AppTheme.textCyanDark),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: AppTheme.textCyanDark, width: 2),
+              borderRadius: BorderRadius.circular(8),
+            ),
             suffixIcon: IconButton(
-              icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
+              icon: Icon(obscure ? Icons.visibility_off : Icons.visibility, color: AppTheme.textCyanDark),
               onPressed: toggle,
             ),
           ),

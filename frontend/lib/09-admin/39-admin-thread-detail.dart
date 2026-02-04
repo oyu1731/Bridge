@@ -1,132 +1,235 @@
-import 'package:flutter/material.dart';
-import 'package:bridge/11-common/58-header.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:bridge/11-common/58-header.dart';
 
 class AdminThreadDetail extends StatefulWidget {
-  final int threadId; // ← String → int に変更
+  final int threadId;
+  final String title;
 
-  const AdminThreadDetail({required this.threadId, super.key});
+  const AdminThreadDetail({
+    super.key,
+    required this.threadId,
+    required this.title,
+  });
 
   @override
-  _AdminThreadDetailState createState() => _AdminThreadDetailState();
+  State<AdminThreadDetail> createState() => _AdminThreadDetailState();
 }
 
 class _AdminThreadDetailState extends State<AdminThreadDetail> {
-  final TextEditingController _messageController = TextEditingController();
-  final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-
-  String searchText = ''; // 検索文字列
-
-  List<Map<String, dynamic>> _messages = [];
-  int _loadedPages = 1;
-  final int _pageSize = 20;
+  final TextEditingController _searchController = TextEditingController();
 
   late final StreamController<List<Map<String, dynamic>>> _messageStreamController;
+  late final WebSocketChannel _channel;
+
+  final List<Map<String, dynamic>> _messages = [];
+  final Map<String, String> _userNicknames = {};
+
+  String _searchText = '';
   bool _showNewBadge = false;
+
+  final String baseUrl = 'http://localhost:8080/api';
 
   @override
   void initState() {
     super.initState();
-    _messageStreamController = StreamController<List<Map<String, dynamic>>>.broadcast();
-    _loadInitialMessages();
 
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels <= _scrollController.position.minScrollExtent + 10) {
-        _loadMoreMessages();
-      }
-      if (_showNewBadge &&
-          _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 50) {
-        setState(() {
-          _showNewBadge = false;
-        });
-      }
-    });
+    _messageStreamController =
+        StreamController<List<Map<String, dynamic>>>.broadcast();
+
+    _fetchMessages();
+    _connectWebSocket();
+
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    _channel.sink.close();
     _messageStreamController.close();
     _scrollController.dispose();
-    _messageController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  void _loadInitialMessages() {
-    final now = DateTime.now();
-    List<Map<String, dynamic>> initialData = List.generate(_pageSize, (index) {
-      return {
-        'id': index,
-        'user_id': index % 2 == 0 ? 'user_001' : 'user_002',
-        'text': 'メッセージ ${index + 1} (最新側)',
-        'created_at': now.subtract(Duration(minutes: _pageSize - index))
-      };
-    });
+  // -------------------------
+  // 初期メッセージ取得
+  // -------------------------
+  Future<void> _fetchMessages() async {
+    try {
+      final response =
+          await http.get(Uri.parse('$baseUrl/chat/${widget.threadId}/active'));
 
-    _messages = initialData;
-    _messageStreamController.add(_messages);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+
+        for (final msg in data) {
+          _messages.add({
+            'id': msg['id'],
+            'user_id': msg['userId'].toString(),
+            'text': msg['content'],
+            'created_at': msg['createdAt'],
+            'photoId': msg['photoId'],
+          });
+        }
+
+        _messages.sort((a, b) =>
+            DateTime.parse(a['created_at'])
+                .compareTo(DateTime.parse(b['created_at'])));
+
+        _messageStreamController.add(List.from(_messages));
+        _scrollToBottom();
       }
-    });
+    } catch (e) {
+      debugPrint('管理者メッセージ取得失敗: $e');
+    }
   }
 
-  Future<void> _loadMoreMessages() async {
-    if (!mounted) return;
-    await Future.delayed(const Duration(milliseconds: 400));
+  // -------------------------
+  // WebSocket 接続（受信専用）
+  // -------------------------
+  void _connectWebSocket() {
+    _channel = WebSocketChannel.connect(
+      Uri.parse('ws://localhost:8080/ws/chat/${widget.threadId}'),
+    );
 
-    final base = _loadedPages * _pageSize;
-    final now = DateTime.now();
-    List<Map<String, dynamic>> moreData = List.generate(_pageSize, (index) {
-      final id = base + index;
-      return {
-        'id': id,
-        'user_id': id % 2 == 0 ? 'user_001' : 'user_002',
-        'text': '過去メッセージ ${id + 1}',
-        'created_at': now.subtract(Duration(minutes: id + 1 + _pageSize))
-      };
-    });
+    _channel.stream.listen((data) {
+      try {
+        final msg = Map<String, dynamic>.from(jsonDecode(data));
 
-    double prevScrollHeight = _scrollController.hasClients ? _scrollController.position.maxScrollExtent : 0;
-    setState(() {
-      _messages = [...moreData, ..._messages];
-      _loadedPages++;
-    });
-    _messageStreamController.add(_messages);
+        if (_messages.any((m) => m['id'] == msg['id'])) return;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      final newScrollHeight = _scrollController.position.maxScrollExtent;
-      final delta = newScrollHeight - prevScrollHeight;
-      if (delta > 0) {
-        _scrollController.jumpTo(_scrollController.position.pixels + delta);
-      }
-    });
-  }
-
-  // （将来）外部ソケットからの着信を想定した擬似メソッド
-  void _onExternalNewMessage(Map<String, dynamic> msg) {
-    setState(() {
-      _messages.add(msg);
-    });
-    _messageStreamController.add(_messages);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 50) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      } else {
-        setState(() {
-          _showNewBadge = true;
+        _messages.add({
+          'id': msg['id'],
+          'user_id': msg['userId'].toString(),
+          'text': msg['content'],
+          'created_at': msg['createdAt'],
+          'photoId': msg['photoId'],
         });
+
+        _messages.sort((a, b) =>
+            DateTime.parse(a['created_at'])
+                .compareTo(DateTime.parse(b['created_at'])));
+
+        _messageStreamController.add(List.from(_messages));
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!_scrollController.hasClients) return;
+
+          if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 50) {
+            _scrollToBottom();
+          } else {
+            setState(() => _showNewBadge = true);
+          }
+        });
+      } catch (e) {
+        debugPrint('WebSocket parse error: $e');
       }
     });
+  }
+
+  // -------------------------
+  // スクロール制御
+  // -------------------------
+  void _scrollToBottom() {
+    if (!_scrollController.hasClients) return;
+
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  void _onScroll() {
+    if (_showNewBadge &&
+        _scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 50) {
+      setState(() => _showNewBadge = false);
+    }
+  }
+
+  // -------------------------
+  // ニックネーム取得
+  // -------------------------
+  Future<String> _getNickname(String userId) async {
+    if (_userNicknames.containsKey(userId)) {
+      return _userNicknames[userId]!;
+    }
+
+    try {
+      final response =
+          await http.get(Uri.parse('$baseUrl/chat/user/$userId'));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final nickname = data['nickname'] ?? 'Unknown';
+        _userNicknames[userId] = nickname;
+        return nickname;
+      }
+    } catch (_) {}
+
+    return 'Unknown';
+  }
+
+
+  // -------------------------
+  // 画像データ取得
+  // -------------------------
+  Future<String?> fetchPhotoUrl(int photoId) async {
+    final response =
+        await http.get(Uri.parse('$baseUrl/photos/$photoId'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return "http://localhost:8080${data['photoPath']}";
+    }
+    return null;
+  }
+
+  Future<void> _confirmDeleteChat(int chatId) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('コメント削除'),
+        content: const Text('このコメントを削除しますか？'),
+        actions: [
+          TextButton(
+            child: const Text('キャンセル'),
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          TextButton(
+            child: const Text('削除',),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      await _deleteChat(chatId);
+    }
+  }
+
+  Future<void> _deleteChat(int chatId) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/chat/$chatId/delete'),
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        _messages.removeWhere((m) => m['id'] == chatId);
+      });
+      _messageStreamController.add(List.from(_messages));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('コメントの削除に失敗しました')),
+      );
+    }
   }
 
   @override
@@ -135,142 +238,191 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
       appBar: BridgeHeader(),
       body: Column(
         children: [
+          // ===== ヘッダー =====
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.all(12),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
-                    "スレッドID: ${widget.threadId}", // ← 受け取ったIDのみ使用
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    widget.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 10),
+
+                /// ↓↓↓ 追加：最新コメントへスクロールボタン ↓↓↓
+                Tooltip(
+                  message: '読み込める最新のコメントまでスクロール',
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_downward),
+                    onPressed: _scrollToBottom,
+                  ),
+                ),
+
                 Expanded(
                   child: TextField(
                     controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: '検索',
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.search),
-                        onPressed: () {
-                          setState(() {
-                            searchText = _searchController.text.trim();
-                          });
-                        },
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                    decoration: const InputDecoration(
+                      hintText: 'コメント検索',
+                      prefixIcon: Icon(Icons.search),
                     ),
-                    onChanged: (value) {
-                      setState(() {
-                        searchText = value;
-                      });
-                    },
+                    onChanged: (v) =>
+                        setState(() => _searchText = v.trim()),
                   ),
                 ),
               ],
             ),
           ),
 
-          const Divider(height: 1),
-
           if (_showNewBadge)
             GestureDetector(
               onTap: () {
-                _scrollController.animateTo(
-                  _scrollController.position.maxScrollExtent,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                );
-                setState(() {
-                  _showNewBadge = false;
-                });
+                _scrollToBottom();
+                setState(() => _showNewBadge = false);
               },
               child: Container(
                 margin: const EdgeInsets.symmetric(vertical: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.blueAccent,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Text('新しいメッセージがあります', style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  '新しいメッセージがあります',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ),
 
+          // ===== メッセージ一覧 =====
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: _messageStreamController.stream,
+              initialData: _messages,
               builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final filteredMessages = snapshot.data!.where((msg) {
-                  final text = (msg['text'] ?? '').toString();
-                  return searchText.isEmpty || text.contains(searchText);
-                }).toList();
+                final messages = snapshot.data!
+                    .where((m) =>
+                        _searchText.isEmpty ||
+                        m['text'].contains(_searchText))
+                    .toList();
 
                 return ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.all(12),
-                  itemCount: filteredMessages.length,
+                  itemCount: messages.length,
                   itemBuilder: (context, index) {
-                    final msg = filteredMessages[index];
-
-                    final createdAt = msg['created_at'] as DateTime;
-                    final timeString =
+                    final msg = messages[index];
+                    final createdAt =
+                        DateTime.parse(msg['created_at']);
+                    final time =
                         '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
-                    final dateString =
-                        '${createdAt.year}年${createdAt.month}月${createdAt.day}日';
 
-                    bool showDateLabel = index == 0 ||
-                        dateString !=
-                            '${(filteredMessages[index - 1]['created_at'] as DateTime).year}年'
-                            '${(filteredMessages[index - 1]['created_at'] as DateTime).month}月'
-                            '${(filteredMessages[index - 1]['created_at'] as DateTime).day}日';
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const CircleAvatar(radius: 18),
+                          const SizedBox(width: 8),
 
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (showDateLabel)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Center(
-                              child: Text(dateString, style: const TextStyle(fontSize: 13)),
-                            ),
-                          ),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            const CircleAvatar(
-                              backgroundImage: AssetImage('assets/user_icon1.png'),
-                              radius: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Column(
+                          Stack(
+                            children: [
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(msg['user_id'], style: const TextStyle(fontSize: 12)),
-                                  Container(
-                                    margin: const EdgeInsets.symmetric(vertical: 4),
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(width: 1),
-                                      borderRadius: BorderRadius.circular(12),
+                                  // ニックネーム
+                                  FutureBuilder<String>(
+                                    future: _getNickname(msg['user_id']),
+                                    builder: (_, snap) => Text(
+                                      snap.data ?? '...',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                    child: Text(msg['text'], style: const TextStyle(fontSize: 15)),
                                   ),
-                                  Text(timeString, style: const TextStyle(fontSize: 11)),
+
+                                  // 吹き出し（横幅制限が超重要）
+                                  ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxWidth: MediaQuery.of(context).size.width * 0.65,
+                                    ),
+                                    child: Container(
+                                      margin: const EdgeInsets.only(top: 4, right: 28),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(),
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: Colors.grey[200],
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          if (msg['photoId'] != null)
+                                            FutureBuilder<String?>(
+                                              future: fetchPhotoUrl(msg['photoId']),
+                                              builder: (context, snapshot) {
+                                                if (!snapshot.hasData) {
+                                                  return const SizedBox(
+                                                    width: 200,
+                                                    height: 200,
+                                                  );
+                                                }
+                                                return Padding(
+                                                  padding: const EdgeInsets.only(bottom: 8),
+                                                  child: ClipRRect(
+                                                    borderRadius: BorderRadius.circular(12),
+                                                    child: Image.network(
+                                                      snapshot.data!,
+                                                      width: 200,
+                                                      height: 200,
+                                                      fit: BoxFit.cover,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          if (msg['text'] != null &&
+                                              msg['text'].toString().isNotEmpty)
+                                            Text(msg['text']),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+
+                                  // 時刻
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text(
+                                      time,
+                                      style: const TextStyle(fontSize: 11),
+                                    ),
+                                  ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+
+                              // 削除ボタン：吹き出し右下
+                              Positioned(
+                                right: 0,
+                                bottom: 18,
+                                child: IconButton(
+                                  icon: const Icon(Icons.delete, size: 20),
+                                  onPressed: () => _confirmDeleteChat(msg['id']),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     );
                   },
                 );
