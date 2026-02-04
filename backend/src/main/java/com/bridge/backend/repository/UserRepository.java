@@ -7,6 +7,8 @@ import java.util.List;
 
 // User エンティティを操作するための Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
+        // phone_number重複チェック
+        boolean existsByPhoneNumber(String phoneNumber);
     
     /**
      * 企業IDに基づいてユーザーを検索

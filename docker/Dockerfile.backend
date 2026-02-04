@@ -19,5 +19,13 @@ RUN ./mvnw dependency:go-offline -B
 COPY src ./src
 RUN ./mvnw clean package -DskipTests
 
+# ===== 初期画像をコンテナにコピー（entrypoint で volume にコピーされる）=====
+RUN mkdir -p /app/initial-images
+COPY initial-images/ /app/initial-images/
+
+# ===== uploads/photos ディレクトリを作成 =====
+RUN mkdir -p /app/uploads/photos && \
+    cp /app/initial-images/* /app/uploads/photos/ 2>/dev/null || true
+
 # ===== アプリケーション実行 =====
 ENTRYPOINT ["java", "-jar", "target/backend-0.0.1-SNAPSHOT.jar"]

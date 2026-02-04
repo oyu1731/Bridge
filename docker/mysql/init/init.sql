@@ -230,12 +230,12 @@ INSERT INTO photos (photo_path, user_id) VALUES
 ('/path/to/photo3.jpg', 3);
 
 INSERT INTO companies (name, address, phone_number, description, plan_status, is_withdrawn, created_at, photo_id) VALUES
-('株式会社Bridge', '東京都渋谷区', '03-1234-5678', 'IT企業です', 1, FALSE, NOW(), 1);
+('株式会社Bridge', '東京都渋谷区', '03-1234-5678', 'IT企業です', 1, FALSE, NOW(), 2);
 
 INSERT INTO users (nickname, type, password, phone_number, email, company_id, report_count, plan_status, is_withdrawn, created_at, society_history, icon, announcement_deletion) VALUES
-('学生ユーザー', 1, 'hashed_password_student', '090-1111-2222', 'student@example.com', NULL, 0, '無料', FALSE, NOW(), NULL, 1, 1),
-('社会人ユーザー', 2, 'hashed_password_worker', '080-3333-4444', 'worker@example.com', NULL, 0, '無料', FALSE, NOW(), 5, 2, 1),
-('企業ユーザー', 3, 'hashed_password_company', '070-5555-6666', 'company@example.com', 1, 0, '無料', FALSE, NOW(), NULL, 3, 1),
+('学生ユーザー', 1, 'hashed_password_student', '090-1111-2222', 'student@example.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1),
+('社会人ユーザー', 2, 'hashed_password_worker', '080-3333-4444', 'worker@example.com', NULL, 0, '無料', FALSE, NOW(), 6, NULL, 1),
+('企業ユーザー', 3, 'hashed_password_company', '070-5555-6666', 'company@example.com', 1, 0, '無料', FALSE, NOW(), NULL, NULL, 1),
 ('管理者ユーザー', 4, 'hashed_password_admin', '060-7777-8888', 'admin@example.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1);
 
 INSERT INTO industries (industry) VALUES
@@ -246,8 +246,8 @@ INSERT INTO subscriptions (user_id, plan_name, start_date, end_date, is_plan_sta
 (2, 'プレミアム', NOW(), '2026-01-01', TRUE, NOW());
 
 INSERT INTO articles (title, description, company_id, is_deleted, total_likes, created_at, photo1_id) VALUES
-('記事タイトル1', '記事説明1', 1, FALSE, 10, NOW(), 1),
-('記事タイトル2', '記事説明2', 1, FALSE, 5, NOW(), 2);
+('記事タイトル1', '記事説明1', 1, FALSE, 10, NOW(), 2),
+('記事タイトル2', '記事説明2', 1, FALSE, 5, NOW(), 3);
 
 INSERT INTO threads (user_id, title, type, description, entry_criteria, last_update_date, is_deleted, created_at) VALUES
 (1, '公式スレッド', 1, '公式スレッドの説明', 1, '2025-10-01 12:00:00', FALSE, '2025-09-01 10:00:00'),

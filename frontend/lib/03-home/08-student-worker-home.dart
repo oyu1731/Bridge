@@ -1,4 +1,5 @@
 import 'package:bridge/02-auth/06-delete-account.dart';
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/59-global-method.dart'; // loadUserSession 等のため
@@ -73,7 +74,7 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
       final response = await http
           .post(
             Uri.parse(
-              "http://localhost:8080/api/users/$userId/check-subscription",
+              '${ApiConfig.baseUrl}/api/users/$userId/check-subscription',
             ),
           )
           .timeout(const Duration(seconds: 5));
@@ -124,7 +125,7 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
         final response = await http
             .get(
               Uri.parse(
-                "http://localhost:8080/api/subscriptions/status/$userId",
+                '${ApiConfig.baseUrl}/api/subscriptions/status/$userId',
               ),
             )
             .timeout(const Duration(seconds: 5));
@@ -183,38 +184,38 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
   }
 
   // =====================
-// トップページタブ
-// =====================
-Widget _buildTopPageTab(BuildContext context) {
-  final isMobile = MediaQuery.of(context).size.width < 600;
-  return FutureBuilder<List<ArticleDTO>>(
-    future: ArticleApiClient.getAllArticles(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      if (snapshot.hasError) {
-        return Center(child: Text('記事の取得に失敗しました'));
-      }
-      // 取得した記事のうち最大10件のみ表示
-      final articles = (snapshot.data ?? []).take(10).toList();
-      return SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 最新スレッド
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    '最新スレッド',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+  // トップページタブ
+  // =====================
+  Widget _buildTopPageTab(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    return FutureBuilder<List<ArticleDTO>>(
+      future: ArticleApiClient.getAllArticles(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('記事の取得に失敗しました'));
+        }
+        // 取得した記事のうち最大10件のみ表示
+        final articles = (snapshot.data ?? []).take(10).toList();
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 最新スレッド
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '最新スレッド',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
                     TextButton(
                       onPressed: () {
                         Navigator.push(
@@ -333,68 +334,75 @@ Widget _buildTopPageTab(BuildContext context) {
               ),
 
               // スマホ: 横スクロール / PC: PageView＋ボタン（3枚ずつ）
-              SizedBox(
-                height: 260,
-                child:
-                    isMobile
-                        ? ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          itemCount: articles.length,
-                          separatorBuilder:
-                              (_, __) => const SizedBox(width: 16),
-                          itemBuilder: (context, i) {
-                            final a = articles[i];
-                            return _buildArticleCard(
-                              title: a.title,
-                              companyName: a.companyName ?? '',
-                              totalLikes: a.totalLikes ?? 0,
-                              link: '',
-                              onTitleTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => ArticleDetailPage(
-                                          articleTitle: a.title,
-                                          articleId: a.id?.toString() ?? '',
-                                          companyName: a.companyName,
-                                          description: a.description,
-                                        ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        )
-                        : _ArticlePager(
-                          articles:
-                              articles
-                                  .map(
-                                    (a) => {
-                                      "title": a.title,
-                                      "companyName": a.companyName ?? '',
-                                      "totalLikes": a.totalLikes ?? 0,
-                                      "link": '',
-                                      "onTitleTap": () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (_) => ArticleDetailPage(
-                                                  articleTitle: a.title,
-                                                  articleId:
-                                                      a.id?.toString() ?? '',
-                                                  companyName: a.companyName,
-                                                  description: a.description,
-                                                ),
+              Center(
+                child: SizedBox(
+                  height: 260,
+                  width: double.infinity,
+                  child:
+                      isMobile
+                          ? ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                            ),
+                            itemCount: articles.length,
+                            separatorBuilder:
+                                (_, __) => const SizedBox(width: 16),
+                            itemBuilder: (context, i) {
+                              final a = articles[i];
+                              return _buildArticleCard(
+                                title: a.title,
+                                companyName: a.companyName ?? '',
+                                totalLikes: a.totalLikes ?? 0,
+                                link: '',
+                                photo1Id: a.photo1Id,
+                                onTitleTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => ArticleDetailPage(
+                                            articleTitle: a.title,
+                                            articleId: a.id?.toString() ?? '',
+                                            companyName: a.companyName,
+                                            description: a.description,
                                           ),
-                                        );
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          )
+                          : _ArticlePager(
+                            articles:
+                                articles
+                                    .map(
+                                      (a) => {
+                                        "title": a.title,
+                                        "companyName": a.companyName ?? '',
+                                        "totalLikes": a.totalLikes ?? 0,
+                                        "link": '',
+                                        "photo1Id": a.photo1Id,
+                                        "onTitleTap": () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (_) => ArticleDetailPage(
+                                                    articleTitle: a.title,
+                                                    articleId:
+                                                        a.id?.toString() ?? '',
+                                                    companyName: a.companyName,
+                                                    description: a.description,
+                                                  ),
+                                            ),
+                                          );
+                                        },
                                       },
-                                    },
-                                  )
-                                  .toList(),
-                        ),
+                                    )
+                                    .toList(),
+                          ),
+                ),
               ),
 
               const SizedBox(height: 24),
@@ -440,64 +448,93 @@ Widget _buildArticleCard({
   required String companyName,
   required int totalLikes,
   required String link,
+  int? photo1Id,
   VoidCallback? onTitleTap,
 }) {
-  return Container(
-    width: 280,
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      border: Border.all(color: Colors.teal[300]!),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Stack(
-      children: [
-        Column(
+  return SizedBox(
+    width: 260, // 横幅を少し広げて安定させる
+    child: Card(
+      elevation: 3,
+      clipBehavior: Clip.antiAlias, // 角丸からはみ出る画像をカット
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: onTitleTap,
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            GestureDetector(
-              onTap: onTitleTap,
+            // --- 画像部分 ---
+            Container(
+              height: 120, // 高さを少し下げる
+              width: double.infinity,
+              color: Colors.grey.shade200,
+              child:
+                  photo1Id != null
+                      ? FutureBuilder<PhotoDTO?>(
+                        future: PhotoApiClient.getPhotoById(photo1Id),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState !=
+                              ConnectionState.done) {
+                            return CircularProgressIndicator();
+                          }
+                          final photo = snapshot.data;
+                          if (photo != null &&
+                              photo.filePath != null &&
+                              photo.filePath!.isNotEmpty) {
+                            return Image.network(photo.filePath!);
+                          } else {
+                            return Icon(Icons.image_not_supported, size: 50);
+                          }
+                        },
+                      )
+                      : const Icon(
+                        Icons.business,
+                        size: 50,
+                        color: Colors.grey,
+                      ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 2), // 余白を調整
               child: Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+                  height: 1.2,
                 ),
-                maxLines: 2,
+                maxLines: 1, // 1行に制限
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              companyName,
-              style: const TextStyle(fontSize: 12, color: Colors.black87),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                companyName,
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const Icon(Icons.favorite, color: Colors.red, size: 14),
+                  const SizedBox(width: 4),
+                  Text('$totalLikes', style: const TextStyle(fontSize: 13)),
+                ],
+              ),
+            ),
           ],
         ),
-        Positioned(
-          right: 0,
-          bottom: 0,
-          child: Row(
-            children: [
-              const Icon(Icons.thumb_up, size: 16, color: Colors.redAccent),
-              const SizedBox(width: 4),
-              Text(
-                '$totalLikes',
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
-              ),
-            ],
-          ),
-        ),
-      ],
+      ),
     ),
   );
 }
 
 // =====================
-// PC用記事ページアー (3枚ずつ表示)
+// PC用記事ページアー (画面サイズに応じて2～4枚ずつ表示)
 // =====================
 class _ArticlePager extends StatefulWidget {
   final List<Map<String, dynamic>> articles;
@@ -511,27 +548,41 @@ class _ArticlePagerState extends State<_ArticlePager> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
+  int _getItemsPerPage() {
+    final width = MediaQuery.of(context).size.width;
+    const cardWidth = 240.0; // カード幅固定
+    const buttonWidth = 100.0; // 左右ボタンの幅
+    final availableWidth = width - buttonWidth; // 利用可能な幅
+    return (availableWidth / cardWidth).floor().clamp(1, 5); // 最小1、最大5件
+  }
+
   void _nextPage() {
-    if (_currentPage < (widget.articles.length / 3).ceil() - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
+    final itemsPerPage = _getItemsPerPage();
+    final maxPage = (widget.articles.length + itemsPerPage - 1) ~/ itemsPerPage;
+    final nextPage = (_currentPage + 1) % maxPage;
+    _pageController.animateToPage(
+      nextPage,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   void _prevPage() {
-    if (_currentPage > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
+    final itemsPerPage = _getItemsPerPage();
+    final maxPage = (widget.articles.length + itemsPerPage - 1) ~/ itemsPerPage;
+    final prevPage = (_currentPage - 1 + maxPage) % maxPage;
+    _pageController.animateToPage(
+      prevPage,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final totalPages = (widget.articles.length / 3).ceil();
+    final itemsPerPage = _getItemsPerPage();
+    final totalPages =
+        (widget.articles.length + itemsPerPage - 1) ~/ itemsPerPage;
 
     return Row(
       children: [
@@ -542,28 +593,37 @@ class _ArticlePagerState extends State<_ArticlePager> {
             itemCount: totalPages,
             onPageChanged: (i) => setState(() => _currentPage = i),
             itemBuilder: (context, pageIndex) {
-              final start = pageIndex * 3;
-              final end = (start + 3).clamp(0, widget.articles.length);
+              final start = pageIndex * itemsPerPage;
+              final end = (start + itemsPerPage).clamp(
+                0,
+                widget.articles.length,
+              );
               final pageArticles = widget.articles.sublist(start, end);
 
-              return SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: pageArticles
-                      .map(
-                        (a) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: _buildArticleCard(
-                            title: a["title"] ?? '',
-                            companyName: a["companyName"] ?? '',
-                            totalLikes: a["totalLikes"] ?? 0,
-                            link: a["link"] ?? '',
-                            onTitleTap: a["onTitleTap"],
-                          ),
-                        ),
-                      )
-                      .toList(),
+              return Center(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children:
+                        pageArticles
+                            .map(
+                              (a) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6.0,
+                                ),
+                                child: _buildArticleCard(
+                                  title: a["title"] ?? '',
+                                  companyName: a["companyName"] ?? '',
+                                  totalLikes: a["totalLikes"] ?? 0,
+                                  link: a["link"] ?? '',
+                                  photo1Id: a["photo1Id"],
+                                  onTitleTap: a["onTitleTap"],
+                                ),
+                              ),
+                            )
+                            .toList(),
+                  ),
                 ),
               );
             },

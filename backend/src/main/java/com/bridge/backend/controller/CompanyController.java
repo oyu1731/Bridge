@@ -65,6 +65,13 @@ import java.util.Optional;
     @GetMapping("/search")
     public ResponseEntity<List<CompanyDTO>> searchCompanies(@RequestParam(required = false) String keyword) {
         try {
+            if (keyword == null) {
+                CompanyDTO dto = new CompanyDTO();
+                dto.setName(null); // 入力値（null）を保存
+                // エラーメッセージ用のDTO拡張またはMapで返却
+                dto.setDescription("不正な入力値です");
+                return ResponseEntity.badRequest().body(java.util.Arrays.asList(dto));
+            }
             List<CompanyDTO> companies = companyService.searchCompanies(keyword);
             return ResponseEntity.ok(companies);
         } catch (Exception e) {
@@ -78,10 +85,18 @@ import java.util.Optional;
      * GET /api/companies/{id}
      */
     @GetMapping("/{id}")
-    public ResponseEntity<CompanyDTO> getCompanyById(@PathVariable Integer id) {
+    public ResponseEntity<CompanyDTO> getCompanyById(@PathVariable String id) {
         try {
-            Optional<CompanyDTO> company = companyService.getCompanyById(id);
-            
+            Integer companyId = null;
+            try {
+                companyId = Integer.valueOf(id);
+            } catch (NumberFormatException e) {
+                CompanyDTO dto = new CompanyDTO();
+                dto.setId(null);
+                dto.setDescription("不正な入力値です");
+                return ResponseEntity.ok(dto);
+            }
+            Optional<CompanyDTO> company = companyService.getCompanyById(companyId);
             if (company.isPresent()) {
                 return ResponseEntity.ok(company.get());
             } else {
@@ -118,10 +133,43 @@ import java.util.Optional;
      * PUT /api/companies/{id}
      */
     @PutMapping("/{id}")
-    public ResponseEntity<CompanyDTO> updateCompany(@PathVariable Integer id, @RequestBody CompanyDTO companyDTO) {
+    public ResponseEntity<CompanyDTO> updateCompany(@PathVariable String id, @RequestBody CompanyDTO companyDTO) {
         try {
-            Optional<CompanyDTO> updatedCompany = companyService.updateCompany(id, companyDTO);
-            
+            Integer companyId = null;
+            try {
+                companyId = Integer.valueOf(id);
+            } catch (NumberFormatException e) {
+                CompanyDTO dto = new CompanyDTO();
+                dto.setId(null);
+                dto.setDescription("不正な入力値です");
+                return ResponseEntity.ok(dto);
+            }
+            // nickname, email, phoneNumber, address のバリデーション
+            if (companyDTO.getName() == null || companyDTO.getName().trim().isEmpty()) {
+                CompanyDTO dto = new CompanyDTO();
+                dto.setName(companyDTO.getName());
+                dto.setDescription("不正な入力値です");
+                return ResponseEntity.ok(dto);
+            }
+            if (companyDTO.getEmail() == null || companyDTO.getEmail().trim().isEmpty()) {
+                CompanyDTO dto = new CompanyDTO();
+                dto.setEmail(companyDTO.getEmail());
+                dto.setDescription("不正な入力値です");
+                return ResponseEntity.ok(dto);
+            }
+            if (companyDTO.getPhoneNumber() == null || companyDTO.getPhoneNumber().trim().isEmpty()) {
+                CompanyDTO dto = new CompanyDTO();
+                dto.setPhoneNumber(companyDTO.getPhoneNumber());
+                dto.setDescription("不正な入力値です");
+                return ResponseEntity.ok(dto);
+            }
+            if (companyDTO.getAddress() == null || companyDTO.getAddress().trim().isEmpty()) {
+                CompanyDTO dto = new CompanyDTO();
+                dto.setAddress(companyDTO.getAddress());
+                dto.setDescription("不正な入力値です");
+                return ResponseEntity.ok(dto);
+            }
+            Optional<CompanyDTO> updatedCompany = companyService.updateCompany(companyId, companyDTO);
             if (updatedCompany.isPresent()) {
                 return ResponseEntity.ok(updatedCompany.get());
             } else {

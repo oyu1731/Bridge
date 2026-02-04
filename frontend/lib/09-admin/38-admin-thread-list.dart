@@ -3,6 +3,7 @@ import 'package:bridge/11-common/58-header.dart';
 import '39-admin-thread-detail.dart';
 import 'package:bridge/08-thread/thread_api_client.dart';
 import 'package:bridge/08-thread/thread_model.dart';
+import 'admin_reported_thread.dart';
 import 'admin-thread-list.dart';
 
 class AdminThreadList extends StatefulWidget {
@@ -12,7 +13,7 @@ class AdminThreadList extends StatefulWidget {
 
 class _AdminThreadListState extends State<AdminThreadList> {
   List<Thread> officialThreads = [];
-  List<Thread> unofficialThreads = [];
+  List<AdminReportedThread> unofficialThreads = [];
 
   @override
   void initState() {
@@ -22,18 +23,17 @@ class _AdminThreadListState extends State<AdminThreadList> {
 
   Future<void> _fetchThreads() async {
     try {
-      final threads = await ThreadApiClient.getReportedThreads();
+      final allThreads = await ThreadApiClient.getAllThreads();
+      final official = allThreads.where((t) => t.type == 1).toList();
 
-      // ---- 公式スレッド ----
-      final official = threads.where((t) => t.type == 1).toList();
-
-      // ---- 非公式スレッド ----
-      final unofficial = threads.where((t) => t.type == 2).toList();
+      final reportedThreads = await ThreadApiClient.getReportedThreads();
+      final unofficial =
+          reportedThreads.where((r) => r.thread.type == 2).toList();
 
       // 通報順
       unofficial.sort((a, b) {
-        final aDate = a.lastReportedAt ?? DateTime(2000);
-        final bDate = b.lastReportedAt ?? DateTime(2000);
+        final aDate = a.thread.lastReportedAt ?? DateTime(2000);
+        final bDate = b.thread.lastReportedAt ?? DateTime(2000);
         return bDate.compareTo(aDate);
       });
 
@@ -49,27 +49,28 @@ class _AdminThreadListState extends State<AdminThreadList> {
     }
   }
 
-  Future<void> _confirmDeleteThread(Thread thread) async {
+  Future<void> _confirmDeleteThread(AdminReportedThread reported) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('削除確認'),
-        content: const Text('このスレッドを削除しますか？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('キャンセル'),
+      builder:
+          (_) => AlertDialog(
+            title: const Text('削除確認'),
+            content: const Text('このスレッドを削除しますか？'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('キャンセル'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('削除'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('削除'),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true) {
-      await _deleteThread(thread.id);
+      await _deleteThread(reported.thread.id);
     }
   }
 
@@ -77,15 +78,15 @@ class _AdminThreadListState extends State<AdminThreadList> {
     try {
       await ThreadApiClient.deleteThread(threadId);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('スレッドを削除しました')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('スレッドを削除しました')));
 
       _fetchThreads();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('削除に失敗しました')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('削除に失敗しました')));
     }
   }
 
@@ -105,53 +106,58 @@ class _AdminThreadListState extends State<AdminThreadList> {
             ),
             const SizedBox(height: 10),
             Column(
-              children: officialThreads.map((thread) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AdminThreadDetail(
-                          threadId: int.parse(thread.id),
-                          title: thread.title,
+              children:
+                  officialThreads.map((thread) {
+                    return GestureDetector(
+                      onTap: () {
+                        print('thread.id=${thread.id}');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => AdminThreadDetail(
+                                  threadId: thread.id,
+                                  title: thread.title,
+                                ),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        color: Colors.white,
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        elevation: 2,
+                        child: ListTile(
+                          title: Text(
+                            thread.title,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(
+                            thread.description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: Colors.grey[700]),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                thread.timeAgo,
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: null,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
-                  },
-                  child: Card(
-                    color: Colors.white,
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    elevation: 2,
-                    child: ListTile(
-                      title: Text(
-                        thread.title,
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        thread.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Colors.grey[700]),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            thread.timeAgo,
-                            style: const TextStyle(color: Colors.grey),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: null,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                  }).toList(),
             ),
 
             const SizedBox(height: 30),
@@ -169,9 +175,7 @@ class _AdminThreadListState extends State<AdminThreadList> {
                   // ★追加：戻ってきたら再取得
                   final changed = await Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => ThreadUnofficialList(),
-                    ),
+                    MaterialPageRoute(builder: (_) => ThreadUnofficialList()),
                   );
 
                   if (changed == true) {
@@ -186,53 +190,58 @@ class _AdminThreadListState extends State<AdminThreadList> {
             ),
             const SizedBox(height: 10),
             Column(
-              children: unofficialThreads.map((thread) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AdminThreadDetail(
-                          threadId: int.parse(thread.id),
-                          title: thread.title,
+              children:
+                  unofficialThreads.map((thread) {
+                    return GestureDetector(
+                      onTap: () {
+                        print('thread.id=${thread.thread.id}');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => AdminThreadDetail(
+                                  threadId: thread.thread.id,
+                                  title: thread.thread.title,
+                                ),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        color: Colors.white,
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        elevation: 2,
+                        child: ListTile(
+                          title: Text(
+                            thread.thread.title,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(
+                            thread.thread.description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: Colors.grey[700]),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                thread.thread.adminTimeAgo ?? '',
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () => _confirmDeleteThread(thread),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
-                  },
-                  child: Card(
-                    color: Colors.white,
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    elevation: 2,
-                    child: ListTile(
-                      title: Text(
-                        thread.title,
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        thread.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Colors.grey[700]),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            thread.adminTimeAgo ?? '',
-                            style: const TextStyle(color: Colors.grey),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () => _confirmDeleteThread(thread),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                  }).toList(),
             ),
           ],
         ),

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'api_config.dart';
-
+import '../11-common/api_config.dart';
 
 class CompanyDTO {
   final int? id;
@@ -48,7 +47,8 @@ class CompanyDTO {
     List<String>? industries;
     if (json['industries'] != null) {
       if (json['industries'] is List) {
-        industries = (json['industries'] as List).map((e) => e.toString()).toList();
+        industries =
+            (json['industries'] as List).map((e) => e.toString()).toList();
       } else if (json['industries'] is String) {
         // 万一文字列で来た場合はカンマ区切りで分割
         industries = (json['industries'] as String).split(',');
@@ -99,7 +99,7 @@ class CompanyApiClient {
   static Future<List<CompanyDTO>> getAllCompanies() async {
     try {
       final response = await http.get(Uri.parse(baseUrl));
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(response.body);
         return jsonList.map((json) => CompanyDTO.fromJson(json)).toList();
@@ -119,7 +119,7 @@ class CompanyApiClient {
     try {
       final uri = Uri.parse('$baseUrl/search');
       final Map<String, String> queryParams = {};
-      
+
       if (industry != null && industry.isNotEmpty) {
         queryParams['industry'] = industry;
       }
@@ -129,10 +129,10 @@ class CompanyApiClient {
       if (keyword != null && keyword.isNotEmpty) {
         queryParams['keyword'] = keyword;
       }
-      
+
       final searchUri = uri.replace(queryParameters: queryParams);
       final response = await http.get(searchUri);
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(response.body);
         return jsonList.map((json) => CompanyDTO.fromJson(json)).toList();
@@ -151,7 +151,7 @@ class CompanyApiClient {
   static Future<CompanyDTO?> getCompanyById(int id) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/$id'));
-      
+
       if (response.statusCode == 200) {
         return CompanyDTO.fromJson(json.decode(response.body));
       } else if (response.statusCode == 404) {
@@ -171,7 +171,7 @@ class CompanyApiClient {
         headers: {'Content-Type': 'application/json'},
         body: json.encode(company.toJson()),
       );
-      
+
       if (response.statusCode == 201 || response.statusCode == 200) {
         return CompanyDTO.fromJson(json.decode(response.body));
       } else {
@@ -189,7 +189,7 @@ class CompanyApiClient {
         headers: {'Content-Type': 'application/json'},
         body: json.encode(company.toJson()),
       );
-      
+
       if (response.statusCode == 200) {
         return CompanyDTO.fromJson(json.decode(response.body));
       } else {
@@ -203,7 +203,7 @@ class CompanyApiClient {
   static Future<void> deleteCompany(int id) async {
     try {
       final response = await http.delete(Uri.parse('$baseUrl/$id'));
-      
+
       if (response.statusCode != 204 && response.statusCode != 200) {
         throw Exception('Failed to delete company: ${response.statusCode}');
       }
@@ -215,7 +215,7 @@ class CompanyApiClient {
   static Future<List<String>> getIndustries() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/industries'));
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(response.body);
         return jsonList.cast<String>();
@@ -230,7 +230,7 @@ class CompanyApiClient {
   static Future<List<String>> getAreas() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/areas'));
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(response.body);
         return jsonList.cast<String>();

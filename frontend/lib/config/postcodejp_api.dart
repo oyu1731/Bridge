@@ -1,8 +1,9 @@
 import 'dart:convert';
+import 'package:bridge/11-common/api_config.dart';
 import 'package:http/http.dart' as http;
 
 class PostcodeJPApi {
-  static const String _endpoint = 'http://localhost:8080/api/postcode';
+  static String _endpoint = '${ApiConfig.baseUrl}/api/postcode';
 
   /// 郵便番号から住所情報を取得（Spring Boot経由）
   static Future<Map<String, dynamic>?> fetchAddress(String postcode) async {

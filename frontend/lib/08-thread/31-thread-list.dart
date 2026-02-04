@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:bridge/11-common/58-header.dart';
@@ -26,7 +27,7 @@ class _ThreadListState extends State<ThreadList> {
     if (jsonString == null) return;
     final userData = jsonDecode(jsonString);
     setState(() {
-      userType = userData['type'] + 1;
+      userType = userData['type'];
     });
   }
 
@@ -62,7 +63,7 @@ class _ThreadListState extends State<ThreadList> {
       final response = await http
           .post(
             Uri.parse(
-              "http://localhost:8080/api/users/$userId/check-subscription",
+              "${ApiConfig.baseUrl}/api/users/$userId/check-subscription",
             ),
           )
           .timeout(const Duration(seconds: 5));
@@ -100,15 +101,18 @@ class _ThreadListState extends State<ThreadList> {
                         ElevatedButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) =>
-                                        const PlanStatusScreen(userType: '企業'),
-                              ),
-                              (route) => false,
-                            );
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => const PlanStatusScreen(
+                                        userType: '企業',
+                                      ),
+                                ),
+                                (route) => false,
+                              );
+                            });
                           },
                           child: const Text('プランを確認'),
                         ),
@@ -127,31 +131,40 @@ class _ThreadListState extends State<ThreadList> {
   }
 
   Future<void> _fetchThreads() async {
-    try {
-      final threads = await ThreadApiClient.getAllThreads();
+  try {
+    final threads = await ThreadApiClient.getAllThreads();
+    //スレッド表示絞り込み
+    bool canView(Thread t) {
+      // userType 未取得（未ログイン or セッション不整合）
+      if (userType == null) {
+        return t.entryCriteria == 1; // 全員OKのみ表示
+      }
 
-      // ---- 公式スレッド ----
-      final official = threads.where((t) => t.type == 1).toList();
+      if (t.entryCriteria == 1) return true;
+      if (userType == 1 && t.entryCriteria == 2) return true;
+      if (userType == 2 && t.entryCriteria == 3) return true;
+      return false;
+    }
 
-      // ---- 非公式フィルタ ----
-      final filtered =
-          threads
-              .where(
-                (t) =>
-                    t.type == 2 &&
-                    (t.entryCriteria == userType || t.entryCriteria == 1),
-              )
-              .toList();
 
-      // 並び替え（新しい順）
-      filtered.sort((a, b) {
-        final aDate = a.lastCommentDate ?? DateTime(2000);
-        final bDate = b.lastCommentDate ?? DateTime(2000);
-        return bDate.compareTo(aDate);
-      });
+    //公式スレッド
+    final official = threads
+      .where((t) => t.type == 1 && canView(t))
+      .toList();
+    //非公式スレッド
+    final filtered = threads
+      .where((t) => t.type == 2 && canView(t))
+      .toList();
 
-      // 上位5件
-      final top5 = filtered.take(5).toList();
+    //並び替え（新しい順）
+    filtered.sort((a, b) {
+      final aDate = a.lastCommentDate ?? DateTime(2000);
+      final bDate = b.lastCommentDate ?? DateTime(2000);
+      return bDate.compareTo(aDate);
+    });
+
+    //上位5件
+    final top5 = filtered.take(5).toList();
 
       setState(() {
         officialThreads = official;
@@ -182,18 +195,20 @@ class _ThreadListState extends State<ThreadList> {
                   officialThreads.map((thread) {
                     return GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => ThreadOfficialDetail(
-                                  thread: {
-                                    'id': thread.id,
-                                    'title': thread.title,
-                                  },
-                                ),
-                          ),
-                        );
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => ThreadOfficialDetail(
+                                    thread: {
+                                      'id': thread.id,
+                                      'title': thread.title,
+                                    },
+                                  ),
+                            ),
+                          );
+                        });
                       },
                       child: Card(
                         color: Colors.white, // 背景を白に設定
@@ -209,7 +224,7 @@ class _ThreadListState extends State<ThreadList> {
                           ),
                           //スレッドの説明文
                           subtitle: Text(
-                            thread.description,
+                            thread.description ?? '',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(color: Colors.grey[700]),
@@ -236,12 +251,14 @@ class _ThreadListState extends State<ThreadList> {
                 Spacer(),
                 TextButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ThreadUnofficialList(),
-                      ),
-                    );
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ThreadUnofficialList(),
+                        ),
+                      );
+                    });
                   },
                   child: Text(
                     'もっと見る',
@@ -256,18 +273,20 @@ class _ThreadListState extends State<ThreadList> {
                   hotUnofficialThreads.map((thread) {
                     return GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => ThreadUnOfficialDetail(
-                                  thread: {
-                                    'id': thread.id,
-                                    'title': thread.title,
-                                  },
-                                ),
-                          ),
-                        );
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => ThreadUnOfficialDetail(
+                                    thread: {
+                                      'id': thread.id,
+                                      'title': thread.title,
+                                    },
+                                  ),
+                            ),
+                          );
+                        });
                       },
                       child: Card(
                         color: Colors.white, // 背景を白に設定
@@ -278,7 +297,8 @@ class _ThreadListState extends State<ThreadList> {
                         ),
                         child: ListTile(
                           title: Text(
-                            thread.title,
+                            //タイトルなし保険
+                            thread.title.isNotEmpty ? thread.title : '（タイトルなし）',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -286,7 +306,7 @@ class _ThreadListState extends State<ThreadList> {
                           ),
                           //スレッドの説明文
                           subtitle: Text(
-                            thread.description,
+                            thread.description ?? '',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(color: Colors.grey[700]),

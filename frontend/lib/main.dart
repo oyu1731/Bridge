@@ -14,8 +14,45 @@ import 'package:bridge/10-payment/54-payment-complete.dart';
 
 import 'package:flutter/foundation.dart' show kIsWeb; // Web判定
 import 'dart:html' as html; // WebのURL取得用
+import 'bridge_error_widget.dart';
+import '11-common/common_error_page.dart';
+import 'package:flutter/foundation.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+// グローバルエラー遷移用のタイマー・フラグ変数
+DateTime? _firstGlobalErrorTime;
+bool _isGlobalErrorActive = false;
+bool _hasNavigatedToErrorPage = false;
 
 void main() async {
+  // グローバルエラーハンドリング: 画面ビルドエラー時は共通エラーページ
+  ErrorWidget.builder =
+      (FlutterErrorDetails details) => BridgeErrorWidget(details);
+  FlutterError.onError = (FlutterErrorDetails details) {
+    int errorCode = 500;
+    final errorMsg = details.exceptionAsString().toLowerCase();
+    if (errorMsg.contains('404')) {
+      errorCode = 404;
+    } else if (errorMsg.contains('400')) {
+      errorCode = 400;
+    }
+    if (_firstGlobalErrorTime == null) {
+      _firstGlobalErrorTime = DateTime.now();
+      _isGlobalErrorActive = true;
+    }
+    if (_isGlobalErrorActive &&
+        DateTime.now().difference(_firstGlobalErrorTime!).inMilliseconds >=
+            10 &&
+        !_hasNavigatedToErrorPage) {
+      _hasNavigatedToErrorPage = true;
+      navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => CommonErrorPage(errorCode: errorCode),
+        ),
+        (route) => false,
+      );
+    }
+  };
   WidgetsFlutterBinding.ensureInitialized();
 
   Widget initialPage;
@@ -106,6 +143,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -115,6 +153,11 @@ class MyApp extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color.fromARGB(255, 0, 100, 120),
             foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 4,
+            shadowColor: Colors.black.withOpacity(0.3),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
@@ -212,18 +255,27 @@ class _MyHomePageState extends State<MyHomePage> {
         onTap: () => _onCircleTap(label, context),
         borderRadius: BorderRadius.circular(100),
         containedInkWell: true,
-        splashColor: Colors.cyan[700]!,
+        splashColor: Colors.cyan[700]!.withOpacity(0.6),
         child: Container(
           height: size,
           width: size,
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.white, const Color.fromARGB(255, 230, 247, 255)],
+            ),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.black26,
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 12,
+                offset: const Offset(2, 4),
+              ),
+              BoxShadow(
+                color: Colors.white.withOpacity(0.8),
                 blurRadius: 4,
-                offset: Offset(1, 2),
+                offset: const Offset(-2, -2),
               ),
             ],
           ),
@@ -231,17 +283,200 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  icon,
-                  size: size * 0.3,
-                  color: const Color.fromARGB(255, 6, 62, 85),
+                Container(
+                  width: size * 0.4,
+                  height: size * 0.4,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color.fromARGB(255, 24, 147, 178),
+                        const Color.fromARGB(255, 0, 100, 120),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color.fromARGB(
+                          255,
+                          0,
+                          100,
+                          120,
+                        ).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(2, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(icon, size: size * 0.25, color: Colors.white),
                 ),
+                const SizedBox(height: 12),
                 Text(
                   label,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontSize: size * 0.13,
+                    fontSize: size * 0.15,
                     color: const Color.fromARGB(255, 6, 62, 85),
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _roleEnglish(label),
+                  style: TextStyle(
+                    fontSize: size * 0.08,
+                    color: const Color.fromARGB(
+                      255,
+                      6,
+                      62,
+                      85,
+                    ).withOpacity(0.7),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 英語ラベル変換
+  String _roleEnglish(String jp) {
+    switch (jp) {
+      case '学生':
+        return 'Student';
+      case '社会人':
+        return 'Professional';
+      case '企業':
+        return 'Company';
+      default:
+        return jp;
+    }
+  }
+
+  Widget _buildRoleCard(String label, IconData icon) {
+    final color = const Color.fromARGB(255, 24, 147, 178);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        elevation: 0,
+        child: InkWell(
+          onTap: () => _onCircleTap(label, context),
+          borderRadius: BorderRadius.circular(20),
+          splashColor: const Color.fromARGB(255, 24, 147, 178).withOpacity(0.2),
+          child: Container(
+            height: 90,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.white.withOpacity(0.9),
+                  const Color.fromARGB(255, 240, 252, 255),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color.fromARGB(255, 230, 240, 245),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 10,
+                  offset: const Offset(2, 4),
+                ),
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.8),
+                  blurRadius: 4,
+                  offset: const Offset(-2, -2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color.fromARGB(255, 24, 147, 178),
+                        const Color.fromARGB(255, 0, 100, 120),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color.fromARGB(
+                          255,
+                          0,
+                          100,
+                          120,
+                        ).withOpacity(0.3),
+                        blurRadius: 6,
+                        offset: const Offset(2, 3),
+                      ),
+                    ],
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 28),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _roleEnglish(label),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: const Color.fromARGB(
+                            255,
+                            6,
+                            62,
+                            85,
+                          ).withOpacity(0.7),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(255, 6, 62, 85),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(
+                      255,
+                      6,
+                      62,
+                      85,
+                    ).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.chevron_right,
+                    color: Color.fromARGB(255, 6, 62, 85),
+                    size: 22,
                   ),
                 ),
               ],
@@ -293,7 +528,7 @@ class _MyHomePageState extends State<MyHomePage> {
         'is_withdrawn': false,
         'created_at': '2025-11-10',
         'society_history': null,
-        'icon': 1,
+        'icon': null,
         'announcement_deletion': 1,
       },
       '社会人': {
@@ -309,7 +544,7 @@ class _MyHomePageState extends State<MyHomePage> {
         'is_withdrawn': false,
         'created_at': '2025-11-10',
         'society_history': 5,
-        'icon': 2,
+        'icon': null,
         'announcement_deletion': 1,
       },
       '企業': {
@@ -325,7 +560,7 @@ class _MyHomePageState extends State<MyHomePage> {
         'is_withdrawn': false,
         'created_at': '2025-11-10',
         'society_history': null,
-        'icon': 3,
+        'icon': null,
         'announcement_deletion': 1,
       },
       '管理者': {
@@ -355,118 +590,315 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 24, 147, 178),
         foregroundColor: Colors.white,
-        title: Text(widget.title),
+        title: Text(
+          widget.title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
+        ),
+        elevation: 4,
+        shadowColor: Colors.black.withOpacity(0.2),
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 40),
-              Image.asset(
-                'lib/01-images/bridge-logo.png',
-                height: 100, // サイズを少し小さく
-                width: 220, // 横幅も調整
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return Row(
-                    children: [
-                      Icon(Icons.home_outlined, color: Colors.blue, size: 44),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Bridge',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1976D2),
-                        ),
-                      ),
-                    ],
-                  );
-                },
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color.fromARGB(255, 245, 252, 255),
+              const Color.fromARGB(255, 230, 247, 255),
+              Colors.white,
+            ],
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 16 : 32,
+                vertical: 20,
               ),
-              const Text(
-                'Bridgeへようこそ！',
-                style: TextStyle(
-                  fontSize: 23,
-                  color: const Color.fromARGB(255, 6, 62, 85),
-                ),
-              ),
-              const Text(
-                '以下の３つのタイプから選択して、アカウントを作成してください。',
-                style: TextStyle(
-                  fontSize: 17,
-                  color: const Color.fromARGB(255, 6, 62, 85),
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              // レスポンシブレイアウト
-              if (isSmallScreen)
-                Column(
-                  children: [
-                    _buildCircleButton('学生', Icons.school, size: 150),
-                    const SizedBox(height: 20),
-                    _buildCircleButton('社会人', Icons.work, size: 150),
-                    const SizedBox(height: 20),
-                    _buildCircleButton('企業', Icons.business, size: 150),
-                  ],
-                )
-              else
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildCircleButton('学生', Icons.school),
-                    _buildCircleButton('社会人', Icons.work),
-                    _buildCircleButton('企業', Icons.business),
-                  ],
-                ),
-
-              const SizedBox(height: 20),
-              const Text("デバッグ用: ユーザーセッション操作"),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 10,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton(
-                    onPressed: () => saveUserSession('学生'),
-                    child: const Text('学生を保存'),
+                  const SizedBox(height: 30),
+                  // ロゴ部分（楕円背景：さらに小さく）
+                  Container(
+                    width: (isSmallScreen ? 160 : 200) + 20,
+                    // さらに縦を短くしてコンパクトに
+                    height: (isSmallScreen ? 90 : 110) + 8,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 6,
+                      horizontal: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(999), // ピル型の楕円にする
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 12,
+                          offset: const Offset(2, 4),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Image.asset(
+                        'lib/01-images/Bridge-logo.png',
+                        height: isSmallScreen ? 70 : 90,
+                        width: isSmallScreen ? 160 : 200,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: isSmallScreen ? 160 : 200,
+                            height: isSmallScreen ? 70 : 90,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  const Color.fromARGB(255, 24, 147, 178),
+                                  const Color.fromARGB(255, 0, 100, 120),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.handshake,
+                                color: Colors.white,
+                                size: 50,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
-                  ElevatedButton(
-                    onPressed: () => saveUserSession('社会人'),
-                    child: const Text('社会人を保存'),
+                  const SizedBox(height: 24),
+
+                  // タイトル
+                  Text(
+                    'Bridgeへようこそ！',
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? 24 : 28,
+                      fontWeight: FontWeight.bold,
+                      color: const Color.fromARGB(255, 6, 62, 85),
+                      letterSpacing: 0.5,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  ElevatedButton(
-                    onPressed: () => saveUserSession('企業'),
-                    child: const Text('企業を保存'),
+                  const SizedBox(height: 12),
+
+                  // 説明文 - スマホで改行を適切に
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isSmallScreen ? 8 : 80,
+                    ),
+                    child: Text(
+                      '以下の３つのタイプから選択して、\nアカウントを作成してください。',
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 16 : 18,
+                        color: const Color.fromARGB(
+                          255,
+                          6,
+                          62,
+                          85,
+                        ).withOpacity(0.8),
+                        height: 1.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                  ElevatedButton(
-                    onPressed: () => saveUserSession('管理者'),
-                    child: const Text('管理者を保存'),
+                  const SizedBox(height: 40),
+
+                  // レスポンシブレイアウト
+                  if (isSmallScreen)
+                    Column(
+                      children: [
+                        _buildRoleCard('学生', Icons.school),
+                        const SizedBox(height: 16),
+                        _buildRoleCard('社会人', Icons.work),
+                        const SizedBox(height: 16),
+                        _buildRoleCard('企業', Icons.business),
+                      ],
+                    )
+                  else
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildCircleButton('学生', Icons.school, size: 220),
+                        _buildCircleButton('社会人', Icons.work, size: 220),
+                        _buildCircleButton('企業', Icons.business, size: 220),
+                      ],
+                    ),
+
+                  const SizedBox(height: 40),
+
+                  // 既存ユーザー向けセクション
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color.fromARGB(255, 230, 240, 245),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(2, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '既にアカウントをお持ちの方',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: const Color.fromARGB(255, 6, 62, 85),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: isSmallScreen ? double.infinity : 300,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SignInPage(),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(54),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              backgroundColor: const Color.fromARGB(
+                                255,
+                                24,
+                                147,
+                                178,
+                              ),
+                              foregroundColor: Colors.white,
+                              elevation: 4,
+                              shadowColor: Colors.black.withOpacity(0.3),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.login, size: 22),
+                                SizedBox(width: 10),
+                                Text(
+                                  'サインイン',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  ElevatedButton(
-                    onPressed: loadUserSession,
-                    child: const Text('セッション取得'),
-                  ),
+
+                  const SizedBox(height: 30),
+
+                  // デバッグセクション（開発時のみ）
+                  if (!kReleaseMode) ...[
+                    const Divider(height: 40),
+                    const Text(
+                      "デバッグ用: ユーザーセッション操作",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () => saveUserSession('学生'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[200],
+                            foregroundColor: Colors.black87,
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text('学生を保存'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => saveUserSession('社会人'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[200],
+                            foregroundColor: Colors.black87,
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text('社会人を保存'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => saveUserSession('企業'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[200],
+                            foregroundColor: Colors.black87,
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text('企業を保存'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => saveUserSession('管理者'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[200],
+                            foregroundColor: Colors.black87,
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text('管理者を保存'),
+                        ),
+                        ElevatedButton(
+                          onPressed: loadUserSession,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[200],
+                            foregroundColor: Colors.black87,
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text('セッション取得'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                 ],
               ),
-              const SizedBox(height: 20),
-              TextButton(
-                child: const Text(
-                  "サインインはこちら",
-                  style: TextStyle(
-                    decoration: TextDecoration.underline,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const SignInPage()),
-                  );
-                },
-              ),
-            ],
+            ),
           ),
         ),
       ),

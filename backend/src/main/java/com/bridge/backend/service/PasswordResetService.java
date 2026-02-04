@@ -13,6 +13,10 @@ import java.util.Random;
 @Service
 public class PasswordResetService {
 
+    public boolean userExistsByEmail(String email) {
+        return userRepository.findByEmail(email).isPresent();
+    }
+
     @Autowired
     private UserRepository userRepository;
 

@@ -1,4 +1,4 @@
-import 'package:bridge/06-company/api_config.dart';
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:bridge/03-home/09-company-home.dart';
@@ -84,7 +84,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
     while (attempt < maxAttempts && mounted) {
       try {
         final res = await http.get(
-          Uri.parse('http://localhost:8080/api/v1/payment/session/$sessionId'),
+          Uri.parse(ApiConfig.paymentSessionDetail(sessionId)),
         );
         if (res.statusCode == 200) {
           user = jsonDecode(res.body) as Map<String, dynamic>;
@@ -105,7 +105,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
     // ✅ バックエンド側でセッション保存
     try {
       final loginRes = await http.post(
-        Uri.parse('http://localhost:8080/api/auth/login-by-id/${user['id']}'),
+        Uri.parse('${ApiConfig.baseUrl}/api/auth/login-by-id/${user['id']}'),
       );
       if (loginRes.statusCode == 200) {
         final sessionUser = jsonDecode(loginRes.body);
@@ -174,7 +174,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
     if (kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.microtask(() {
-          html.window.location.replace('http://localhost:5000/');
+          html.window.location.replace('${ApiConfig.frontendUrl}/#/');
         });
       });
     } else {
@@ -358,7 +358,7 @@ class PaymentCancelScreen extends StatelessWidget {
     if (kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.microtask(() {
-          html.window.location.replace('http://localhost:5000/');
+          html.window.location.replace('${ApiConfig.frontendUrl}/#/');
         });
       });
     } else {

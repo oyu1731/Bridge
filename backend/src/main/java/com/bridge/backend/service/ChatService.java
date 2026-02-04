@@ -40,11 +40,11 @@ public class ChatService {
         //スレッドが存在するか
         ForumThread thread = threadRepository.findById(threadId)
             .orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.GONE, "THREAD_DELETED")
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "スレッドは存在しません")
             );
         //スレッドが論理削除されていないか
         if (Boolean.TRUE.equals(thread.getIsDeleted())) {
-            throw new ResponseStatusException(HttpStatus.GONE, "THREAD_DELETED");
+            throw new ResponseStatusException(HttpStatus.GONE, "スレッドはすでに削除されています");
         }
         return chatRepository
             .findByThreadIdAndIsDeletedFalseOrderByCreatedAtAsc(threadId);
@@ -55,17 +55,29 @@ public class ChatService {
         //単体テストの時にここが発揮される
         ForumThread thread = threadRepository.findById(threadId)
             .orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.GONE, "THREAD_DELETED")
+                new ResponseStatusException(HttpStatus.GONE, "入力されていない項目か不正な入力値があります")
             );
-
-        if (chat.getUserId() == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "LOGIN_REQUIRED");
+        if (Boolean.TRUE.equals(thread.getIsDeleted())) {
+            throw new ResponseStatusException(
+                HttpStatus.GONE,
+                "このスレッドは現在表示できません"
+            );
         }
-
-        User user = userRepository.findById(chat.getUserId())
-            .orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND")
+        if (chat.getUserId() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "入力されていない項目か不正な入力値があります");
+        }
+        boolean noContent =
+        chat.getContent() == null || chat.getContent().trim().isEmpty();
+        boolean noPhoto = chat.getPhotoId() == null;
+        if (noContent && noPhoto) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "テキストを入力するか写真を貼ってください"
             );
+        }
+        if (chat.getContent() == null) {
+            chat.setContent("");
+        }
         chat.setThreadId(threadId);
         chat.setCreatedAt(LocalDateTime.now());
         Chat saved = chatRepository.save(chat);

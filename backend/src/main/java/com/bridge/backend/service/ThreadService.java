@@ -26,7 +26,20 @@ public class ThreadService {
         String title = (String) payload.get("title");
         String description = (String) payload.get("description");
         String condition = (String) payload.get("condition");
-        Integer userId = (Integer) payload.get("userId");
+        // Integer userId = (Integer) payload.get("userId");
+        //数字以外の文字列だと５００番エラー
+        Integer userId = Integer.valueOf(payload.get("userId").toString());
+
+        // バリデーション
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("タイトルは必須です");
+        }
+        if (title.length() > 255) {
+            throw new IllegalArgumentException("タイトルは255文字以内で入力してください");
+        }
+        if (condition == null || condition.trim().isEmpty()) {
+            throw new IllegalArgumentException("参加条件は必須です");
+        }
 
         ForumThread thread = new ForumThread();
         thread.setUserId(userId);

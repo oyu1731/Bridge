@@ -1,3 +1,4 @@
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -14,11 +15,12 @@ import 'package:bridge/main.dart';
 import '31-thread-list.dart';
 
 class ThreadUnOfficialDetail extends StatefulWidget {
-final Map<String, dynamic> thread;
-const ThreadUnOfficialDetail({required this.thread, Key? key}) : super(key: key);
+  final Map<String, dynamic> thread;
+  const ThreadUnOfficialDetail({required this.thread, Key? key})
+    : super(key: key);
 
-@override
-_ThreadUnOfficialDetailState createState() => _ThreadUnOfficialDetailState();
+  @override
+  _ThreadUnOfficialDetailState createState() => _ThreadUnOfficialDetailState();
 }
 
 class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
@@ -26,7 +28,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   //サインインしているユーザーのアイコンのURL
-  String? _currentUserIconUrl; 
+  String? _currentUserIconUrl;
   // ユーザーID,ニックネーム
   final Map<String, String> _nicknameCache = {};
   // ユーザーID,アイコンURL
@@ -39,9 +41,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
   Future<void> _loadUserInfo(String userId) async {
     if (_nicknameCache.containsKey(userId)) return;
 
-    final res = await http.get(
-      Uri.parse('$baseUrl/chat/user/$userId'),
-    );
+    final res = await http.get(Uri.parse('$baseUrl/chat/user/$userId'));
     if (res.statusCode != 200) return;
 
     final data = json.decode(res.body);
@@ -50,13 +50,11 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
 
     final iconId = data['icon'];
     if (iconId != null) {
-      final res2 = await http.get(
-        Uri.parse('$baseUrl/photos/$iconId'),
-      );
+      final res2 = await http.get(Uri.parse('$baseUrl/photos/$iconId'));
       if (res2.statusCode == 200) {
         final path = json.decode(res2.body)['photoPath'];
         if (path != null && path.toString().isNotEmpty) {
-          _userIconCache[userId] = "http://localhost:8080$path";
+          _userIconCache[userId] = "$img_baseurl$path";
         } else {
           _userIconCache[userId] = null;
         }
@@ -84,7 +82,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
   }
 
   //initでユーザのIDを入れる
-  String currentUserId="";
+  String currentUserId = "";
   //読み込めたかどうかの判定
   bool _isUserLoaded = false;
   //ユーザ情報取得
@@ -93,19 +91,15 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
     final jsonString = prefs.getString('current_user');
     if (jsonString == null) return;
     final userData = jsonDecode(jsonString);
-    currentUserId = userData['id'].toString();  
-    final res = await http.get(
-      Uri.parse('$baseUrl/chat/user/$currentUserId'),
-    );
+    currentUserId = userData['id'].toString();
+    final res = await http.get(Uri.parse('$baseUrl/chat/user/$currentUserId'));
     if (res.statusCode == 200) {
       final iconId = json.decode(res.body)['icon'];
       if (iconId != null) {
-        final res2 = await http.get(
-          Uri.parse('$baseUrl/photos/$iconId'),
-        );
+        final res2 = await http.get(Uri.parse('$baseUrl/photos/$iconId'));
         if (res2.statusCode == 200) {
           final path = json.decode(res2.body)['photoPath'];
-          _currentUserIconUrl = "http://localhost:8080$path";
+          _currentUserIconUrl = "$img_baseurl$path";
         }
       }
     }
@@ -114,14 +108,17 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
       _isUserLoaded = true;
     });
   }
+
   Map<String, String> _userNicknames = {};
   List<Map<String, dynamic>> _messages = [];
   String searchText = '';
   bool _isSending = false;
 
-  late final StreamController<List<Map<String, dynamic>>> _messageStreamController;
+  late final StreamController<List<Map<String, dynamic>>>
+  _messageStreamController;
   late final WebSocketChannel _channel;
-  final String baseUrl = 'http://localhost:8080/api';
+  final String baseUrl = '${ApiConfig.baseUrl}/api';
+  final String img_baseurl = '${ApiConfig.baseUrl}';
 
   File? _selectedImage;
   Uint8List? _webImageBytes;
@@ -131,17 +128,21 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
   @override
   void initState() {
     super.initState();
-    _messageStreamController = StreamController<List<Map<String, dynamic>>>.broadcast();
+    _messageStreamController =
+        StreamController<List<Map<String, dynamic>>>.broadcast();
     _loadCurrentUser();
     _fetchMessages();
 
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://localhost:8080/ws/chat/${widget.thread['id']}'),
+      Uri.parse(ApiConfig.chatWebSocketUrl(widget.thread['id'])),
     );
 
-    _channel.stream.listen((data) {
+    _channel.stream.listen((data) async{
       try {
         final msg = Map<String, dynamic>.from(jsonDecode(data));
+        final userId = msg['userId'].toString();
+        // ★ これを追加
+        await _loadUserInfo(userId);
         if (!_messages.any((m) => m['id'] == msg['id'])) {
           _messages.add({
             'id': msg['id'],
@@ -149,10 +150,13 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
             'text': msg['content'],
             'created_at': msg['createdAt'],
             'photoId': msg['photoId'],
-            'userIconUrl': msg['userIconUrl'], 
+            'userIconUrl': msg['userIconUrl'],
           });
-          _messages.sort((a, b) =>
-              DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+          _messages.sort(
+            (a, b) => DateTime.parse(
+              a['created_at'],
+            ).compareTo(DateTime.parse(b['created_at'])),
+          );
           _messageStreamController.add(List.from(_messages));
 
           //ページを開いたときに下まで移動する（移動しないだめコメントアウト）
@@ -175,21 +179,21 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
     _searchController.dispose();
     super.dispose();
   }
-  
+
   Future<void> pickImage() async {
     final picker = ImagePicker();
     final XFile? picked = await picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 70,      //これをいれなきゃたまに画像が送れない（0〜100）
+      imageQuality: 70, //これをいれなきゃたまに画像が送れない（0〜100）
       //maxWidth: 1200,        // ← 大きすぎる画像を縮小
     );
     if (picked == null) return;
     if (kIsWeb) {
       final bytes = await picked.readAsBytes();
       setState(() {
-      _webImageBytes = bytes;
-      _webImageName = picked.name;
-      _selectedImage = null;
+        _webImageBytes = bytes;
+        _webImageName = picked.name;
+        _selectedImage = null;
       });
     } else {
       setState(() {
@@ -207,16 +211,22 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
     //ここは絶対にユーザーidを文字列にする
     request.fields['userId'] = currentUserId.toString();
     if (kIsWeb) {
-      request.files.add(http.MultipartFile.fromBytes(
-        'file', _webImageBytes!,
-        filename: _webImageName ?? "upload.jpg",
-        //contentType: MediaType('image', 'jpeg'),
-      ));
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          _webImageBytes!,
+          filename: _webImageName ?? "upload.jpg",
+          //contentType: MediaType('image', 'jpeg'),
+        ),
+      );
     } else {
-      request.files.add(await http.MultipartFile.fromPath(
-        'file', _selectedImage!.path,
-        // contentType: MediaType('image', 'jpeg'),
-      ));
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          _selectedImage!.path,
+          // contentType: MediaType('image', 'jpeg'),
+        ),
+      );
     }
 
     try {
@@ -225,7 +235,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
       if (response.statusCode == 201) {
         final jsonBody = jsonDecode(body);
         final photoId = jsonBody['id'];
-        // final int? photoId = int.tryParse( 
+        // final int? photoId = int.tryParse(
         //   RegExp(r'"id"\s*:\s*(\d+)').firstMatch(body)?.group(1) ?? '',
         // );
         return photoId;
@@ -238,18 +248,17 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
       setState(() => _isUploading = false);
     }
   }
+
   //写真のパス取得
   Future<String?> fetchPhotoUrl(int photoId) async {
     if (_photoUrlCache.containsKey(photoId)) {
       return _photoUrlCache[photoId];
     }
 
-    final res = await http.get(
-      Uri.parse('$baseUrl/photos/$photoId'),
-    );
+    final res = await http.get(Uri.parse('$baseUrl/photos/$photoId'));
     if (res.statusCode == 200) {
       final path = json.decode(res.body)['photoPath'];
-      final url = "http://localhost:8080$path";
+      final url = "$img_baseurl$path";
       _photoUrlCache[photoId] = url;
       return url;
     }
@@ -274,20 +283,21 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
           String? userIconUrl;
           //ユーザーidを指定してアイコンidを取得する
           final response = await http.get(
-            Uri.parse('$baseUrl/chat/user/$userId')
+            Uri.parse('$baseUrl/chat/user/$userId'),
           );
           //名前、アイコンidが取得
           print(json.decode(response.body)['icon']);
-          final chat_userid=json.decode(response.body)['icon'];
+          final chat_userid = json.decode(response.body)['icon'];
           //アイコンidを指定してアイコンの写真のパスを取得
           final response2 = await http.get(
-            Uri.parse('$baseUrl/photos/$chat_userid')
+            Uri.parse('$baseUrl/photos/$chat_userid'),
           );
           print(json.decode(response2.body));
           print("これでアイコンの写真のパスが取得できる");
           print(json.decode(response2.body)['photoPath']);
           final iconPath = json.decode(response2.body)['photoPath'];
-          userIconUrl = "http://localhost:8080$iconPath";
+          //img_baseurlを使う
+          userIconUrl = "$img_baseurl$iconPath";
           if (!_messages.any((m) => m['id'] == msg['id'])) {
             _messages.add({
               'id': msg['id'],
@@ -299,8 +309,11 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
             });
           }
           // 投稿時間順にソート
-          _messages.sort((a, b) =>
-            DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+          _messages.sort(
+            (a, b) => DateTime.parse(
+              a['created_at'],
+            ).compareTo(DateTime.parse(b['created_at'])),
+          );
           _messageStreamController.add(List.from(_messages));
         }
       }
@@ -309,44 +322,66 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
     }
   }
 
-  void _scrollToBottom() {
-    // スクロール対象があるか確認
+  Future<void> _scrollToBottom() async {
     if (!_scrollController.hasClients) return;
 
-    // 描画後にスクロール
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: Duration(milliseconds: 500),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+    // ① フレーム完了待ち
+    await Future.delayed(Duration.zero);
+
+    // ② 画像描画の揺れ対策（超重要）
+    for (int i = 0; i < 3; i++) {
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      if (!_scrollController.hasClients) return;
+
+      _scrollController.jumpTo(
+        _scrollController.position.maxScrollExtent,
+      );
+    }
   }
+
+
+  // void _scrollToBottom() {
+  //   // スクロール対象があるか確認
+  //   if (!_scrollController.hasClients) return;
+
+  //   // 描画後にスクロール
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     if (_scrollController.hasClients) {
+  //       _scrollController.animateTo(
+  //         _scrollController.position.maxScrollExtent,
+  //         duration: Duration(milliseconds: 500),
+  //         curve: Curves.easeOut,
+  //       );
+  //     }
+  //   });
+  // }
 
   //スレッド内にいる時にスレッドが削除された場合スレッド一覧ページに戻す
   void _showThreadDeletedDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text('スレッドが削除されました'),
-        content: const Text('このスレッドは既に存在しません。'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => ThreadList()),
-                (route) => false,
-              );
-            },
-            child: const Text('一覧へ戻る'),
+      builder:
+          (_) => AlertDialog(
+            title: const Text('スレッドが削除されました'),
+            content: const Text('このスレッドは既に存在しません。'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => ThreadList()),
+                      (route) => false,
+                    );
+                  });
+                },
+                child: const Text('一覧へ戻る'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -358,9 +393,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
       builder: (context) {
         return AlertDialog(
           title: const Text('ログインが必要です'),
-          content: const Text(
-            'ログイン状態が切れています。\nもう一度サインインしてください。',
-          ),
+          content: const Text('ログイン状態が切れています。\nもう一度サインインしてください。'),
           actions: [
             TextButton(
               onPressed: () async {
@@ -372,13 +405,15 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
                 await prefs.clear();
 
                 // サインイン画面（MyHomePage）へ戻す
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => MyHomePage(title: 'Bridge'),
-                  ),
-                  (_) => false,
-                );
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MyHomePage(title: 'Bridge'),
+                    ),
+                    (_) => false,
+                  );
+                });
               },
               child: const Text('サインインへ'),
             ),
@@ -396,14 +431,15 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
     }
     final text_check = _messageController.text.trim();
     if (text_check.length > 255) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('メッセージは255文字以内で入力してください')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('メッセージは255文字以内で入力してください')));
       return;
     }
     if (_isSending) return;
     final text = _messageController.text.trim();
-    if (text.isEmpty && _selectedImage == null && _webImageBytes == null) return;
+    if (text.isEmpty && _selectedImage == null && _webImageBytes == null)
+      return;
     setState(() => _isSending = true);
 
     int? photoId;
@@ -435,8 +471,11 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
           'photoId': msg['photoId'],
           'userIconUrl': _currentUserIconUrl,
         });
-        _messages.sort((a, b) =>
-            DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+        _messages.sort(
+          (a, b) => DateTime.parse(
+            a['created_at'],
+          ).compareTo(DateTime.parse(b['created_at'])),
+        );
         _messageStreamController.add(List.from(_messages));
         //_scrollToBottom();
         //_channel.sink.add(json.encode(msg));
@@ -446,12 +485,11 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
           _webImageBytes = null;
           _webImageName = null;
         });
-        _channel.sink.add(json.encode({
-          ...msg,
-          'userIconUrl': _currentUserIconUrl,
-        }));
+        _channel.sink.add(
+          json.encode({...msg, 'userIconUrl': _currentUserIconUrl}),
+        );
         //自動スクロール
-        _scrollToBottom(); 
+        _scrollToBottom();
       } else if (response.statusCode == 404 || response.statusCode == 410) {
         _showThreadDeletedDialog();
       } else {
@@ -468,35 +506,35 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
   Future<void> _reportMessage(Map<String, dynamic> msg) async {
     try {
       final payload = {
-      'fromUserId': int.parse(currentUserId),
-      'toUserId': int.parse(msg['user_id']),
-      'type': 2,
-      'threadId': widget.thread['id'],
-      'chatId': msg['id'],
+        'fromUserId': int.parse(currentUserId),
+        'toUserId': int.parse(msg['user_id']),
+        'type': 2,
+        'threadId': widget.thread['id'],
+        'chatId': msg['id'],
       };
-        final response = await http.post(
-          Uri.parse('$baseUrl/notice/report'),
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode(payload),
-        );
+      final response = await http.post(
+        Uri.parse('$baseUrl/notice/report'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(payload),
+      );
 
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("通報しました")),
-          );
-        } else if (response.statusCode == 400) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("このチャットはすでに通報済みです")),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("通報に失敗しました")),
-          );
-        }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("通信エラーが発生しました")),
-        );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("通報しました")));
+      } else if (response.statusCode == 400) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("このチャットはすでに通報済みです")));
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("通報に失敗しました")));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("通信エラーが発生しました")));
     }
   }
 
@@ -508,9 +546,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
     }
 
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/chat/user/$userId'),
-      );
+      final response = await http.get(Uri.parse('$baseUrl/chat/user/$userId'));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -526,9 +562,9 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
     return "Unknown";
   }
 
-//表示部分
-@override
-Widget build(BuildContext context) {
+  //表示部分
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: BridgeHeader(),
       body: Column(
@@ -538,8 +574,10 @@ Widget build(BuildContext context) {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(widget.thread['title'] ?? 'スレッド',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    widget.thread['title'] ?? 'スレッド',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                 ),
                 IconButton(
                   icon: Icon(Icons.arrow_downward),
@@ -566,9 +604,14 @@ Widget build(BuildContext context) {
               initialData: _messages,
               builder: (context, snapshot) {
                 final items = snapshot.data!;
-                final filtered = items
-                    .where((m) => searchText.isEmpty || m['text'].contains(searchText))
-                    .toList();
+                final filtered =
+                    items
+                        .where(
+                          (m) =>
+                              searchText.isEmpty ||
+                              m['text'].contains(searchText),
+                        )
+                        .toList();
                 return ListView.builder(
                   controller: _scrollController,
                   itemCount: filtered.length,
@@ -583,14 +626,17 @@ Widget build(BuildContext context) {
                     final userType = _userTypeCache[msg['user_id']];
                     final typeLabel = _typeLabel(userType);
                     return Align(
-                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment:
+                          isMe ? Alignment.centerRight : Alignment.centerLeft,
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
                           maxWidth: MediaQuery.of(context).size.width * 0.7,
                         ),
                         child: Column(
                           crossAxisAlignment:
-                              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                              isMe
+                                  ? CrossAxisAlignment.end
+                                  : CrossAxisAlignment.start,
                           children: [
                             Padding(
                               padding: const EdgeInsets.only(bottom: 2.0),
@@ -598,25 +644,30 @@ Widget build(BuildContext context) {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   ClipOval(
-                                    child: iconUrl != null && iconUrl.isNotEmpty
-                                        ? Image.network(
-                                            iconUrl,
-                                            width: 16,
-                                            height: 16,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return const Icon(
-                                                Icons.account_circle_outlined,
-                                                size: 16,
-                                                color: Color(0xFF616161),
-                                              );
-                                            },
-                                          )
-                                        : const Icon(
-                                            Icons.account_circle_outlined,
-                                            size: 16,
-                                            color: Color(0xFF616161),
-                                          ),
+                                    child:
+                                        iconUrl != null && iconUrl.isNotEmpty
+                                            ? Image.network(
+                                              iconUrl,
+                                              width: 16,
+                                              height: 16,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (
+                                                context,
+                                                error,
+                                                stackTrace,
+                                              ) {
+                                                return const Icon(
+                                                  Icons.account_circle_outlined,
+                                                  size: 16,
+                                                  color: Color(0xFF616161),
+                                                );
+                                              },
+                                            )
+                                            : const Icon(
+                                              Icons.account_circle_outlined,
+                                              size: 16,
+                                              color: Color(0xFF616161),
+                                            ),
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
@@ -629,7 +680,10 @@ Widget build(BuildContext context) {
                                   if (!isMe && typeLabel.isNotEmpty) ...[
                                     const SizedBox(width: 4),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: Colors.black,
                                         borderRadius: BorderRadius.circular(8),
@@ -643,15 +697,19 @@ Widget build(BuildContext context) {
                                         ),
                                       ),
                                     ),
-                                  ]
+                                  ],
                                 ],
                               ),
                             ),
                             Container(
                               margin: EdgeInsets.symmetric(vertical: 4),
-                              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                              padding: EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 12,
+                              ),
                               decoration: BoxDecoration(
-                                color: isMe ? Colors.green[300] : Colors.grey[200],
+                                color:
+                                    isMe ? Colors.green[300] : Colors.grey[200],
                                 borderRadius: BorderRadius.only(
                                   topLeft: Radius.circular(12),
                                   topRight: Radius.circular(12),
@@ -662,28 +720,43 @@ Widget build(BuildContext context) {
                               //コメントのコンテナ
                               child: Column(
                                 crossAxisAlignment:
-                                    isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                    isMe
+                                        ? CrossAxisAlignment.end
+                                        : CrossAxisAlignment.start,
                                 children: [
                                   if (msg['photoId'] != null) ...[
                                     FutureBuilder(
                                       future: fetchPhotoUrl(msg['photoId']),
                                       builder: (context, snapshot) {
                                         if (!snapshot.hasData) {
-                                          return SizedBox(width: 200, height: 200); // プレースホルダー
+                                          return SizedBox(
+                                            width: 200,
+                                            height: 200,
+                                          ); // プレースホルダー
                                         }
                                         return Padding(
-                                          padding: const EdgeInsets.only(bottom: 8.0),
+                                          padding: const EdgeInsets.only(
+                                            bottom: 8.0,
+                                          ),
                                           child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                             child: GestureDetector(
                                               onTap: () {
                                                 showDialog(
                                                   context: context,
-                                                  builder: (_) => Dialog(
-                                                    child: InteractiveViewer(
-                                                      child: Image.network(snapshot.data!),
-                                                    ),
-                                                  ),
+                                                  builder:
+                                                      (_) => Dialog(
+                                                        child:
+                                                            InteractiveViewer(
+                                                              child:
+                                                                  Image.network(
+                                                                    snapshot
+                                                                        .data!,
+                                                                  ),
+                                                            ),
+                                                      ),
                                                 );
                                               },
                                               child: Image.network(
@@ -705,22 +778,21 @@ Widget build(BuildContext context) {
                                       if (!isMe)
                                         PopupMenuButton<String>(
                                           onSelected: (value) {
-                                            if (value == 'report') _reportMessage(msg);
+                                            if (value == 'report')
+                                              _reportMessage(msg);
                                           },
-                                          itemBuilder: (context) => [
-                                            PopupMenuItem(
-                                              value: 'report',
-                                              child: Text('通報する'),
-                                            ),
-                                          ],
+                                          itemBuilder:
+                                              (context) => [
+                                                PopupMenuItem(
+                                                  value: 'report',
+                                                  child: Text('通報する'),
+                                                ),
+                                              ],
                                         ),
                                     ],
                                   ),
                                   SizedBox(height: 4),
-                                  Text(
-                                    timeStr,
-                                    style: TextStyle(fontSize: 10),
-                                  ),
+                                  Text(timeStr, style: TextStyle(fontSize: 10)),
                                 ],
                               ),
                             ),
@@ -733,74 +805,94 @@ Widget build(BuildContext context) {
               },
             ),
           ),
-      if (_selectedImage != null || _webImageBytes != null)
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Container(
-            margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: kIsWeb
-                      ? Image.memory(_webImageBytes!, width: 120, height: 120, fit: BoxFit.cover)
-                      : Image.file(_selectedImage!, width: 120, height: 120, fit: BoxFit.cover),
-                ),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedImage = null;
-                        _webImageBytes = null;
-                        _webImageName = null;
-                      });
-                    },
-                    child: CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Colors.black54,
-                      child: Icon(Icons.close, size: 16, color: Colors.white),
-                    ),
-                  ),
-                )
-              ],
-            ),
-          ),
-        ),
-      SafeArea(
-        child: Row(
-          children: [
-            IconButton(icon: Icon(Icons.photo), onPressed: pickImage),
-            Expanded(
+          if (_selectedImage != null || _webImageBytes != null)
+            Align(
+              alignment: Alignment.centerLeft,
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: TextField(
-                  controller: _messageController,
-                  maxLength: 255,
-                  decoration: InputDecoration(
-                    hintText: 'メッセージを入力',
-                    border: InputBorder.none,
-                  ),
-                  onSubmitted: (_) => _sendMessage(),
+                margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child:
+                          kIsWeb
+                              ? Image.memory(
+                                _webImageBytes!,
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.cover,
+                              )
+                              : Image.file(
+                                _selectedImage!,
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.cover,
+                              ),
+                    ),
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedImage = null;
+                            _webImageBytes = null;
+                            _webImageName = null;
+                          });
+                        },
+                        child: CircleAvatar(
+                          radius: 12,
+                          backgroundColor: Colors.black54,
+                          child: Icon(
+                            Icons.close,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            IconButton(
-              icon: _isSending
-                  ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Icon(Icons.send, color: Colors.blue),
-              onPressed: _isSending ? null : _sendMessage,
+          SafeArea(
+            child: Row(
+              children: [
+                IconButton(icon: Icon(Icons.photo), onPressed: pickImage),
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: TextField(
+                      controller: _messageController,
+                      maxLength: 255,
+                      decoration: InputDecoration(
+                        hintText: 'メッセージを入力',
+                        border: InputBorder.none,
+                      ),
+                      onSubmitted: (_) => _sendMessage(),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon:
+                      _isSending
+                          ? SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : Icon(Icons.send, color: Colors.blue),
+                  onPressed: _isSending ? null : _sendMessage,
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    ],
-  ),
-);
-}
+    );
+  }
 }

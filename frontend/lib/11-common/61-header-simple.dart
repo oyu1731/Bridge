@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-class BridgeHeaderSimple extends StatelessWidget implements PreferredSizeWidget {
+class BridgeHeaderSimple extends StatelessWidget
+    implements PreferredSizeWidget {
   const BridgeHeaderSimple({Key? key}) : super(key: key);
 
   @override
@@ -28,18 +29,14 @@ class BridgeHeaderSimple extends StatelessWidget implements PreferredSizeWidget 
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: Image.asset(
-                  'lib/01-images/bridge-logo.png',
+                  '../lib/01-images/Bridge-logo.png',
                   height: 50,
                   width: 100,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
                     return Row(
                       children: [
-                        Icon(
-                          Icons.home_outlined,
-                          color: Colors.blue,
-                          size: 40,
-                        ),
+                        Icon(Icons.home_outlined, color: Colors.blue, size: 40),
                         const SizedBox(width: 8),
                         Text(
                           'Bridge',
@@ -60,7 +57,6 @@ class BridgeHeaderSimple extends StatelessWidget implements PreferredSizeWidget 
       ),
     );
   }
-
 
   @override
   Size get preferredSize => const Size.fromHeight(70);

@@ -1,3 +1,4 @@
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -26,7 +27,9 @@ Future<void> saveSession(dynamic userData) async {
 class PhoneNumberFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
     if (digits.length > 11) return oldValue;
 
@@ -113,15 +116,18 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
   // 業界リストを取得
   Future<void> _fetchIndustries() async {
     try {
-      final response =
-          await http.get(Uri.parse('http://localhost:8080/api/industries'));
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/industries'),
+      );
       if (!mounted) return;
 
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         setState(() {
           _industries =
-              data.map((item) => {"id": item["id"], "name": item["industry"]}).toList();
+              data
+                  .map((item) => {"id": item["id"], "name": item["industry"]})
+                  .toList();
           _isLoading = false;
         });
       } else {
@@ -151,7 +157,9 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
   }
 
   // 郵便番号から住所を取得
-  Future<Map<String, dynamic>?> _fetchAddressFromPostcode(String postcode) async {
+  Future<Map<String, dynamic>?> _fetchAddressFromPostcode(
+    String postcode,
+  ) async {
     return await PostcodeJPApi.fetchAddress(postcode);
   }
 
@@ -204,7 +212,11 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                               border: OutlineInputBorder(),
                               labelText: '企業名',
                             ),
-                            validator: (v) => (v == null || v.isEmpty) ? '企業名を入力してください' : null,
+                            validator:
+                                (v) =>
+                                    (v == null || v.isEmpty)
+                                        ? '企業名を入力してください'
+                                        : null,
                           ),
                         ),
                       ],
@@ -259,7 +271,9 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                               hintText: '英数字８文字以上で入力してください',
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
                                   color: cyanDark,
                                 ),
                                 onPressed: () {
@@ -314,8 +328,11 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                               PhoneNumberFormatter(),
                             ],
                             validator: (value) {
-                              if (value == null || value.isEmpty) return '電話番号を入力してください';
-                              if (!RegExp(r'^\d{3}-\d{4}-\d{4}$').hasMatch(value)) {
+                              if (value == null || value.isEmpty)
+                                return '電話番号を入力してください';
+                              if (!RegExp(
+                                r'^\d{3}-\d{4}-\d{4}$',
+                              ).hasMatch(value)) {
                                 return '電話番号の形式が正しくありません';
                               }
                               return null;
@@ -332,7 +349,10 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.only(top: 14),
-                          child: Icon(Icons.location_searching_outlined, color: cyanDark),
+                          child: Icon(
+                            Icons.markunread_mailbox_outlined,
+                            color: cyanDark,
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -361,7 +381,9 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                               String digitsOnly = postcode.replaceAll('-', '');
                               if (digitsOnly.length != 7) return;
 
-                              setState(() { _isFetchingAddress = true; });
+                                      setState(() {
+                                        _isFetchingAddress = true;
+                                      });
 
                               try {
                                 final address = await _fetchAddressFromPostcode(digitsOnly);
@@ -379,24 +401,36 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                                 );
                               }
 
-                              setState(() { _isFetchingAddress = false; });
-                            },
-                            child: _isFetchingAddress
-                                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Text('住所自動入力'),
+                                      setState(() {
+                                        _isFetchingAddress = false;
+                                      });
+                                    },
+                            child:
+                                _isFetchingAddress
+                                    ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                    : const Text('住所自動入力'),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // 所在地（自動入力）
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Padding(
                           padding: EdgeInsets.only(top: 14),
-                          child: Icon(Icons.location_on_outlined, color: cyanDark),
+                          child: Icon(
+                            Icons.location_on_outlined,
+                            color: cyanDark,
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -406,7 +440,11 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                               border: OutlineInputBorder(),
                               labelText: '所在地',
                             ),
-                            validator: (v) => (v == null || v.isEmpty) ? '所在地を入力してください' : null,
+                            validator:
+                                (v) =>
+                                    (v == null || v.isEmpty)
+                                        ? '所在地を入力してください'
+                                        : null,
                           ),
                         ),
                       ],
@@ -517,7 +555,7 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                           // 1) 一時サインアップを作成して tempId を取得
                           final tempRes = await http.post(
                             Uri.parse(
-                              'http://localhost:8080/api/v1/temp-signups',
+                              '${ApiConfig.baseUrl}/api/v1/temp-signups',
                             ),
                             headers: {
                               'Content-Type': 'application/json; charset=UTF-8',

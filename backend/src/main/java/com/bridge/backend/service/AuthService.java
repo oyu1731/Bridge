@@ -42,7 +42,7 @@ public class AuthService {
         userDto.setId(user.getId());
         userDto.setNickname(user.getNickname());
         userDto.setEmail(user.getEmail());
-        user.setPassword(userDto.getPassword()); 
+            userDto.setPassword(user.getPassword()); // 明示的なキャストを追加
         userDto.setPhoneNumber(user.getPhoneNumber());
         userDto.setSocietyHistory(user.getSocietyHistory());
         userDto.setType(user.getType() == null ? 0 : user.getType());

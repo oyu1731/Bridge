@@ -1,3 +1,4 @@
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -8,11 +9,8 @@ class PasswordResetPage extends StatefulWidget {
   final String email;
   final String otp;
 
-  const PasswordResetPage({
-    Key? key,
-    required this.email,
-    required this.otp,
-  }) : super(key: key);
+  const PasswordResetPage({Key? key, required this.email, required this.otp})
+    : super(key: key);
 
   @override
   State<PasswordResetPage> createState() => _PasswordResetPageState();
@@ -21,7 +19,8 @@ class PasswordResetPage extends StatefulWidget {
 class _PasswordResetPageState extends State<PasswordResetPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -57,12 +56,16 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
     final confirm = _confirmPasswordController.text.trim();
     setState(() { _errorMessage = null; });
     if (pass != confirm) {
-      setState(() { _errorMessage = 'パスワードが一致しません'; });
+      setState(() {
+        _errorMessage = 'パスワードが一致しません';
+      });
       return;
     }
-    setState(() { _loading = true; });
+    setState(() {
+      _loading = true;
+    });
     try {
-      const baseUrl = 'http://localhost:8080/api/password/reset';
+      final baseUrl = '${ApiConfig.baseUrl}/api/password/reset';
       final resp = await http.post(
         Uri.parse(baseUrl),
         headers: {'Content-Type': 'application/json'},
@@ -82,12 +85,19 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
         );
       } else {
         final data = jsonDecode(resp.body);
-        setState(() { _errorMessage = data['error'] ?? '再設定に失敗しました'; });
+        setState(() {
+          _errorMessage = data['error'] ?? '再設定に失敗しました';
+        });
       }
     } catch (e) {
-      setState(() { _errorMessage = '通信エラーが発生しました'; });
+      setState(() {
+        _errorMessage = '通信エラーが発生しました';
+      });
     } finally {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+        });
     }
   }
 
@@ -124,18 +134,12 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
               SizedBox(height: 32),
               Text(
                 'パスワードの再設定を行います。',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF424242),
-                ),
+                style: TextStyle(fontSize: 14, color: Color(0xFF424242)),
                 textAlign: TextAlign.center,
               ),
               Text(
                 '新しいパスワードを入力してください。',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF424242),
-                ),
+                style: TextStyle(fontSize: 14, color: Color(0xFF424242)),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 48),
@@ -147,10 +151,7 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
                     width: 140,
                     child: Text(
                       '新しいパスワード',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF424242),
-                      ),
+                      style: TextStyle(fontSize: 14, color: Color(0xFF424242)),
                     ),
                   ),
                   SizedBox(width: 16),
@@ -171,14 +172,18 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
                                 hintText: 'パスワードを入力してください',
                                 hintStyle: TextStyle(color: Color(0xFF9E9E9E)),
                                 border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
                               ),
                               style: TextStyle(fontSize: 14),
                             ),
                           ),
                           IconButton(
                             icon: Icon(
-                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                              _obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                               color: Color(0xFF757575),
                             ),
                             onPressed: () {
@@ -202,10 +207,7 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
                     width: 140,
                     child: Text(
                       '新しいパスワード\n（再入力）',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF424242),
-                      ),
+                      style: TextStyle(fontSize: 14, color: Color(0xFF424242)),
                     ),
                   ),
                   SizedBox(width: 16),
@@ -226,19 +228,24 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
                                 hintText: 'パスワードを再入力してください',
                                 hintStyle: TextStyle(color: Color(0xFF9E9E9E)),
                                 border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
                               ),
                               style: TextStyle(fontSize: 14),
                             ),
                           ),
                           IconButton(
                             icon: Icon(
-                              _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                              _obscureConfirmPassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                               color: Color(0xFF757575),
                             ),
                             onPressed: () {
                               setState(() {
-                                _obscureConfirmPassword = !_obscureConfirmPassword;
+                                _obscureConfirmPassword =
+                                    !_obscureConfirmPassword;
                               });
                             },
                           ),
@@ -255,7 +262,7 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
                   width: 120,
                   height: 48,
                   child: ElevatedButton(
-                      onPressed: _loading ? null : _handleSubmit,
+                    onPressed: _loading ? null : _handleSubmit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFFFF9800),
                       foregroundColor: Colors.white,
@@ -263,19 +270,23 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
-                    child: _loading
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                          )
-                        : Text(
-                            '送信',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                    child:
+                        _loading
+                            ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : Text(
+                              '送信',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
                   ),
                 ),
               ),

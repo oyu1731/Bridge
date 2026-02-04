@@ -1,3 +1,4 @@
+import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -23,17 +24,16 @@ class CompanySearchPage extends StatefulWidget {
 }
 
 class _CompanySearchPageState extends State<CompanySearchPage> {
-
-
-    Future<void> _checkLoginStatus() async {
-      final prefs = await SharedPreferences.getInstance();
-      final userJson = prefs.getString('current_user');
-      if (userJson == null) {
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed('/signin');
-        }
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('current_user');
+    if (userJson == null) {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/signin');
       }
     }
+  }
+
   final TextEditingController _searchController = TextEditingController();
   String _selectedIndustry = '業界';
   String _selectedArea = 'エリア';
@@ -47,6 +47,10 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
   String? _errorMessage;
   bool _hasSearched = false; // 検索が実行されたかどうかを管理
 
+  // PC用横スクロールのコントローラと設定（ループ用）
+  final ScrollController _companyScrollController = ScrollController();
+  static const double _companyScrollDelta = 200.0;
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +59,13 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     _loadArticles();
     _loadIndustries();
     _checkAndUpdateSubscriptionStatus(); // 無料プランチェック
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _companyScrollController.dispose();
+    super.dispose();
   }
 
   // 企業データを読み込む
@@ -66,16 +77,17 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
 
     try {
       final companies = await CompanyApiClient.getAllCompanies();
+      // 削除済み・退会済み企業を除外
+      final filtered = companies.where((c) => c.isWithdrawn != true).toList();
       // 最終更新日時順にソート（注目企業として表示）
-      companies.sort((a, b) {
+      filtered.sort((a, b) {
         if (a.createdAt == null && b.createdAt == null) return 0;
         if (a.createdAt == null) return 1;
         if (b.createdAt == null) return -1;
         return b.createdAt!.compareTo(a.createdAt!);
       });
-
       setState(() {
-        _filteredCompanies = companies;
+        _filteredCompanies = filtered;
         _isLoading = false;
         _hasSearched = false; // 初期データは注目企業として表示
       });
@@ -107,7 +119,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
       final response = await http
           .post(
             Uri.parse(
-              "http://localhost:8080/api/users/$userId/check-subscription",
+              '${ApiConfig.baseUrl}/api/users/$userId/check-subscription',
             ),
           )
           .timeout(const Duration(seconds: 5));
@@ -627,7 +639,6 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
   }
 
   Widget _buildPCHorizontalScroll([bool isSmallScreen = false]) {
-    final ScrollController _scrollController = ScrollController();
     double containerHeight = isSmallScreen ? 180 : 200;
     double buttonSize = isSmallScreen ? 36 : 40; // 最小サイズを36に
     double iconSize = isSmallScreen ? 18 : 20; // アイコンサイズも調整
@@ -642,11 +653,26 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
             child: Center(
               child: IconButton(
                 onPressed: () {
-                  _scrollController.animateTo(
-                    _scrollController.offset - 200,
-                    duration: Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
+                  if (!_companyScrollController.hasClients) return;
+                  final max = _companyScrollController.position.maxScrollExtent;
+                  final pos = _companyScrollController.offset;
+                  if (max <= 0) return; // ループ不要
+
+                  final double target = pos - _companyScrollDelta;
+                  if (target <= 0) {
+                    // 先頭より前に行こうとしたら末尾にループ
+                    _companyScrollController.animateTo(
+                      max,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  } else {
+                    _companyScrollController.animateTo(
+                      target,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  }
                 },
                 icon: Icon(
                   Icons.arrow_back_ios,
@@ -667,7 +693,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
           // スクロール可能なカードリスト
           Expanded(
             child: ListView.builder(
-              controller: _scrollController,
+              controller: _companyScrollController,
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.symmetric(horizontal: 8),
               itemCount: _filteredCompanies.length,
@@ -686,11 +712,26 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
             child: Center(
               child: IconButton(
                 onPressed: () {
-                  _scrollController.animateTo(
-                    _scrollController.offset + 200,
-                    duration: Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
+                  if (!_companyScrollController.hasClients) return;
+                  final max = _companyScrollController.position.maxScrollExtent;
+                  final pos = _companyScrollController.offset;
+                  if (max <= 0) return; // ループ不要
+
+                  final double target = pos + _companyScrollDelta;
+                  if (target >= max) {
+                    // 末尾を超える場合は先頭にループ
+                    _companyScrollController.animateTo(
+                      0,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  } else {
+                    _companyScrollController.animateTo(
+                      target,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  }
                 },
                 icon: Icon(
                   Icons.arrow_forward_ios,
