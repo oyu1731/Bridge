@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:html' as html;
 import '../11-common/api_config.dart';
-import '../11-common/url.dart' as url;
 
 /// Web版 Stripe Checkout
 Future<void> startWebCheckout({
@@ -18,9 +17,9 @@ Future<void> startWebCheckout({
 
   // Set default URLs if not provided
   final String effectiveSuccessUrlBase =
-      successUrl ?? "${url.ApiConfig.frontendUrl}/#/payment-success";
+      successUrl ?? "${ApiConfig.frontendUrl}/#/payment-success";
   final String effectiveCancelUrl =
-      cancelUrl ?? "${url.ApiConfig.frontendUrl}/#/payment-cancel";
+      cancelUrl ?? "${ApiConfig.frontendUrl}/#/payment-cancel";
 
   final payload = {
     "amount": amount,

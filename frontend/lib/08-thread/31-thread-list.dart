@@ -101,15 +101,18 @@ class _ThreadListState extends State<ThreadList> {
                         ElevatedButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) =>
-                                        const PlanStatusScreen(userType: '企業'),
-                              ),
-                              (route) => false,
-                            );
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => const PlanStatusScreen(
+                                        userType: '企業',
+                                      ),
+                                ),
+                                (route) => false,
+                              );
+                            });
                           },
                           child: const Text('プランを確認'),
                         ),
@@ -192,18 +195,20 @@ class _ThreadListState extends State<ThreadList> {
                   officialThreads.map((thread) {
                     return GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => ThreadOfficialDetail(
-                                  thread: {
-                                    'id': thread.id,
-                                    'title': thread.title,
-                                  },
-                                ),
-                          ),
-                        );
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => ThreadOfficialDetail(
+                                    thread: {
+                                      'id': thread.id,
+                                      'title': thread.title,
+                                    },
+                                  ),
+                            ),
+                          );
+                        });
                       },
                       child: Card(
                         color: Colors.white, // 背景を白に設定
@@ -246,12 +251,14 @@ class _ThreadListState extends State<ThreadList> {
                 Spacer(),
                 TextButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ThreadUnofficialList(),
-                      ),
-                    );
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ThreadUnofficialList(),
+                        ),
+                      );
+                    });
                   },
                   child: Text(
                     'もっと見る',
@@ -266,18 +273,20 @@ class _ThreadListState extends State<ThreadList> {
                   hotUnofficialThreads.map((thread) {
                     return GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => ThreadUnOfficialDetail(
-                                  thread: {
-                                    'id': thread.id,
-                                    'title': thread.title,
-                                  },
-                                ),
-                          ),
-                        );
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => ThreadUnOfficialDetail(
+                                    thread: {
+                                      'id': thread.id,
+                                      'title': thread.title,
+                                    },
+                                  ),
+                            ),
+                          );
+                        });
                       },
                       child: Card(
                         color: Colors.white, // 背景を白に設定

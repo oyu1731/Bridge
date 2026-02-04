@@ -548,6 +548,17 @@ public class UserService {
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime endDate = subscription.getEndDate();
 
+            // Defensive: endDate が null の場合は無効扱いにして無料に更新
+            if (endDate == null) {
+                logger.warn("Subscription endDate is null for subscriptionId={}, userId={}. Marking as free.", subscription.getId(), userId);
+                user.setPlanStatus("無料");
+                userRepository.save(user);
+                result.put("status", "invalid_subscription");
+                result.put("planStatus", "無料");
+                result.put("message", "サブスクリプションの終了日が不明なため、無料に更新しました。");
+                return result;
+            }
+
             // 5. 有効期限が切れている場合
             if (endDate.isBefore(now)) {
                 user.setPlanStatus("無料");

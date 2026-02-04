@@ -1,4 +1,3 @@
-import 'package:bridge/11-common/url.dart' as url;
 import 'package:bridge/11-common/api_config.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -85,9 +84,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
     while (attempt < maxAttempts && mounted) {
       try {
         final res = await http.get(
-          Uri.parse(
-            '${url.ApiConfig.frontendUrl}/api/v1/payment/session/$sessionId',
-          ),
+          Uri.parse(ApiConfig.paymentSessionDetail(sessionId)),
         );
         if (res.statusCode == 200) {
           user = jsonDecode(res.body) as Map<String, dynamic>;
@@ -177,7 +174,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
     if (kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.microtask(() {
-          html.window.location.replace('${ApiConfig.baseUrl}');
+          html.window.location.replace('${ApiConfig.frontendUrl}/#/');
         });
       });
     } else {
@@ -361,7 +358,7 @@ class PaymentCancelScreen extends StatelessWidget {
     if (kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.microtask(() {
-          html.window.location.replace('${ApiConfig.baseUrl}');
+          html.window.location.replace('${ApiConfig.frontendUrl}/#/');
         });
       });
     } else {

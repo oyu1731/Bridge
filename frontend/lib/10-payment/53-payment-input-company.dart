@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:bridge/11-common/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:html' as html;
-import '../11-common/url.dart' as url;
 
 Future<void> startWebCheckout({
   required int amount,
@@ -15,9 +14,9 @@ Future<void> startWebCheckout({
 }) async {
   final String baseUrl = ApiConfig.baseUrl;
   final String effectiveSuccessUrlParam =
-      successUrl ?? "${url.ApiConfig.frontendUrl}/#/payment-success";
+      successUrl ?? "${ApiConfig.frontendUrl}/#/payment-success";
   final String effectiveCancelUrl =
-      cancelUrl ?? "${url.ApiConfig.frontendUrl}/#/payment-cancel";
+      cancelUrl ?? "${ApiConfig.frontendUrl}/#/payment-cancel";
 
   final payload = {
     "amount": amount,
@@ -42,7 +41,7 @@ Future<void> startWebCheckout({
 
   try {
     final response = await http.post(
-      Uri.parse("${url.ApiConfig.frontendUrl}/api/v1/payment/checkout-session"),
+      Uri.parse("${ApiConfig.baseUrl}${ApiConfig.checkoutSessionUrl}"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(payload),
     );

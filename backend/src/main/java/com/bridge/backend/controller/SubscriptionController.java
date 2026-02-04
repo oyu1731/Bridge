@@ -12,8 +12,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/subscriptions")
-// @CrossOrigin(origins = "*")
-//ここはデプロイした後に変わるかもしれない～
 @CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
 public class SubscriptionController {
 
@@ -28,31 +26,64 @@ public class SubscriptionController {
 
     /**
      * 1. リアルタイムのプラン名取得
-     * 型を Integer userId に変更してリポジトリと一致させます
      */
     @GetMapping("/status/{userId}")
-    public ResponseEntity<String> getSubscriptionStatus(@PathVariable Integer userId) {
-        // UserRepository.findById(Integer) に合わせて Integer を渡す
-        return userRepository.findById(userId)
-                .map(user -> {
-                    String status = user.getPlanStatus();
-                    return ResponseEntity.ok(status != null ? status : "無料");
-                })
-                .orElse(ResponseEntity.status(404).body("User Not Found"));
+    public ResponseEntity<?> getSubscriptionStatus(@PathVariable(required = false) String userId) {
+        Integer id = validateUserId(userId);
+        if (id == null) {
+            return ResponseEntity.badRequest().body("不正な入力値です");
+        }
+
+        try {
+            return userRepository.findById(id)
+                    .map(user -> {
+                        String status = user.getPlanStatus();
+                        return ResponseEntity.ok(status != null ? status : "無料");
+                    })
+                    .orElse(ResponseEntity.status(404).body("User Not Found"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("500 Internal Server Error");
+        }
     }
 
     /**
      * 2. 有効なサブスクリプション詳細情報の取得
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getActiveSubscription(@PathVariable Integer userId) {
-        Optional<Subscription> subscriptionOpt = subscriptionService.getActiveSubscriptionByUserId(userId);
+    public ResponseEntity<?> getActiveSubscription(@PathVariable(required = false) String userId) {
+        // 1. バリデーション（数値型チェック、null、空文字チェック）
+        Integer id = validateUserId(userId);
+        if (id == null) {
+            return ResponseEntity.badRequest().body("不正な入力値です");
+        }
 
-        if (subscriptionOpt.isPresent()) {
-            SubscriptionResponseDto dto = new SubscriptionResponseDto(subscriptionOpt.get());
-            return ResponseEntity.ok(dto);
-        } else {
-            return ResponseEntity.status(404).body("Active subscription not found");
+        try {
+            Optional<Subscription> subscriptionOpt = subscriptionService.getActiveSubscriptionByUserId(id);
+
+            if (subscriptionOpt.isPresent()) {
+                SubscriptionResponseDto dto = new SubscriptionResponseDto(subscriptionOpt.get());
+                return ResponseEntity.ok(dto);
+            } else {
+                // 設計書の失敗時要件に合わせたメッセージ
+                return ResponseEntity.status(404).body("現在サブスクは継続されていません");
+            }
+        } catch (Exception e) {
+            // DB接続エラーなど
+            return ResponseEntity.status(500).body("500 Internal Server Error");
+        }
+    }
+
+    /**
+     * IDバリデーション用共通メソッド
+     */
+    private Integer validateUserId(String userId) {
+        if (userId == null || userId.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(userId);
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 }

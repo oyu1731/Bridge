@@ -384,11 +384,13 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => ThreadList()),
-                    (route) => false,
-                  );
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => ThreadList()),
+                      (route) => false,
+                    );
+                  });
                 },
                 child: const Text('一覧へ戻る'),
               ),
@@ -417,13 +419,15 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                 await prefs.clear();
 
                 // サインイン画面（MyHomePage）へ戻す
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => MyHomePage(title: 'Bridge'),
-                  ),
-                  (_) => false,
-                );
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MyHomePage(title: 'Bridge'),
+                    ),
+                    (_) => false,
+                  );
+                });
               },
               child: const Text('サインインへ'),
             ),
