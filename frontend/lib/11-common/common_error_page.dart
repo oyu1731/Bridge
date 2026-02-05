@@ -16,15 +16,38 @@ class CommonErrorPage extends StatelessWidget {
   String get errorMessage {
     switch (errorCode) {
       case 400:
-        return '400エラーが発生しました';
+        return 'リクエストが正しくありません（400エラー）';
+      case 401:
+        return '認証が必要です。再度ログインしてください（401エラー）';
+      case 403:
+        return 'このリソースにアクセスする権限がありません（403エラー）';
       case 404:
-        return '404エラーが発生しました';
+        return 'リクエストされたページが見つかりません（404エラー）';
       case 500:
-        return '500エラーが発生しました';
+        return 'サーバーエラーが発生しました。しばらく時間をおいてお試しください（500エラー）';
       default:
-        return 'エラーが発生しました';
+        return '予期しないエラーが発生しました';
     }
   }
+
+  String get errorDescription {
+    switch (errorCode) {
+      case 400:
+        return '入力内容に誤りがあります。再度確認してお試しください。';
+      case 401:
+        return 'セッションの有効期限が切れた可能性があります。';
+      case 403:
+        return 'このアカウントは当該機能の利用権限がありません。';
+      case 404:
+        return 'ページが移動または削除された可能性があります。';
+      case 500:
+        return 'システムに一時的な問題が発生しています。';
+      default:
+        return 'もう一度お試しいただくか、サポートにお問い合わせください。';
+    }
+  }
+
+  bool get isAuthError => errorCode == 401;
 
   Future<Map<String, dynamic>> _getUserInfo() async {
     final prefs = await SharedPreferences.getInstance();
@@ -60,51 +83,155 @@ class CommonErrorPage extends StatelessWidget {
                 snapshot.data ?? {'isLoggedIn': false, 'type': null};
             final isLoggedIn = userInfo['isLoggedIn'] ?? false;
             final type = userInfo['type'];
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  errorMessage,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF757575),
-                  ),
-                ),
-                SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: () {
-                    if (isLoggedIn) {
-                      if (type == 4) {
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (_) => AdminHome()),
-                          (_) => false,
-                        );
-                      } else if (type == 3) {
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (_) => CompanyHome()),
-                          (_) => false,
-                        );
-                      } else {
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                            builder: (_) => StudentWorkerHome(),
+
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // エラーアイコン
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.error_outline,
+                        color: Colors.red.shade600,
+                        size: 40,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // エラーコード
+                    Text(
+                      'エラー $errorCode',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // エラーメッセージ
+                    Text(
+                      errorMessage,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // エラー詳細説明
+                    Text(
+                      errorDescription,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                        height: 1.6,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // ボタングループ
+                    Column(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            if (isAuthError && !isLoggedIn) {
+                              // 401エラーで未ログインの場合、ホーム画面へ
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                  builder: (_) => MyHomePage(title: 'Bridge'),
+                                ),
+                                (_) => false,
+                              );
+                            } else if (isLoggedIn) {
+                              // ログイン済みの場合、ホーム画面へ
+                              if (type == 4) {
+                                Navigator.of(context).pushAndRemoveUntil(
+                                  MaterialPageRoute(
+                                    builder: (_) => AdminHome(),
+                                  ),
+                                  (_) => false,
+                                );
+                              } else if (type == 3) {
+                                Navigator.of(context).pushAndRemoveUntil(
+                                  MaterialPageRoute(
+                                    builder: (_) => CompanyHome(),
+                                  ),
+                                  (_) => false,
+                                );
+                              } else {
+                                Navigator.of(context).pushAndRemoveUntil(
+                                  MaterialPageRoute(
+                                    builder: (_) => StudentWorkerHome(),
+                                  ),
+                                  (_) => false,
+                                );
+                              }
+                            } else {
+                              // 未ログインの場合、ホーム画面へ
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                  builder: (_) => MyHomePage(title: 'Bridge'),
+                                ),
+                                (_) => false,
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.home),
+                          label: Text(isLoggedIn ? 'TOPページへ戻る' : 'サインインへ戻る'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade600,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          (_) => false,
-                        );
-                      }
-                    } else {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(
-                          builder: (_) => MyHomePage(title: 'Bridge'),
                         ),
-                        (_) => false,
-                      );
-                    }
-                  },
-                  child: Text(isLoggedIn ? 'TOPページへ' : 'サインインへ戻る'),
+                        const SizedBox(height: 12),
+                        if (isAuthError)
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                  builder: (_) => MyHomePage(title: 'Bridge'),
+                                ),
+                                (_) => false,
+                              );
+                            },
+                            icon: const Icon(Icons.login),
+                            label: const Text('再度ログインする'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.blue.shade600,
+                              side: BorderSide(color: Colors.blue.shade600),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 14,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             );
           },
         ),

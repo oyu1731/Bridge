@@ -1,8 +1,12 @@
+import 'package:bridge/11-common/http_error_handler.dart';
 import 'package:bridge/11-common/api_config.dart';
+import 'package:bridge/main.dart';
+import 'package:bridge/11-common/common_error_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/59-global-method.dart';
 import '52-payment-input-student.dart';
@@ -886,6 +890,81 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
     );
   }
 
+  // テスト: 401エラー
+  Future<void> _testError401() async {
+    final response = await safeGet(
+      Uri.parse('${ApiConfig.baseUrl}/api/test/401'),
+      onError: (statusCode) {
+        debugPrint('❌ 401エラーを検出: $statusCode');
+        _navigateToErrorPage(statusCode);
+      },
+    );
+    debugPrint('テスト結果 - statusCode: ${response.statusCode}');
+  }
+
+  // テスト: 403エラー
+  Future<void> _testError403() async {
+    final response = await safeGet(
+      Uri.parse('${ApiConfig.baseUrl}/api/test/403'),
+      onError: (statusCode) {
+        debugPrint('❌ 403エラーを検出: $statusCode');
+        _navigateToErrorPage(statusCode);
+      },
+    );
+    debugPrint('テスト結果 - statusCode: ${response.statusCode}');
+  }
+
+  // テスト: 500エラー
+  Future<void> _testError500() async {
+    final response = await safeGet(
+      Uri.parse('${ApiConfig.baseUrl}/api/test/500'),
+      onError: (statusCode) {
+        debugPrint('❌ 500エラーを検出: $statusCode');
+        _navigateToErrorPage(statusCode);
+      },
+    );
+    debugPrint('テスト結果 - statusCode: ${response.statusCode}');
+  }
+
+  // テスト: 404エラー
+  Future<void> _testError404() async {
+    final response = await safeGet(
+      Uri.parse('${ApiConfig.baseUrl}/api/test/404'),
+      onError: (statusCode) {
+        debugPrint('❌ 404エラーを検出: $statusCode');
+        _navigateToErrorPage(statusCode);
+      },
+    );
+    debugPrint('テスト結果 - statusCode: ${response.statusCode}');
+  }
+
+  // テスト: 成功
+  Future<void> _testSuccess() async {
+    final response = await safeGet(
+      Uri.parse('${ApiConfig.baseUrl}/api/test/success'),
+      onError: (statusCode) {
+        debugPrint('❌ エラー: $statusCode');
+      },
+    );
+    if (response.isSuccess) {
+      debugPrint('✅ 成功: ${response.data}');
+    }
+  }
+
+  // エラーページへの遷移
+  void _navigateToErrorPage(int statusCode) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (navigatorKey.currentState != null) {
+        navigatorKey.currentState!.pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => CommonErrorPage(errorCode: statusCode),
+          ),
+          (route) => false,
+        );
+      }
+    });
+  }
+
   @override
   void dispose() {
     _animationController.dispose();
@@ -937,6 +1016,54 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
                               fontStyle: FontStyle.italic,
                             ),
                           ),
+                        // 既存のUI...
+
+                        // テストボタン（開発時のみ表示）
+                        if (!kReleaseMode) ...[
+                          const Divider(),
+                          const Text('【テスト用】エラーハンドリング検証'),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              ElevatedButton(
+                                onPressed: _testError401,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.purple,
+                                ),
+                                child: const Text('401エラーをテスト'),
+                              ),
+                              ElevatedButton(
+                                onPressed: _testError403,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.indigo,
+                                ),
+                                child: const Text('403エラーをテスト'),
+                              ),
+                              ElevatedButton(
+                                onPressed: _testError404,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                ),
+                                child: const Text('404エラーをテスト'),
+                              ),
+                              ElevatedButton(
+                                onPressed: _testError500,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                ),
+                                child: const Text('500エラーをテスト'),
+                              ),
+                              ElevatedButton(
+                                onPressed: _testSuccess,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                ),
+                                child: const Text('成功をテスト'),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
