@@ -3,7 +3,9 @@ version: '3.8'
 services:
   # MySQLデータベースサービス
   mysql:
-    image: mysql:8.0
+    build:
+      context: .
+      dockerfile: Dockerfile.mysql
     container_name: bridge-mysql
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
@@ -15,12 +17,11 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
     networks:
       - bridge-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u$$MYSQL_USER", "-p$$MYSQL_PASSWORD"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${MYSQL_USER}", "-p${MYSQL_PASSWORD}"]
       timeout: 20s
       retries: 10
       start_period: 30s

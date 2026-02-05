@@ -104,46 +104,46 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
   // 🔧 プラン状態取得
   // =========================
   static void clearPlanStatusCache() {
-    print('🗑️ プラン状態キャッシュをクリア');
+    // print('🗑️ プラン状態キャッシュをクリア');
     _cachedPlanStatus.clear();
   }
 
   static void resetAlertHistory(int userId) {
-    print('🗑️ ユーザー $userId のアラート表示履歴をリセット');
+    // print('🗑️ ユーザー $userId のアラート表示履歴をリセット');
     // このユーザーのすべてのプラン状態に対するアラート履歴をリセット
     _shownAlertUserIds.removeWhere((key) => key.startsWith('${userId}_'));
   }
 
   Future<String?> _fetchPlanStatus(int userId) async {
-    print('🔍 プラン状態取得開始: userId=$userId');
+    // print('🔍 プラン状態取得開始: userId=$userId');
     try {
       final response = await http.get(
         Uri.parse("${ApiConfig.baseUrl}/api/users/$userId/plan-status"),
       );
 
-      print('📶 APIレスポンスコード: ${response.statusCode}');
+      // print('📶 APIレスポンスコード: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
-        print("📡 APIレスポンス: $data");
-        print("📡 レスポンス型: ${data.runtimeType}");
+        // print("📡 APIレスポンス: $data");
+        // print("📡 レスポンス型: ${data.runtimeType}");
 
         // レスポンスが直接文字列の場合と、オブジェクトの場合の両対応
         if (data is String) {
-          print("✅ 文字列として受け取った: $data");
+          // print("✅ 文字列として受け取った: $data");
           return data;
         } else if (data is Map) {
           final planStatus = data['planStatus'] as String?;
-          print("✅ Mapから取得: $planStatus");
+          // print("✅ Mapから取得: $planStatus");
           return planStatus;
         }
       } else {
-        print("❌ ステータスコード異常: ${response.statusCode}");
+        // print("❌ ステータスコード異常: ${response.statusCode}");
       }
     } catch (e) {
-      print("❌ プラン状態取得エラー: $e");
+      // print("❌ プラン状態取得エラー: $e");
     }
-    print("🛑 プラン状態取得失敗: nullを返却");
+    // print("🛑 プラン状態取得失敗: nullを返却");
     return null;
   }
 
@@ -197,6 +197,10 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         final isAdmin = userInfo['isAdmin'] == true;
         final userId = userInfo['userId'];
 
+        // print(
+        //   '【ヘッダーデバッグ】accountType=$accountType, isAdmin=$isAdmin, userId=$userId',
+        // );
+
         final greetings = ['こんにちは', 'いらっしゃいませ', 'ようこそ', 'お帰りなさい'];
         final greeting =
             greetings[DateTime.now().millisecond % greetings.length];
@@ -204,25 +208,22 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         // =========================
         // 🏢 企業アカウントならプランチェック
         // =========================
-        print('🔍 ヘッダー: プランチェック開始');
-        print('   accountType=$accountType, userId=$userId');
-        print('   _shownAlertUserIds=$_shownAlertUserIds');
+        // print('🔍 ヘッダー: プランチェック開始');
+        // print('   accountType=$accountType, userId=$userId');
+        // print('   _shownAlertUserIds=$_shownAlertUserIds');
 
         if (accountType == '企業' &&
             userId != null &&
             !_shownAlertUserIds.contains(userId)) {
-          print('✅ 企業ユーザー確認: プランステータスを取得中...');
           _fetchPlanStatus(userId)
               .then((status) {
-                print('📊 プランステータス取得完了: status=$status, userId=$userId');
                 final alertKey = '${userId}_$status';
                 if (!_shownAlertUserIds.contains(alertKey)) {
                   if (status == null) {
                     // ❌ DB登録なし → トップに戻す
-                    print('❌ プラン状態がnull（DB登録なし）');
+                    print('❌ プラン状態がnull（DB登録なし） → ログイン画面へ遷移');
                     _shownAlertUserIds.add(alertKey);
                     WidgetsBinding.instance.addPostFrameCallback((_) {
-                      print('❌ DB登録なし → トップに戻します');
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(builder: (_) => const SignInPage()),
                         (route) => false,
@@ -230,10 +231,9 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                     });
                   } else if (status == '無料' || status == '無料' || status == '') {
                     // ⚠️ 無料プラン → プラン確認画面へ直接遷移
-                    print('⚠️ 無料プラン検出: status=$status → プラン確認画面へ遷移');
+                    print('⚠️ 無料プラン検出: userId=$userId → プラン確認画面へ遷移');
                     _shownAlertUserIds.add(alertKey);
                     WidgetsBinding.instance.addPostFrameCallback((_) {
-                      print('🚀 プラン確認画面へ遷移中...');
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(
                           builder:
@@ -242,18 +242,12 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                         (route) => false,
                       );
                     });
-                  } else {
-                    print('✅ プレミアムプラン: $status');
                   }
-                } else {
-                  print('⏭️ アラート既に表示済み (key=$alertKey)');
                 }
               })
               .catchError((error) {
                 print('❌ プランステータス取得エラー: $error');
               });
-        } else {
-          print('⏭️ プランチェック条件未満(企業以外またはアラート済み)');
         }
 
         return Container(
@@ -515,17 +509,23 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
 
                     buttons.add(
                       _nav('TOPページ', () {
+                        print(
+                          '【TOPページ遷移】isAdmin=$isAdmin, accountType=$accountType',
+                        );
                         if (isAdmin) {
+                          print('✅ 管理者ページへ遷移');
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (_) => AdminHome()),
                           );
                         } else if (accountType == '企業') {
+                          print('✅ 企業ページへ遷移');
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (_) => CompanyHome()),
                           );
                         } else {
+                          print('✅ 学生/社会人ページへ遷移');
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -735,6 +735,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
     final local = jsonDecode(userJson);
     final userId = local['id'];
     final nickname = local['nickname'] ?? '';
+    final localType = local['type']; // ローカルの type も取得
 
     try {
       final res = await http.get(
@@ -770,14 +771,30 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
           'isAdmin': type == 4,
         };
       }
-    } catch (_) {}
+    } catch (e) {
+      // print('⚠️ API呼び出しエラー: $e。ローカル情報を使用します');
+    }
+
+    // API呼び出し失敗時、ローカルキャッシュから type を使用
+    String fallbackTypeStr =
+        localType == 1
+            ? '学生'
+            : localType == 2
+            ? '社会人'
+            : localType == 3
+            ? '企業'
+            : localType == 4
+            ? '管理者'
+            : 'unknown';
+
+    // print('📌 フォールバック: typeStr=$fallbackTypeStr, isAdmin=${localType == 4}');
 
     return {
       'userId': userId,
-      'accountType': 'unknown',
+      'accountType': fallbackTypeStr,
       'nickname': nickname,
       'iconPath': '',
-      'isAdmin': false,
+      'isAdmin': localType == 4,
     };
   }
 
