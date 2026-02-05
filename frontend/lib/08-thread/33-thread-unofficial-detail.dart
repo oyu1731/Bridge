@@ -116,7 +116,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
 
   late final StreamController<List<Map<String, dynamic>>>
   _messageStreamController;
-  late final WebSocketChannel _channel;
+  WebSocketChannel? _channel;
   final String baseUrl = '${ApiConfig.baseUrl}/api';
   final String img_baseurl = '${ApiConfig.baseUrl}';
 
@@ -130,49 +130,55 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
     super.initState();
     _messageStreamController =
         StreamController<List<Map<String, dynamic>>>.broadcast();
-    _loadCurrentUser();
-    _fetchMessages();
 
-    _channel = WebSocketChannel.connect(
-      Uri.parse(ApiConfig.chatWebSocketUrl(widget.thread['id'])),
-    );
-
-    _channel.stream.listen((data) async{
-      try {
-        final msg = Map<String, dynamic>.from(jsonDecode(data));
-        final userId = msg['userId'].toString();
-        // ★ これを追加
-        await _loadUserInfo(userId);
-        if (!_messages.any((m) => m['id'] == msg['id'])) {
-          _messages.add({
-            'id': msg['id'],
-            'user_id': msg['userId'].toString(),
-            'text': msg['content'],
-            'created_at': msg['createdAt'],
-            'photoId': msg['photoId'],
-            'userIconUrl': msg['userIconUrl'],
-          });
-          _messages.sort(
-            (a, b) => DateTime.parse(
-              a['created_at'],
-            ).compareTo(DateTime.parse(b['created_at'])),
-          );
-          _messageStreamController.add(List.from(_messages));
-
-          //ページを開いたときに下まで移動する（移動しないだめコメントアウト）
-          // if (msg['userId'].toString() == currentUserId) {
-          //   _scrollToBottom();
-          // }
-        }
-      } catch (e) {
-        print("WebSocket parse error: $e");
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadCurrentUser();
+      await _fetchMessages();
+      _connectWebSocket();
+      _scrollToBottom();
     });
+  }
+
+  void _connectWebSocket() {
+    try {
+      _channel = WebSocketChannel.connect(
+        Uri.parse(ApiConfig.chatWebSocketUrl(widget.thread['id'])),
+      );
+
+      _channel!.stream.listen((data) async {
+        try {
+          final msg = Map<String, dynamic>.from(jsonDecode(data));
+          final userId = msg['userId'].toString();
+          // ★ これを追加
+          await _loadUserInfo(userId);
+          if (!_messages.any((m) => m['id'] == msg['id'])) {
+            _messages.add({
+              'id': msg['id'],
+              'user_id': msg['userId'].toString(),
+              'text': msg['content'],
+              'created_at': msg['createdAt'],
+              'photoId': msg['photoId'],
+              'userIconUrl': msg['userIconUrl'],
+            });
+            _messages.sort(
+              (a, b) => DateTime.parse(
+                a['created_at'],
+              ).compareTo(DateTime.parse(b['created_at'])),
+            );
+            _messageStreamController.add(List.from(_messages));
+          }
+        } catch (e) {
+          print("WebSocket parse error: $e");
+        }
+      });
+    } catch (e) {
+      print('WebSocket connection error: $e');
+    }
   }
 
   @override
   void dispose() {
-    _channel.sink.close();
+    _channel?.sink.close();
     _messageStreamController.close();
     _scrollController.dispose();
     _messageController.dispose();
@@ -334,12 +340,9 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
 
       if (!_scrollController.hasClients) return;
 
-      _scrollController.jumpTo(
-        _scrollController.position.maxScrollExtent,
-      );
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     }
   }
-
 
   // void _scrollToBottom() {
   //   // スクロール対象があるか確認
@@ -481,7 +484,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
           _webImageBytes = null;
           _webImageName = null;
         });
-        _channel.sink.add(
+        _channel?.sink.add(
           json.encode({...msg, 'userIconUrl': _currentUserIconUrl}),
         );
         //自動スクロール

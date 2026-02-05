@@ -225,13 +225,13 @@ class _PlanStatusScreenState extends State<PlanStatusScreen>
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            'ID: $_userId',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
+                          // Text(
+                          //   'ID: $_userId',
+                          //   style: TextStyle(
+                          //     fontSize: 12,
+                          //     color: Colors.grey.shade600,
+                          //   ),
+                          // ),
                         ],
                       ),
                     ],
