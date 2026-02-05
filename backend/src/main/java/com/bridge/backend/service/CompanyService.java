@@ -13,7 +13,7 @@ import com.bridge.backend.repository.UserRepository;
 import com.bridge.backend.repository.IndustryRelationRepository;
 import com.bridge.backend.repository.IndustryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,8 +42,7 @@ public class CompanyService {
     @Autowired
     private IndustryRepository industryRepository;
     
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     
     /**
      * すべての企業を取得（退会していない企業のみ）
