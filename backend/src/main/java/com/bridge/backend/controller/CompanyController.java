@@ -1,13 +1,16 @@
 package com.bridge.backend.controller;
 
 import com.bridge.backend.dto.CompanyDTO;
+import com.bridge.backend.dto.CompanySignUpRequest;
 import com.bridge.backend.service.CompanyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -125,6 +128,54 @@ import java.util.Optional;
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * 企業と企業ユーザーを登録
+     * POST /api/companies/signup
+     */
+    @PostMapping("/signup")
+    public ResponseEntity<?> registerCompanyWithUser(@RequestBody CompanySignUpRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        Map<String, String> errors = new HashMap<>();
+        
+        try {
+            // 入力値のバリデーション
+            if (request.getCompanyName() == null || request.getCompanyName().trim().isEmpty()) {
+                errors.put("companyName", "企業名が入力されていません");
+            }
+            if (request.getCompanyAddress() == null || request.getCompanyAddress().trim().isEmpty()) {
+                errors.put("companyAddress", "企業住所が入力されていません");
+            }
+            if (request.getCompanyPhoneNumber() == null || request.getCompanyPhoneNumber().trim().isEmpty()) {
+                errors.put("companyPhoneNumber", "企業電話番号が入力されていません");
+            }
+            if (request.getUserEmail() == null || request.getUserEmail().trim().isEmpty()) {
+                errors.put("userEmail", "ユーザーメールアドレスが入力されていません");
+            }
+            if (request.getUserPassword() == null || request.getUserPassword().trim().isEmpty()) {
+                errors.put("userPassword", "パスワードが入力されていません");
+            }
+            if (request.getUserNickname() == null || request.getUserNickname().trim().isEmpty()) {
+                errors.put("userNickname", "ニックネームが入力されていません");
+            }
+            if (request.getUserPhoneNumber() == null || request.getUserPhoneNumber().trim().isEmpty()) {
+                errors.put("userPhoneNumber", "ユーザー電話番号が入力されていません");
+            }
+            
+            if (!errors.isEmpty()) {
+                response.put("errors", errors);
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            Map<String, Object> result = companyService.registerCompanyWithUser(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            errors.put("system", e.getMessage());
+            response.put("errors", errors);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
     
