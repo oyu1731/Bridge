@@ -16,6 +16,30 @@ import 'company_photo_modal.dart';
 import '../../06-company/company_api_client.dart';
 import 'package:bridge/style.dart';
 
+class PostcodeFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.length > 7) return oldValue;
+
+    String formatted;
+    if (digits.length >= 4) {
+      formatted = '${digits.substring(0, 3)}-${digits.substring(3)}';
+    } else {
+      formatted = digits;
+    }
+
+    int selectionIndex = newValue.selection.baseOffset;
+    if (digits.length >= 4 && selectionIndex > 3) selectionIndex++;
+    if (selectionIndex > formatted.length) selectionIndex = formatted.length;
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: selectionIndex),
+    );
+  }
+}
 class Industry {
   final int id;
   final String name;
@@ -91,6 +115,7 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
           _nicknameController.text = userData['nickname'] ?? '';
           _emailController.text = userData['email'] ?? '';
           _phoneNumberController.text = userData['phoneNumber'] ?? '';
+           _postcodeController.text = userData['postcode'] ?? '';
           _companyAddressController.text = userData['companyAddress'] ?? '';
           _companyDescriptionController.text =
               userData['companyDescription'] ?? '';
@@ -285,48 +310,6 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
               Column(
                 children: [
                   const SizedBox(height: 16),
-                    _buildLabel("メールアドレス"),
-                    _buildTextField(_emailController, validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'メールアドレスを入力してください';
-                      final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-                      if (!emailRegex.hasMatch(v)) return '有効なメールアドレスを入力してください';
-                      return null;
-                    }),
-                    const SizedBox(height: 20),
-                    _buildLabel('パスワード（変更する場合）'),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: EdgeInsetsGeometry.only(top: 14),
-                          child: Icon(Icons.lock_outline, color: AppTheme.cyanDark),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _passwordController,
-                            decoration: InputDecoration(
-                              border: const OutlineInputBorder(),
-                              labelText: '新しいパスワード',
-                              hintText: '英数字８文字以上で入力してください（空のままなら変更しません）',
-                              suffixIcon: IconButton(
-                                icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: AppTheme.cyanDark),
-                                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                              ),
-                            ),
-                            obscureText: _obscurePassword,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) return null;
-                              if (value.length < 8) return 'パスワードは8文字以上である必要があります';
-                              if (value.length > 255) return 'パスワードは255文字以内で入力してください';
-                              final regex = RegExp(r'^[a-zA-Z0-9._]+$');
-                              if (!regex.hasMatch(value)) return '使用できるのは英数字・.・_ のみです';
-                              return null;
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
                   Image.network(
                     _companyPhotoUrl!,
                     width: 120,
@@ -339,9 +322,84 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
             _buildLabel("企業名"),
             _buildTextField(_nicknameController, validator: (v) => v == null || v.trim().isEmpty ? 'ニックネームを入力してください' : null),
             const SizedBox(height: 20),
+            _buildLabel("メールアドレス"),
+            _buildTextField(_emailController, validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'メールアドレスを入力してください';
+              final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+              if (!emailRegex.hasMatch(v)) return '有効なメールアドレスを入力してください';
+              return null;
+            }),
+            const SizedBox(height: 20),
             _buildLabel("電話番号"),
             _buildTextField(_phoneNumberController, validator: (v) => v == null || v.trim().isEmpty ? '電話番号を入力してください' : null),
-            const SizedBox(height: 20),
+            const SizedBox(height: 20),// ===== 郵便番号 =====
+            _buildLabel("郵便番号"),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _postcodeController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [PostcodeFormatter()],
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText: '郵便番号は登録されません。',
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return null;
+                      final digits = v.replaceAll('-', '');
+                      if (!RegExp(r'^\d{7}$').hasMatch(digits)) {
+                        return '7桁の数字で入力してください';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryOrange,
+                  ),
+                  onPressed: _isFetchingAddress
+                      ? null
+                      : () async {
+                          final postcode =
+                              _postcodeController.text.replaceAll('-', '');
+                          if (postcode.length != 7) return;
+
+                          setState(() => _isFetchingAddress = true);
+
+                          try {
+                            final address =
+                                await PostcodeJPApi.fetchAddress(postcode);
+                            if (address != null) {
+                              _companyAddressController.text =
+                                  address['allAddress'] ??
+                                      '${address['prefecture'] ?? ''}'
+                                      '${address['city'] ?? ''}'
+                                      '${address['town'] ?? ''}';
+                            }
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('住所取得エラー: $e')),
+                            );
+                          } finally {
+                            setState(() => _isFetchingAddress = false);
+                          }
+                        },
+                  child: _isFetchingAddress
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('住所自動入力'),
+                ),
+              ],
+            ),
+
+const SizedBox(height: 20),
             _buildLabel("住所"),
             _buildTextField(_companyAddressController, validator: (v) => v == null || v.trim().isEmpty ? '住所を入力してください' : null),
             const SizedBox(height: 20),
