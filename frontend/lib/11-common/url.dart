@@ -7,7 +7,7 @@ class ApiConfig {
     if (kReleaseMode) {
       return 'https://api.bridge-tesg.com'; // ★本番（独自ドメイン）
     } else {
-      return 'localhost:8080'; // ★開発（自分のPC）
+      return 'http://localhost:8080'; // ★開発（自分のPC）
     }
   }
 
@@ -16,7 +16,7 @@ class ApiConfig {
     if (kReleaseMode) {
       return 'https://bridge-915bd.web.app';
     } else {
-      return 'localhost:5000';
+      return 'http://localhost:5000';
     }
   }
 
@@ -116,4 +116,6 @@ class ApiConfig {
 
   // 認証
   static String get passwordVerifyOtpUrl => '$baseUrl/api/password/verify-otp';
+
+  
 }
