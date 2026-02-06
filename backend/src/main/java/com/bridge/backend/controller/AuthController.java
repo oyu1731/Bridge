@@ -55,7 +55,18 @@ public class AuthController {
             }
             _saveUserToSession(session, user);
             System.out.println("✅ サインイン: userId=" + user.getId() + ", email=" + email);
-            return ResponseEntity.ok(user);
+
+            // 必要な情報のみをcamelCaseで返却
+            Map<String, Object> result = new HashMap<>();
+            result.put("id", user.getId());
+            result.put("type", user.getType());
+            result.put("companyId", user.getCompanyId());
+            result.put("planStatus", user.getPlanStatus());
+            result.put("nickname", user.getNickname());
+            result.put("email", user.getEmail());
+            // 必要に応じて他の安全な情報も追加可
+
+            return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             errors.put("auth", "メールアドレスかパスワードが違います");
             response.put("errors", errors);
@@ -83,11 +94,19 @@ public class AuthController {
             session.setAttribute("type", userDto.getType());
             session.setAttribute("planStatus", userDto.getPlanStatus());
             session.setAttribute("token", userDto.getToken());
+            session.setAttribute("companyId", userDto.getCompanyId());
 
             System.out.println("✅ ID指定セッション保存: userId=" + userId);
 
-            // クライアント向けにはUserDtoを返す
-            return ResponseEntity.ok(userDto);
+            // クライアント向けには必要な情報のみをcamelCaseで返す
+            Map<String, Object> result = new HashMap<>();
+            result.put("id", userDto.getId());
+            result.put("type", userDto.getType());
+            result.put("companyId", userDto.getCompanyId());
+            result.put("planStatus", userDto.getPlanStatus());
+            result.put("nickname", userDto.getNickname());
+            result.put("email", userDto.getEmail());
+            return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
         } catch (Exception e) {

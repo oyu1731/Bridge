@@ -75,6 +75,7 @@ public class AuthService {
         userDto.setType(user.getType() == null ? 0 : user.getType());
         userDto.setPlanStatus(user.getPlanStatus());
         userDto.setToken(user.getToken());
+        userDto.setCompanyId(user.getCompanyId());
         return userDto;
     }
 }

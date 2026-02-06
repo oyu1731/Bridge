@@ -17,13 +17,13 @@ class ArticlePostPage extends StatefulWidget {
 }
 
 class _ArticlePostPageState extends State<ArticlePostPage> {
-      static const int maxTagCount = 4;
-    // 文字数制限
-    static const int maxTitleLength = 40;
-    static const int maxContentLength = 2000;
+  static const int maxTagCount = 4;
+  // 文字数制限
+  static const int maxTitleLength = 40;
+  static const int maxContentLength = 2000;
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  
+
   List<String> _selectedTags = [];
   List<XFile> _selectedImages = []; // XFileとして保持（Web対応）
   List<TagDTO> _availableTags = []; // 動的タグリスト
@@ -51,16 +51,13 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
   }
 
   Future<void> _initializeData() async {
-    await Future.wait([
-      _loadCompanyId(),
-      _loadAvailableTags(),
-    ]);
+    await Future.wait([_loadCompanyId(), _loadAvailableTags()]);
   }
 
   Future<void> _loadCompanyId() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // サインイン情報からcompanyIdを取得
       final userDataString = prefs.getString('current_user');
       if (userDataString == null) {
@@ -69,17 +66,17 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
         });
         return;
       }
-      
+
       final userData = jsonDecode(userDataString);
-      final int? companyId = userData['companyId'];
-      
+      final int? companyId = userData['companyId'] ?? userData['company_id'];
+
       if (companyId == null) {
         setState(() {
           _errorMessage = '企業アカウントでログインしてください。';
         });
         return;
       }
-      
+
       setState(() {
         _currentCompanyId = companyId;
       });
@@ -135,60 +132,64 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
 
     return Scaffold(
       appBar: BridgeHeader(),
-      body: _isLoadingTags
-          ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-              // 記事投稿タイトル
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Color(0xFFF5F5F5),
-                  border: Border.all(color: Color(0xFFE0E0E0)),
-                ),
-                child: Text(
-                  '記事投稿',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF424242),
+      body:
+          _isLoadingTags
+              ? Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 記事投稿タイトル
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFF5F5F5),
+                          border: Border.all(color: Color(0xFFE0E0E0)),
+                        ),
+                        child: Text(
+                          '記事投稿',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF424242),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // タイトル入力
+                      _buildTitleSection(),
+
+                      const SizedBox(height: 16),
+
+                      // タグ選択
+                      _buildTagSection(),
+
+                      const SizedBox(height: 16),
+
+                      // 画像選択
+                      _buildImageSection(),
+
+                      const SizedBox(height: 16),
+
+                      // 本文入力
+                      _buildContentSection(),
+
+                      const SizedBox(height: 24),
+
+                      // 投稿ボタン
+                      _buildSubmitButton(),
+                    ],
                   ),
                 ),
               ),
-              
-              const SizedBox(height: 16),
-              
-              // タイトル入力
-              _buildTitleSection(),
-              
-              const SizedBox(height: 16),
-              
-              // タグ選択
-              _buildTagSection(),
-              
-              const SizedBox(height: 16),
-              
-              // 画像選択
-              _buildImageSection(),
-              
-              const SizedBox(height: 16),
-              
-              // 本文入力
-              _buildContentSection(),
-              
-              const SizedBox(height: 24),
-              
-                    // 投稿ボタン
-                    _buildSubmitButton(),
-                  ],
-                ),
-              ),
-            ),
     );
   }
 
@@ -289,10 +290,7 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
         children: [
           Text(
             '#$tag',
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFF1976D2),
-            ),
+            style: TextStyle(fontSize: 12, color: Color(0xFF1976D2)),
           ),
           const SizedBox(width: 4),
           GestureDetector(
@@ -301,11 +299,7 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
                 _selectedTags.remove(tag);
               });
             },
-            child: Icon(
-              Icons.close,
-              size: 16,
-              color: Color(0xFF1976D2),
-            ),
+            child: Icon(Icons.close, size: 16, color: Color(0xFF1976D2)),
           ),
         ],
       ),
@@ -322,11 +316,7 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
           color: Color(0xFF1976D2),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 20,
-        ),
+        child: Icon(Icons.add, color: Colors.white, size: 20),
       ),
     );
   }
@@ -383,18 +373,11 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.image,
-            size: 16,
-            color: Color(0xFF2E7D32),
-          ),
+          Icon(Icons.image, size: 16, color: Color(0xFF2E7D32)),
           const SizedBox(width: 4),
           Text(
             fileName.length > 15 ? '${fileName.substring(0, 12)}...' : fileName,
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFF2E7D32),
-            ),
+            style: TextStyle(fontSize: 12, color: Color(0xFF2E7D32)),
           ),
           const SizedBox(width: 4),
           GestureDetector(
@@ -403,11 +386,7 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
                 _selectedImages.remove(imageFile);
               });
             },
-            child: Icon(
-              Icons.close,
-              size: 16,
-              color: Color(0xFF2E7D32),
-            ),
+            child: Icon(Icons.close, size: 16, color: Color(0xFF2E7D32)),
           ),
         ],
       ),
@@ -424,11 +403,7 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
           color: Color(0xFF1976D2),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 20,
-        ),
+        child: Icon(Icons.add, color: Colors.white, size: 20),
       ),
     );
   }
@@ -490,22 +465,20 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
               borderRadius: BorderRadius.circular(4),
             ),
           ),
-          child: _isLoading
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          child:
+              _isLoading
+                  ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                  : Text(
+                    '投稿',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                )
-              : Text(
-                  '投稿',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
         ),
       ),
     );
@@ -525,14 +498,12 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
 
     // モーダル内で一時的に選択されたタグを管理
     Set<String> tempSelectedTags = Set.from(_selectedTags);
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           child: Container(
             width: MediaQuery.of(context).size.width * 0.8,
             height: MediaQuery.of(context).size.height * 0.7,
@@ -561,8 +532,12 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
                     Expanded(
                       child: GridView.builder(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: MediaQuery.of(context).size.width > 800 ? 3 : 2,
-                          childAspectRatio: MediaQuery.of(context).size.width > 800 ? 2.2 : 2.5,
+                          crossAxisCount:
+                              MediaQuery.of(context).size.width > 800 ? 3 : 2,
+                          childAspectRatio:
+                              MediaQuery.of(context).size.width > 800
+                                  ? 2.2
+                                  : 2.5,
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
                         ),
@@ -580,7 +555,9 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
                                   if (tempSelectedTags.length >= maxTagCount) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text('タグは最大${maxTagCount}個まで選択できます'),
+                                        content: Text(
+                                          'タグは最大${maxTagCount}個まで選択できます',
+                                        ),
                                         backgroundColor: Colors.red,
                                       ),
                                     );
@@ -591,28 +568,57 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
                               });
                             },
                             child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: isSelected ? Color(0xFFE3F2FD) : Colors.white,
+                                color:
+                                    isSelected
+                                        ? Color(0xFFE3F2FD)
+                                        : Colors.white,
                                 border: Border.all(
-                                  color: isSelected ? Color(0xFF1976D2) : Color(0xFFE0E0E0),
+                                  color:
+                                      isSelected
+                                          ? Color(0xFF1976D2)
+                                          : Color(0xFFE0E0E0),
                                 ),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
-                                    isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                                    size: MediaQuery.of(context).size.width > 800 ? 20 : 16,
-                                    color: isSelected ? Color(0xFF1976D2) : Color(0xFF757575),
+                                    isSelected
+                                        ? Icons.check_box
+                                        : Icons.check_box_outline_blank,
+                                    size:
+                                        MediaQuery.of(context).size.width > 800
+                                            ? 20
+                                            : 16,
+                                    color:
+                                        isSelected
+                                            ? Color(0xFF1976D2)
+                                            : Color(0xFF757575),
                                   ),
-                                  SizedBox(width: MediaQuery.of(context).size.width > 800 ? 8 : 4),
+                                  SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width > 800
+                                            ? 8
+                                            : 4,
+                                  ),
                                   Expanded(
                                     child: Text(
                                       tag,
                                       style: TextStyle(
-                                        fontSize: MediaQuery.of(context).size.width > 800 ? 14 : 10,
-                                        color: isSelected ? Color(0xFF1976D2) : Color(0xFF424242),
+                                        fontSize:
+                                            MediaQuery.of(context).size.width >
+                                                    800
+                                                ? 14
+                                                : 10,
+                                        color:
+                                            isSelected
+                                                ? Color(0xFF1976D2)
+                                                : Color(0xFF424242),
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -716,7 +722,7 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
         setState(() {
           _selectedImages.add(pickedFile);
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('画像を追加しました'),
@@ -741,10 +747,7 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
     final content = _contentController.text;
     if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('タイトルを入力してください'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('タイトルを入力してください'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -759,10 +762,7 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
     }
     if (content.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('本文を入力してください'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('本文を入力してください'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -777,10 +777,7 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
     }
     if (_currentCompanyId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('企業情報を取得できません'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('企業情報を取得できません'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -793,7 +790,7 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
       int? photo1Id;
       int? photo2Id;
       int? photo3Id;
-      
+
       if (_selectedImages.isNotEmpty) {
         // 最大3枚まで画像をアップロード
         for (int i = 0; i < _selectedImages.length && i < 3; i++) {
@@ -802,7 +799,7 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
               _selectedImages[i],
               userId: _currentCompanyId,
             );
-            
+
             if (i == 0) {
               photo1Id = photoDTO.id;
             } else if (i == 1) {
@@ -825,13 +822,14 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
           }
         }
       }
-      
+
       // タグを正規化（trim/重複排除）
-      final normalizedTags = _selectedTags
-          .map((t) => t.trim())
-          .where((t) => t.isNotEmpty)
-          .toSet()
-          .toList();
+      final normalizedTags =
+          _selectedTags
+              .map((t) => t.trim())
+              .where((t) => t.isNotEmpty)
+              .toSet()
+              .toList();
 
       // 記事データを作成
       final articleDTO = ArticleDTO(
@@ -848,9 +846,9 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
 
       // API呼び出しで記事を作成
       final createdArticle = await ArticleApiClient.createArticle(articleDTO);
-      
+
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('記事「${createdArticle.title}」を投稿しました'),
@@ -861,12 +859,9 @@ class _ArticlePostPageState extends State<ArticlePostPage> {
       // 投稿後は記事一覧画面に遷移
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (context) => CompanyArticleListPage(),
-        ),
+        MaterialPageRoute(builder: (context) => CompanyArticleListPage()),
         (route) => route.isFirst,
       );
-      
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
