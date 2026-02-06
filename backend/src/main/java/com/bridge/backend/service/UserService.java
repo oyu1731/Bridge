@@ -379,7 +379,7 @@ public class UserService {
 
     // ユーザー一覧取得
     public List<UserListDto> getUsers() {
-        return userRepository.findByIsWithdrawnFalseAndIsDeletedFalse().stream().map(user -> {
+        return userRepository.findAll().stream().map(user -> {
             String photoPath = "";
             if (user.getIcon() != null) {
                 photoPath = photoRepository.findById(user.getIcon())
@@ -393,7 +393,9 @@ public class UserService {
                     user.getType(),
                     user.getIcon(),
                     photoPath,
-                    reportCount
+                    reportCount,
+                    Boolean.TRUE.equals(user.getIsDeleted()),
+                    Boolean.TRUE.equals(user.getIsWithdrawn())
             );
         }).collect(Collectors.toList());
     }
@@ -405,11 +407,11 @@ public class UserService {
         }
         List<User> users;
         if (keyword != null && !keyword.isBlank() && type != null) {
-            users = userRepository.findByNicknameContainingAndTypeAndIsWithdrawnFalseAndIsDeletedFalse(keyword, type);
+            users = userRepository.findByNicknameContainingAndType(keyword, type);
         } else if (keyword != null && !keyword.isBlank()) {
-            users = userRepository.findByNicknameContainingAndIsWithdrawnFalseAndIsDeletedFalse(keyword);
+            users = userRepository.findByNicknameContaining(keyword);
         } else {
-            users = userRepository.findByTypeAndIsWithdrawnFalseAndIsDeletedFalse(type);
+            users = userRepository.findByType(type);
         }
 
         return users.stream().map(user -> {
@@ -426,7 +428,9 @@ public class UserService {
                     user.getType(),
                     user.getIcon(),
                     photoPath,
-                    reportCount
+                    reportCount,
+                    Boolean.TRUE.equals(user.getIsDeleted()),
+                    Boolean.TRUE.equals(user.getIsWithdrawn())
             );
         }).collect(Collectors.toList());
     }
@@ -470,7 +474,9 @@ public class UserService {
                 user.getEmail(),
                 user.getPhoneNumber(),
                 iconPath,
-                user.getCreatedAt() != null ? user.getCreatedAt().toString() : ""
+                user.getCreatedAt() != null ? user.getCreatedAt().toString() : "",
+                Boolean.TRUE.equals(user.getIsDeleted()),
+                Boolean.TRUE.equals(user.getIsWithdrawn())
         );
         dto.setIndustry(industryDisplay);
         dto.setReportCount((int) reportCount);

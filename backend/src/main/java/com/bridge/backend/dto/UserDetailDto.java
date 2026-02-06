@@ -8,6 +8,8 @@ public class UserDetailDto {
     private String phoneNumber;
     private String icon; // パス文字列
     private String createdAt;
+    private boolean deleted;
+    private boolean withdrawn;
 
     // 新規フィールド
     private String desiredIndustry; // 希望業界（学生用）
@@ -20,7 +22,7 @@ public class UserDetailDto {
 
     public UserDetailDto() {}
 
-    public UserDetailDto(int id, String nickname, int type, String email, String phoneNumber, String icon, String createdAt) {
+    public UserDetailDto(int id, String nickname, int type, String email, String phoneNumber, String icon, String createdAt, boolean deleted, boolean withdrawn) {
         this.id = id;
         this.nickname = nickname;
         this.type = type;
@@ -28,6 +30,8 @@ public class UserDetailDto {
         this.phoneNumber = phoneNumber;
         this.icon = icon;
         this.createdAt = createdAt;
+        this.deleted = deleted;
+        this.withdrawn = withdrawn;
         this.industry = "";
         this.reportCount = 0;
     }
@@ -53,6 +57,12 @@ public class UserDetailDto {
 
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+
+    public boolean isDeleted() { return deleted; }
+    public void setDeleted(boolean deleted) { this.deleted = deleted; }
+
+    public boolean isWithdrawn() { return withdrawn; }
+    public void setWithdrawn(boolean withdrawn) { this.withdrawn = withdrawn; }
 
     // 新規フィールド用 getter/setter
     public String getDesiredIndustry() { return desiredIndustry; }

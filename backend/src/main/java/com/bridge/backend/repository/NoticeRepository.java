@@ -40,7 +40,10 @@ public interface NoticeRepository extends JpaRepository<Notice, Integer> {
         END AS totalCount,
 
         uf.is_deleted AS fromUserDeleted,
-        ut.is_deleted AS toUserDeleted
+        ut.is_deleted AS toUserDeleted,
+
+        uf.nickname AS fromUserName,
+        ut.nickname AS toUserName
 
     FROM notices n
     LEFT JOIN threads t ON n.thread_id = t.id

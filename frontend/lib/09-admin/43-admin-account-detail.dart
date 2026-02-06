@@ -41,6 +41,8 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
         'registeredAt': data['createdAt'] ?? '',
         'reports': data['reportCount'] ?? 0,
         'industry': data['industry'] ?? '',
+        'deleted': data['deleted'] ?? false,
+        'withdrawn': data['withdrawn'] ?? false,
       };
     });
   }
@@ -151,40 +153,65 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
               ],
             ),
             const Spacer(), // ← 右端へ押し出す
-            // ===== 削除ボタン =====
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () async {
-                bool ok = await showDialog(
-                  context: context,
-                  builder:
-                      (_) => AlertDialog(
-                        title: const Text('削除確認'),
-                        content: const Text('このアカウントを削除しますか？'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('キャンセル'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text('削除'),
-                          ),
-                        ],
-                      ),
-                );
+            // ===== 状態表示 & 削除ボタン =====
 
-                if (!ok) return;
-
-                await http.put(
-                  Uri.parse(
-                    '${ApiConfig.baseUrl}/api/users/${widget.userId}/delete',
+            // 退会済み（ゴミ箱の前）
+            if (_userData!['withdrawn'] == true &&
+                _userData!['deleted'] != true)
+              const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Text(
+                  '退会済み',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    fontWeight: FontWeight.bold,
                   ),
-                );
+                ),
+              ),
 
-                Navigator.pop(context, true); // 一覧へ戻す
-              },
-            ),
+            // 削除済みならゴミ箱の位置に表示
+            if (_userData!['deleted'] == true)
+              const Text(
+                '削除済み',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+            else
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () async {
+                  bool ok = await showDialog(
+                    context: context,
+                    builder:
+                        (_) => AlertDialog(
+                          title: const Text('削除確認'),
+                          content: const Text('このアカウントを削除しますか？'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('キャンセル'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('削除'),
+                            ),
+                          ],
+                        ),
+                  );
+
+                  if (!ok) return;
+
+                  await http.put(
+                    Uri.parse(
+                      '${ApiConfig.baseUrl}/api/users/${widget.userId}/delete',
+                    ),
+                  );
+
+                  Navigator.pop(context, true);
+                },
+              ),
           ],
         ),
         const SizedBox(height: 24),
@@ -207,7 +234,9 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
                     '登録日',
                     _userData!['registeredAt'].split('T')[0],
                   ),
-                  _buildInfoRow('通報回数', _userData!['reports'].toString()),
+                  if (_userData!['type'] != 4)
+                    _buildInfoRow('通報回数', _userData!['reports'].toString()),
+                    
                   _buildInfoRow(industryLabel, _userData!['industry']),
                 ],
               ),

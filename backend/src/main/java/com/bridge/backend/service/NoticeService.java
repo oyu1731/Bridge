@@ -87,6 +87,9 @@ public class NoticeService {
 
             d.toUserDeleted = r[13] != null && ((Boolean) r[13]);
 
+            d.fromUserName = (String) r[14];
+            d.toUserName   = (String) r[15];
+
             return d;
         }).toList();
     }

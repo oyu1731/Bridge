@@ -309,11 +309,14 @@ class _AdminMailListState extends State<AdminMailList> {
       children: [
         ElevatedButton.icon(
           label: const Text('メール送信'),
-          onPressed: () {
-            Navigator.push(
+          onPressed: () async {
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => AdminMailSend()),
             );
+            if (result == true) {
+              _fetchNotifications();
+            }
           },
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

@@ -184,6 +184,8 @@ class _AdminAccountListState extends State<AdminAccountList> {
           /// Wrapで自動改行
           LayoutBuilder(
             builder: (context, constraints) {
+              final totalWidth = constraints.maxWidth >= 600 ? constraints.maxWidth : constraints.maxWidth;
+              final usableWidth = totalWidth - 144;
               return Wrap(
                 spacing: 12,
                 runSpacing: 12,
@@ -191,7 +193,7 @@ class _AdminAccountListState extends State<AdminAccountList> {
                   SizedBox(
                     width:
                         constraints.maxWidth >= 600
-                            ? constraints.maxWidth * 0.45
+                            ? usableWidth * 0.6
                             : constraints.maxWidth,
                     child: TextField(
                       controller: _searchController,
@@ -209,7 +211,7 @@ class _AdminAccountListState extends State<AdminAccountList> {
                   SizedBox(
                     width:
                         constraints.maxWidth >= 600
-                            ? constraints.maxWidth * 0.3
+                            ? usableWidth * 0.4
                             : constraints.maxWidth,
                     child: DropdownButtonFormField<String>(
                       value: _selectedType,
@@ -223,6 +225,7 @@ class _AdminAccountListState extends State<AdminAccountList> {
                         ),
                       ),
                       items: const [
+                        DropdownMenuItem(value: '', child: Text('指定なし')),
                         DropdownMenuItem(value: '1', child: Text('学生')),
                         DropdownMenuItem(value: '2', child: Text('社会人')),
                         DropdownMenuItem(value: '3', child: Text('企業')),
@@ -318,13 +321,40 @@ class _AdminAccountListState extends State<AdminAccountList> {
                           _getTypeLabel(int.tryParse('${user['type']}') ?? 0),
                         ),
                         const SizedBox(height: 2),
-                        Text('通報回数: ${user['reportCount'] ?? 0}'),
+                        if ((int.tryParse('${user['type']}') ?? 0) != 4)
+                          Text('通報回数: ${user['reportCount'] ?? 0}'),
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => _deleteUser(user['id'])
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (user['deleted'] == true)
+                        const Text(
+                          '削除済み',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      else ...[
+                        if (user['withdrawn'] == true)
+                          const Padding(
+                            padding: EdgeInsets.only(right: 8),
+                            child: Text(
+                              '退会済み',
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _deleteUser(user['id']),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),

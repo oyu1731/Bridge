@@ -27,6 +27,8 @@ class NoticeData {
   final int? totalCount;
   final bool? fromUserDeleted;
   final bool? toUserDeleted;
+  final String? fromUserName;
+  final String? toUserName;
 
   NoticeData({
     required this.id,
@@ -43,6 +45,8 @@ class NoticeData {
     this.totalCount,
     this.fromUserDeleted,
     this.toUserDeleted,
+    this.fromUserName,
+    this.toUserName
   });
 
   factory NoticeData.fromJson(Map<String, dynamic> json) {
@@ -62,6 +66,8 @@ class NoticeData {
       totalCount: json['totalCount'],
       fromUserDeleted: json['fromUserDeleted'],
       toUserDeleted: json['toUserDeleted'],
+      fromUserName: json['fromUserName'],
+      toUserName: json['toUserName'],
     );
   }
 }
@@ -206,8 +212,8 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
       child: Row(
         children: [
           Expanded(flex: 3, child: Center(child: Text(date))),
-          Expanded(flex: 2, child: _userLink(n.fromUserId, n.fromUserDeleted)),
-          Expanded(flex: 2, child: _userLink(n.toUserId, n.toUserDeleted)),
+          Expanded(flex: 2, child: _userLink(n.fromUserId, n.fromUserDeleted, n.fromUserName)),
+          Expanded(flex: 2, child: _userLink(n.toUserId, n.toUserDeleted, n.toUserName)),
           Expanded(flex: 3, child: _threadLink(n)),
           Expanded(flex: 4, child: _chatLink(n)),
           Expanded(
@@ -231,29 +237,24 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
     );
   }
 
-  Widget _userLink(int? id, bool? deleted) => Column(
+  Widget _userLink(int? id, bool? deleted, String? name) => Column(
     children: [
       id == null
           ? const Text('—')
           : GestureDetector(
-              onTap: () {
-                if (deleted == true) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text("このアカウントは削除されています")),
-                  );
-                  return;
-                }
-
-                Navigator.push(
+              onTap: () async {
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => AdminAccountDetail(userId: id),
                   ),
                 );
+                if (result == true) {
+                  _fetchLogs();
+                }
               },
               child: Text(
-                id.toString(),
+                name ?? id.toString(),
                 style: const TextStyle(
                   color: Colors.blue,
                   decoration: TextDecoration.underline,

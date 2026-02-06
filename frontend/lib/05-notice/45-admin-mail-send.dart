@@ -182,7 +182,7 @@ class _AdminMailSendState extends State<AdminMailSend> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('送信が完了しました')));
-        _clearForm();
+        Navigator.pop(context, true);
       } else {
         final msg = utf8.decode(response.bodyBytes);
         ScaffoldMessenger.of(

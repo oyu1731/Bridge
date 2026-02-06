@@ -18,4 +18,6 @@ public class AdminNoticeLogDto {
     public Integer totalCount;
     public Boolean fromUserDeleted;
     public Boolean toUserDeleted;
+    public String fromUserName;
+    public String toUserName;
 }
