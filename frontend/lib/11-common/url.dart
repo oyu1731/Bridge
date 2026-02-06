@@ -116,4 +116,6 @@ class ApiConfig {
 
   // 認証
   static String get passwordVerifyOtpUrl => '$baseUrl/api/password/verify-otp';
+
+  
 }

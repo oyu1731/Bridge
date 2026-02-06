@@ -84,4 +84,16 @@ public class ThreadService {
     public void deleteThread(Integer threadId) {
         threadRepository.softDelete(threadId);
     }
+
+    @Transactional
+    public void deleteThreadHard(Integer threadId) {
+        threadRepository.hardDelete(threadId);
+    }
+    
+    /**
+     * 汎用スレッド保存メソッド
+     */
+    public ForumThread saveThread(ForumThread thread) {
+        return threadRepository.save(thread);
+    }
 }
