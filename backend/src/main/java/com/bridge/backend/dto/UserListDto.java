@@ -7,16 +7,20 @@ public class UserListDto {
     private Integer icon; // nullable: allows API to return null when not set
     private String photoPath;
     private int reportCount;
+    private boolean deleted;
+    private boolean withdrawn;
 
     public UserListDto() {}
 
-    public UserListDto(int id, String nickname, int type, Integer icon, String photoPath, int reportCount) {
+    public UserListDto(int id, String nickname, int type, Integer icon, String photoPath, int reportCount, boolean deleted, boolean withdrawn) {
         this.id = id;
         this.nickname = nickname;
         this.type = type;
         this.icon = icon;
         this.photoPath = photoPath;
         this.reportCount = reportCount;
+        this.deleted = deleted;
+        this.withdrawn = withdrawn;
     }
 
     // 手動でgetterとsetterを追加（Lombokが機能しない場合のため）
@@ -66,5 +70,21 @@ public class UserListDto {
 
     public void setReportCount(int reportCount) {
         this.reportCount = reportCount;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
+
+    public boolean isWithdrawn() {
+        return withdrawn;
+    }
+
+    public void setWithdrawn(boolean withdrawn) {
+        this.withdrawn = withdrawn;
     }
 }

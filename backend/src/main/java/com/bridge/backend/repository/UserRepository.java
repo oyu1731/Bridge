@@ -26,13 +26,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     List<User> findByType(Integer type);
     List<User> findByNicknameContainingAndType(String keyword, Integer type);
 
-    List<User> findByIsWithdrawnFalseAndIsDeletedFalse();
-
-    List<User> findByNicknameContainingAndTypeAndIsWithdrawnFalseAndIsDeletedFalse(String keyword, Integer type);
-
-    List<User> findByNicknameContainingAndIsWithdrawnFalseAndIsDeletedFalse(String keyword);
-
-    List<User> findByTypeAndIsWithdrawnFalseAndIsDeletedFalse(Integer type);
+    List<User> findAll();
     // パスワード更新のためのメソッド
     Optional<User> findById(Integer id);
 
