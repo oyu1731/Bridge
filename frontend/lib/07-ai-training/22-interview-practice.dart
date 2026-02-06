@@ -889,6 +889,7 @@ class _InterviewScreenState extends State<InterviewScreen> {
 
   // 面接官の画像リスト
   final List<String> _interviewerImages = [
+    'lib/01-images/mensetukan.png',
     'lib/01-images/mensetukan1.png',
     'lib/01-images/mensetukan2.png',
     'lib/01-images/mensetukan3.png',
@@ -1016,15 +1017,6 @@ class _InterviewScreenState extends State<InterviewScreen> {
             if (!isPremium) {
               final userId = _userSession!['id'] as int;
               final tokensToDeduct = 20;
-              final bool deducted = await _globalActions.deductUserTokens(
-                userId,
-                tokensToDeduct,
-              );
-              if (deducted) {
-                print('$tokensToDeduct トークンを消費しました。');
-              } else {
-                print('トークン消費に失敗しました。');
-              }
             } else {
               print('プレミアムユーザーのためトークン消費をスキップしました。');
             }

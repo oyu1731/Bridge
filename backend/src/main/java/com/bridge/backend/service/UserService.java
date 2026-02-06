@@ -79,6 +79,9 @@ public class UserService {
     private ThreadRepository threadRepository;
 
     @Autowired
+    private com.bridge.backend.repository.ArticleRepository articleRepository;
+
+    @Autowired
     private SubscriptionRepository subscriptionRepository;
 
     @Autowired
@@ -520,6 +523,10 @@ public class UserService {
 
         user.setIsDeleted(true);
         userRepository.save(user);
+
+        if (user.getType() != null && user.getType() == 3 && user.getCompanyId() != null) {
+            articleRepository.markDeletedByCompanyId(user.getCompanyId());
+        }
     }
 
     /**

@@ -51,6 +51,7 @@ public class CompanyService {
     public List<CompanyDTO> getAllCompanies() {
         List<Company> companies = companyRepository.findByIsWithdrawnFalseOrderByCreatedAtDesc();
         return companies.stream()
+                .filter(this::isActiveCompanyUser)
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -69,6 +70,7 @@ public class CompanyService {
         }
         
         return companies.stream()
+            .filter(this::isActiveCompanyUser)
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -150,8 +152,21 @@ public class CompanyService {
     public List<CompanyDTO> getCompaniesByPlanStatus(Integer planStatus) {
         List<Company> companies = companyRepository.findByPlanStatusAndIsWithdrawnFalseOrderByCreatedAtDesc(planStatus);
         return companies.stream()
+                .filter(this::isActiveCompanyUser)
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 企業に紐づくユーザーが退会・削除済みの場合は非表示にする
+     */
+    private boolean isActiveCompanyUser(Company company) {
+        Optional<User> companyUser = userRepository.findByCompanyId(company.getId());
+        if (companyUser.isEmpty()) {
+            return true;
+        }
+        User user = companyUser.get();
+        return user.getIsWithdrawn() != Boolean.TRUE && user.getIsDeleted() != Boolean.TRUE;
     }
     
     /**

@@ -2,6 +2,7 @@ package com.bridge.backend.repository;
 
 import com.bridge.backend.entity.Article;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -63,4 +64,14 @@ public interface ArticleRepository extends JpaRepository<Article, Integer> {
      * @return 記事（存在しない、または削除済みの場合はnull）
      */
     Article findByIdAndIsDeletedFalse(Integer id);
+
+    /**
+     * 企業IDに紐づく記事を論理削除
+     *
+     * @param companyId 企業ID
+     * @return 更新件数
+     */
+    @Modifying
+    @Query("UPDATE Article a SET a.isDeleted = true WHERE a.companyId = :companyId")
+    int markDeletedByCompanyId(@Param("companyId") Integer companyId);
 }

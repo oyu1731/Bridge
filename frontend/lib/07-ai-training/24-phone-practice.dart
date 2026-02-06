@@ -875,15 +875,6 @@ class _PhoneCallScreenState extends State<PhoneCallScreen> {
           if (!isPremium) {
             final userId = _userSession!['id'] as int;
             final tokensToDeduct = 20;
-            final bool deducted = await _globalActions.deductUserTokens(
-              userId,
-              tokensToDeduct,
-            );
-            if (deducted) {
-              print('$tokensToDeduct トークンを消費しました。');
-            } else {
-              print('トークン消費に失敗しました。');
-            }
           } else {
             print('プレミアムユーザーのためトークン消費をスキップしました。');
           }
