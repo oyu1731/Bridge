@@ -782,12 +782,14 @@ public class ChatController {
             String resultMessage = werewolfGameService.executeNightPhase(threadId);
             WerewolfGame game = werewolfGameService.getGame(threadId);
             Integer killedUserId = game != null ? game.getLastKilledUserId() : null;
+            Integer protectedUserId = game != null ? game.getLastProtectedUserId() : null;
             String winner = werewolfGameService.checkWinner(threadId);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", resultMessage);
             response.put("killedUserId", killedUserId);
+            response.put("protectedUserId", protectedUserId);
             response.put("winner", winner);
             
             return ResponseEntity.ok(response);

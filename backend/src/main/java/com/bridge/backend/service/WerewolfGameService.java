@@ -458,6 +458,7 @@ public class WerewolfGameService {
         if (game.getCurrentCycle() == 1) {
             game.getNightActions().clear();
             game.setLastKilledUserId(null);
+            game.setLastProtectedUserId(null);
             game.setCurrentPhase(Phase.DISCUSSION);
             return "1日目の夜が明けました。議論を開始してください。";
         }
@@ -489,8 +490,10 @@ public class WerewolfGameService {
         result.append("夜が明けました。\n\n");
         
         game.setLastKilledUserId(null);
+        game.setLastProtectedUserId(null);
         if (attackTarget != null) {
             if (attackTarget.equals(protectedTarget)) {
+                game.setLastProtectedUserId(attackTarget);
                 result.append("昨夜、誰も死にませんでした。\n（騎士の護衛が成功しました）");
             } else {
                 game.killPlayer(attackTarget);

@@ -77,7 +77,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
 
     try {
       final companies = await CompanyApiClient.getAllCompanies();
-      // 削除済み・退会済み企業を除外
+      // 退会済み企業を除外
       final filtered = companies.where((c) => c.isWithdrawn != true).toList();
       // 最終更新日時順にソート（注目企業として表示）
       filtered.sort((a, b) {
@@ -208,8 +208,10 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
 
     try {
       final articles = await ArticleApiClient.getAllArticles();
+      // 削除済み記事を除外
+      final filtered = articles.where((a) => a.isDeleted != true).toList();
       // 最終更新日時順にソート（注目記事として表示）
-      articles.sort((a, b) {
+      filtered.sort((a, b) {
         if (a.createdAt == null && b.createdAt == null) return 0;
         if (a.createdAt == null) return 1;
         if (b.createdAt == null) return -1;
@@ -217,7 +219,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
       });
 
       setState(() {
-        _articles = articles;
+        _articles = filtered;
         _isLoadingArticles = false;
       });
     } catch (e) {

@@ -57,10 +57,12 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
       final articles = await ArticleApiClient.getArticlesByCompanyId(
         widget.companyId,
       );
-      articles.sort((a, b) => (b.totalLikes ?? 0).compareTo(a.totalLikes ?? 0));
+      // 削除済み記事を除外
+      final filtered = articles.where((a) => a.isDeleted != true).toList();
+      filtered.sort((a, b) => (b.totalLikes ?? 0).compareTo(a.totalLikes ?? 0));
       setState(() {
         _company = company;
-        _featuredArticles = articles.take(5).toList();
+        _featuredArticles = filtered.take(5).toList();
         _isLoading = false;
       });
       // 記事取得後に自動スクロールをセットアップ
