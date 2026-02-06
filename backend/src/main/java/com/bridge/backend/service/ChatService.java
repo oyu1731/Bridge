@@ -10,6 +10,7 @@ import com.bridge.backend.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -103,5 +104,13 @@ public class ChatService {
             result.put("nickname", "Unknown");
         }
         return result;
+    }
+
+    /**
+     * スレッド内のチャットを物理削除
+     */
+    @Transactional
+    public void deleteChatsByThreadId(Integer threadId) {
+        chatRepository.deleteByThreadId(threadId);
     }
 }

@@ -22,4 +22,12 @@ class ApiConfig {
     final wsBase = baseUrl.replaceFirst('http', 'ws');
     return '$wsBase/ws/chat/$threadId';
   }
+
+  // 人狼ゲーム募集
+  static String get werewolfStartUrl => '$baseUrl/api/chat/werewolf/start';
+  static String werewolfRecruitmentUrl(int chatId) => '$baseUrl/api/chat/werewolf/$chatId';
+  static String werewolfJoinUrl(int chatId) => '$baseUrl/api/chat/werewolf/$chatId/join';
+  static String werewolfLeaveUrl(int chatId) => '$baseUrl/api/chat/werewolf/$chatId/leave';
+  static String werewolfEndUrl(int chatId) => '$baseUrl/api/chat/werewolf/$chatId/end';
+  static String werewolfDeleteUrl(int chatId) => '$baseUrl/api/chat/werewolf/$chatId/delete';
 }

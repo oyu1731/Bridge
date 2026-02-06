@@ -59,6 +59,36 @@ public class ThreadController {
 
         return threadService.createUnofficialThread(payload);
     }
+    
+    /**
+     * 汎用スレッド作成（タイプ指定可能）
+     * 人狼ゲーム専用スレッド（type=3）の作成に使用
+     */
+    @PostMapping
+    public ForumThread createThread(@RequestBody Map<String, Object> payload) {
+        // userId が null または空文字なら 403
+        if (!payload.containsKey("user_id") || payload.get("user_id") == null || payload.get("user_id").toString().isBlank()) {
+            throw new AccessDeniedException("サインインしてください");
+        }
+        
+        try {
+            Integer userId = Integer.valueOf(payload.get("user_id").toString());
+            String title = payload.get("title").toString();
+            String description = payload.getOrDefault("description", "").toString();
+            Integer type = Integer.valueOf(payload.getOrDefault("type", 2).toString()); // デフォルトは非公式(2)
+            
+            ForumThread thread = new ForumThread();
+            thread.setTitle(title);
+            thread.setDescription(description);
+            thread.setType(type);
+            thread.setUserId(userId);
+            thread.setEntryCriteria(1); // デフォルト: 誰でも参加可能
+            
+            return threadService.saveThread(thread);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("入力されていない項目か不正な入力値があります");
+        }
+    }
 
     // @PostMapping("/unofficial")
     // public ForumThread createUnofficialThread(@RequestBody Map<String, Object> payload) {

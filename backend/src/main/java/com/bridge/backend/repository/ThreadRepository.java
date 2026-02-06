@@ -16,6 +16,10 @@ public interface ThreadRepository extends JpaRepository<ForumThread, Integer> {
     @Query("UPDATE ForumThread t SET t.isDeleted = true WHERE t.id = :id")
     void softDelete(Integer id);
 
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM ForumThread t WHERE t.id = :id")
+    void hardDelete(Integer id);
+
     @Query(value = """
         SELECT
             t.id,

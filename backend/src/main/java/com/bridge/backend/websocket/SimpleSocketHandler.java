@@ -46,4 +46,16 @@ public class SimpleSocketHandler extends TextWebSocketHandler {
 
         System.out.println("WebSocket disconnected from thread " + threadId);
     }
+    
+    /**
+     * 特定のスレッドに人狼ゲーム募集の状態変更を配信
+     */
+    public void broadcastWerewolfUpdate(String threadId, String message) throws Exception {
+        TextMessage textMessage = new TextMessage(message);
+        for (WebSocketSession s : roomSessions.getOrDefault(threadId, Set.of())) {
+            if (s.isOpen()) {
+                s.sendMessage(textMessage);
+            }
+        }
+    }
 }
