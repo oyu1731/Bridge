@@ -101,15 +101,18 @@ class _ThreadListState extends State<ThreadList> {
                         ElevatedButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) =>
-                                        const PlanStatusScreen(userType: '企業'),
-                              ),
-                              (route) => false,
-                            );
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => const PlanStatusScreen(
+                                        userType: '企業',
+                                      ),
+                                ),
+                                (route) => false,
+                              );
+                            });
                           },
                           child: const Text('プランを確認'),
                         ),
@@ -185,12 +188,9 @@ class _ThreadListState extends State<ThreadList> {
             Column(
               children:
                   officialThreads.map((thread) {
-                    return Card(
-                      color: Colors.white, // 背景を白に設定
-                      margin: EdgeInsets.symmetric(vertical: 6),
-                      elevation: 2,
-                      child: ListTile(
-                        onTap: () {
+                    return GestureDetector(
+                      onTap: () {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -203,24 +203,31 @@ class _ThreadListState extends State<ThreadList> {
                                   ),
                             ),
                           );
-                        },
-                        title: Text(
-                          thread.title,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                        });
+                      },
+                      child: Card(
+                        color: Colors.white, // 背景を白に設定
+                        margin: EdgeInsets.symmetric(vertical: 6),
+                        elevation: 2,
+                        child: ListTile(
+                          title: Text(
+                            thread.title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        //スレッドの説明文
-                        subtitle: Text(
-                          thread.description ?? '',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: Colors.grey[700]),
-                        ),
-                        trailing: Text(
-                          thread.timeAgo,
-                          style: TextStyle(color: Colors.grey),
+                          //スレッドの説明文
+                          subtitle: Text(
+                            thread.description ?? '',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: Colors.grey[700]),
+                          ),
+                          trailing: Text(
+                            thread.timeAgo,
+                            style: TextStyle(color: Colors.grey),
+                          ),
                         ),
                       ),
                     );
@@ -239,12 +246,14 @@ class _ThreadListState extends State<ThreadList> {
                 Spacer(),
                 TextButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ThreadUnofficialList(),
-                      ),
-                    );
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ThreadUnofficialList(),
+                        ),
+                      );
+                    });
                   },
                   child: Text(
                     'もっと見る',
@@ -257,15 +266,9 @@ class _ThreadListState extends State<ThreadList> {
             Column(
               children:
                   hotUnofficialThreads.map((thread) {
-                    return Card(
-                      color: Colors.white, // 背景を白に設定
-                      margin: EdgeInsets.symmetric(vertical: 6),
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ListTile(
-                        onTap: () {
+                    return GestureDetector(
+                      onTap: () {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -278,25 +281,35 @@ class _ThreadListState extends State<ThreadList> {
                                   ),
                             ),
                           );
-                        },
-                        title: Text(
-                          //タイトルなし保険
-                          thread.title.isNotEmpty ? thread.title : '（タイトルなし）',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                        });
+                      },
+                      child: Card(
+                        color: Colors.white, // 背景を白に設定
+                        margin: EdgeInsets.symmetric(vertical: 6),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: ListTile(
+                          title: Text(
+                            //タイトルなし保険
+                            thread.title.isNotEmpty ? thread.title : '（タイトルなし）',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        //スレッドの説明文
-                        subtitle: Text(
-                          thread.description ?? '',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: Colors.grey[700]),
-                        ),
-                        trailing: Text(
-                          thread.timeAgo,
-                          style: TextStyle(color: Colors.grey),
+                          //スレッドの説明文
+                          subtitle: Text(
+                            thread.description ?? '',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: Colors.grey[700]),
+                          ),
+                          trailing: Text(
+                            thread.timeAgo,
+                            style: TextStyle(color: Colors.grey),
+                          ),
                         ),
                       ),
                     );

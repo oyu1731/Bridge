@@ -17,6 +17,7 @@ class PasswordResetPage extends StatefulWidget {
 }
 
 class _PasswordResetPageState extends State<PasswordResetPage> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
@@ -33,18 +34,27 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
   bool _loading = false;
   String? _errorMessage;
 
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'パスワードを入力してください';
+    }
+    if (value.length > 255) {
+      return 'パスワードは255文字以内で入力してください';
+    }
+    final regex = RegExp(r'^[a-zA-Z0-9._]+$');
+    if (!regex.hasMatch(value)) {
+      return '使用できない文字が含まれています。パスワードに使用できるのは英数字、ピリオド、アンダースコアのみです。';
+    }
+    return null;
+  }
+
   Future<void> _handleSubmit() async {
-    final pass = _passwordController.text.trim();
-    final confirm = _confirmPasswordController.text.trim();
-    setState(() {
-      _errorMessage = null;
-    });
-    if (pass.isEmpty || confirm.isEmpty) {
-      setState(() {
-        _errorMessage = 'パスワードを入力してください';
-      });
+    if (!_formKey.currentState!.validate()) {
       return;
     }
+    final pass = _passwordController.text.trim();
+    final confirm = _confirmPasswordController.text.trim();
+    setState(() { _errorMessage = null; });
     if (pass != confirm) {
       setState(() {
         _errorMessage = 'パスワードが一致しません';
@@ -159,7 +169,7 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
                               controller: _passwordController,
                               obscureText: _obscurePassword,
                               decoration: InputDecoration(
-                                hintText: 'examplepassword',
+                                hintText: 'パスワードを入力してください',
                                 hintStyle: TextStyle(color: Color(0xFF9E9E9E)),
                                 border: InputBorder.none,
                                 contentPadding: EdgeInsets.symmetric(
@@ -215,7 +225,7 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
                               controller: _confirmPasswordController,
                               obscureText: _obscureConfirmPassword,
                               decoration: InputDecoration(
-                                hintText: 'examplepassword',
+                                hintText: 'パスワードを再入力してください',
                                 hintStyle: TextStyle(color: Color(0xFF9E9E9E)),
                                 border: InputBorder.none,
                                 contentPadding: EdgeInsets.symmetric(

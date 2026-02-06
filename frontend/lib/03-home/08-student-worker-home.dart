@@ -212,6 +212,7 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
                     const Text(
                       '最新スレッド',
                       style: TextStyle(
+                        color: AppTheme.textCyanDark,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -316,6 +317,7 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
                     const Text(
                       '注目記事',
                       style: TextStyle(
+                        color: AppTheme.textCyanDark,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),

@@ -26,7 +26,7 @@ import org.springframework.dao.DataAccessException;
 
 @RestController
 @RequestMapping("/api/threads")
-@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:5000"}, allowCredentials = "true")
 public class ThreadController {
 
     //エラーログ

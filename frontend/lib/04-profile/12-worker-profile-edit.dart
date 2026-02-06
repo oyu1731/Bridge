@@ -31,10 +31,12 @@ class WorkerProfileEditPage extends StatefulWidget {
 }
 
 class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
+  final _formKey = GlobalKey<FormState>();
   Map<String, dynamic> userData = {};
   List<Industry> industries = [];
   final _nicknameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _phoneNumberController = TextEditingController();
   final _societyHistoryController = TextEditingController();
   int? _iconPhotoId;
@@ -42,6 +44,7 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
   bool _uploadingIcon = false;
 
   bool _isSaving = false; // 保存中フラグ
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -54,6 +57,7 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
   void dispose() {
     _nicknameController.dispose();
     _emailController.dispose();
+    _passwordController.dispose();
     _phoneNumberController.dispose();
     _societyHistoryController.dispose();
     super.dispose();
@@ -163,10 +167,12 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: BridgeHeader(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               "プロフィールアイコン",
@@ -226,31 +232,56 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
             ),
             const SizedBox(height: 30),
             _buildLabel("ニックネーム"),
-            _buildTextField(_nicknameController),
+            _buildTextField(_nicknameController, validator: (v) => v == null || v.trim().isEmpty ? 'ニックネームを入力してください' : null),
             const SizedBox(height: 20),
             _buildLabel("メールアドレス"),
-            _buildTextField(_emailController),
+            _buildTextField(_emailController, validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'メールアドレスを入力してください';
+              final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+              if (!emailRegex.hasMatch(v)) return '有効なメールアドレスを入力してください';
+              return null;
+            }),
             const SizedBox(height: 20),
             _buildLabel("電話番号"),
-            _buildTextField(_phoneNumberController),
+            _buildTextField(_phoneNumberController, validator: (v) => v == null || v.trim().isEmpty ? '電話番号を入力してください' : null),
             const SizedBox(height: 20),
             _buildLabel("社会人歴（年）"),
-            _buildTextField(_societyHistoryController),
+            _buildTextField(_societyHistoryController, validator: (v) {
+              if (v == null || v.trim().isEmpty) return '社会人歴を入力してください';
+              final num = int.tryParse(v);
+              if (num == null || num < 0) return '有効な数値を入力してください';
+              return null;
+            }),
             const SizedBox(height: 20),
             _buildLabel("現職業界"),
-            Column(
-              children:
-                  industries.map((industry) {
-                    return CheckboxListTile(
-                      title: Text(industry.name),
-                      value: industry.isSelected,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          industry.isSelected = value ?? false;
-                        });
-                      },
-                    );
-                  }).toList(),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: AppTheme.cyanDark,
+                  width: 1.0,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                children: industries.map((industry) {
+                  return CheckboxListTile(
+                    title: Text(
+                      industry.name,
+                      style: const TextStyle(
+                        color: AppTheme.textCyanDark,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    value: industry.isSelected,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        industry.isSelected = value ?? false;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
             ),
             const SizedBox(height: 30),
             Center(
@@ -259,22 +290,25 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
                   backgroundColor: Colors.orangeAccent[400],
                   foregroundColor: Colors.white,
                 ),
-                onPressed:
-                    _isSaving
-                        ? null
-                        : () async {
-                          setState(() => _isSaving = true);
-                          await _updateUserProfile();
-                          setState(() => _isSaving = false);
-                        },
-                child:
-                    _isSaving
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('編集', style: TextStyle(fontSize: 16)),
+                onPressed: _isSaving
+                    ? null
+                    : () async {
+                        if (!_formKey.currentState!.validate()) return;
+                        setState(() => _isSaving = true);
+                        await _updateUserProfile();
+                        setState(() => _isSaving = false);
+                      },
+                child: _isSaving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('編集',
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),),
               ),
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -290,10 +324,11 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, {int maxLines = 1}) {
+  Widget _buildTextField(TextEditingController controller, {int maxLines = 1, String? Function(String?)? validator}) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
+      validator: validator,
       decoration: InputDecoration(
         border: OutlineInputBorder(),
         contentPadding: const EdgeInsets.all(12),
@@ -344,6 +379,9 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
       'desiredIndustries': selectedIndustryIds,
       'icon': _iconPhotoId,
     };
+    if (_passwordController.text.isNotEmpty) {
+      updatedData['password'] = _passwordController.text;
+    }
 
     final url = '${ApiConfig.baseUrl}/api/users/$userId/profile';
     final response = await http.put(

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:html' as html;
-import '../11-common/url.dart' as url;
+import '../11-common/api_config.dart';
 
 Future<void> startWebCheckout({
   required int amount,
@@ -13,9 +13,9 @@ Future<void> startWebCheckout({
   String? cancelUrl,
 }) async {
   final String effectiveSuccessUrlParam =
-      successUrl ?? "${url.ApiConfig.frontendUrl}/#/payment-success";
+      successUrl ?? "${ApiConfig.frontendUrl}/#/payment-success";
   final String effectiveCancelUrl =
-      cancelUrl ?? "${url.ApiConfig.frontendUrl}/#/payment-cancel";
+      cancelUrl ?? "${ApiConfig.frontendUrl}/#/payment-cancel";
 
   final payload = {
     "amount": amount,
@@ -36,12 +36,12 @@ Future<void> startWebCheckout({
   payload['successUrl'] = effectiveSuccessUrl;
 
   print("===== Stripe Checkout リクエスト開始 =====");
-  print("送信先: ${url.ApiConfig.baseUrl}/api/v1/payment/checkout-session");
+  print("送信先: ${ApiConfig.checkoutSessionUrl}");
   print("送信データ(JSON): ${jsonEncode(payload)}");
 
   try {
     final response = await http.post(
-      Uri.parse("${url.ApiConfig.baseUrl}/api/v1/payment/checkout-session"),
+      Uri.parse(ApiConfig.checkoutSessionUrl),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(payload),
     );

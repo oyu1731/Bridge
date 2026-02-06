@@ -84,6 +84,7 @@ class _AdminMailListState extends State<AdminMailList> {
 
   List<NotificationData> _notifications = [];
   bool _loading = true;
+  bool _isSearched = false; // ★追加
 
   Future<void> _fetchNotifications() async {
     try {
@@ -91,6 +92,7 @@ class _AdminMailListState extends State<AdminMailList> {
       setState(() {
         _notifications = list;
         _loading = false;
+        _isSearched = false;
       });
     } catch (e) {
       print('Error fetching notices: $e');
@@ -122,37 +124,50 @@ class _AdminMailListState extends State<AdminMailList> {
         title: _searchController.text,
         type: _selectedTarget,
         category: _selectedCategory == null
-          ? null
-          : (_selectedCategory == '運営情報' ? '1' : '2'),
+            ? null
+            : (_selectedCategory == '運営情報' ? '1' : '2'),
         sendDate: _selectedDate,
       );
 
       setState(() {
         _notifications = results;
+        _isSearched = true;
       });
     } catch (e) {
       print('検索エラー: $e');
     }
   }
 
+  Future<void> _clearSearch() async {
+    setState(() {
+      _searchController.clear();
+      _selectedTarget = null;
+      _selectedCategory = null;
+      _selectedDate = null;
+      _loading = true;
+      _isSearched = false;
+    });
+
+    await _fetchNotifications();
+  }
+
   Future<void> _deleteNotification(NotificationData notification) async {
     bool confirm = await showDialog(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: const Text('削除確認'),
-            content: const Text('このメールを削除しますか？'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('キャンセル'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('削除'),
-              ),
-            ],
+      builder: (_) => AlertDialog(
+        title: const Text('削除確認'),
+        content: const Text('このメールを削除しますか？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('キャンセル'),
           ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('削除'),
+          ),
+        ],
+      ),
     );
 
     if (confirm != true) return;
@@ -160,15 +175,15 @@ class _AdminMailListState extends State<AdminMailList> {
     try {
       await AdminNotificationApi.delete(notification.id);
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('メールを削除しました')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('メールを削除しました')),
+      );
 
       _fetchNotifications();
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('削除に失敗しました')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('削除に失敗しました')),
+      );
     }
   }
 
@@ -178,22 +193,21 @@ class _AdminMailListState extends State<AdminMailList> {
   ) {
     showDialog(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: Text(notification.title),
-            content: SingleChildScrollView(
-              child: Text(
-                notification.content,
-                style: const TextStyle(fontSize: 14),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('閉じる'),
-              ),
-            ],
+      builder: (_) => AlertDialog(
+        title: Text(notification.title),
+        content: SingleChildScrollView(
+          child: Text(
+            notification.content,
+            style: const TextStyle(fontSize: 14),
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('閉じる'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -216,90 +230,55 @@ class _AdminMailListState extends State<AdminMailList> {
     );
   }
 
-  // 🔍 検索フォーム（レスポンシブ修正版）
   Widget _buildSearchCard() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 700;
-
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.grey.shade400),
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 3,
-                offset: Offset(0, 2),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade400),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          TextField(
+            controller: _searchController,
+            decoration: const InputDecoration(
+              labelText: 'タイトルで検索',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          const SizedBox(height: 12),
+          Row(
             children: [
-              const Center(
-                child: Text(
-                  'お知らせ検索',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // タイトル検索（未変更）
-              TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(
-                  labelText: 'タイトルで検索',
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                  contentPadding: EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 12,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              if (!isMobile)
-                // ===== 横幅が広いとき：1行 =====
-                Row(
-                  children: [
-                    Expanded(child: _buildTargetDropdown()),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildCategoryDropdown()),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildDateField()),
-                    const SizedBox(width: 12),
-                    _buildSearchButton(),
-                  ],
-                )
-              else
-                // ===== スマホ：2行 =====
-                Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(child: _buildTargetDropdown()),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildCategoryDropdown()),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(child: _buildDateField()),
-                        const SizedBox(width: 12),
-                        _buildSearchButton(),
-                      ],
-                    ),
-                  ],
-                ),
+              Expanded(child: _buildTargetDropdown()),
+              const SizedBox(width: 8),
+              Expanded(child: _buildCategoryDropdown()),
+              const SizedBox(width: 8),
+              Expanded(child: _buildDateField()),
+              const SizedBox(width: 8),
+              _buildSearchButton(),
             ],
           ),
-        );
-      },
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchButton() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ElevatedButton(
+          onPressed: _searchNotifications,
+          child: const Text('検索'),
+        ),
+        const SizedBox(width: 8),
+        OutlinedButton(
+          onPressed: _clearSearch,
+          child: const Text('クリア'),
+        ),
+      ],
     );
   }
 
@@ -318,9 +297,6 @@ class _AdminMailListState extends State<AdminMailList> {
               _fetchNotifications();
             }
           },
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
         ),
       ],
     );
@@ -376,30 +352,26 @@ class _AdminMailListState extends State<AdminMailList> {
             suffixIcon: Icon(Icons.calendar_today),
           ),
           controller: TextEditingController(
-            text:
-                _selectedDate != null
-                    ? "${_selectedDate!.year}/${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.day.toString().padLeft(2, '0')}"
-                    : '',
+            text: _selectedDate != null
+                ? "${_selectedDate!.year}/${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.day.toString().padLeft(2, '0')}"
+                : '',
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSearchButton() {
-    return ElevatedButton(
-      onPressed: _searchNotifications,
-      child: const Text('検索'),
-    );
-  }
-
-  // 以下、一覧テーブル部分は
   Widget _buildNoticeTable() {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
+
     if (_notifications.isEmpty) {
-      return const Center(child: Text('お知らせはありません'));
+      return Center(
+        child: Text(
+          _isSearched ? 'お知らせがありません' : 'データがありません',
+        ),
+      );
     }
 
     return Container(
@@ -409,59 +381,16 @@ class _AdminMailListState extends State<AdminMailList> {
       ),
       child: Table(
         columnWidths: const {
-          0: FlexColumnWidth(),
-          1: FlexColumnWidth(),
-          2: FlexColumnWidth(),
-          3: FlexColumnWidth(),
           4: FixedColumnWidth(40),
         },
-        border: TableBorder.symmetric(
-          inside: BorderSide(color: Colors.grey.shade300),
-        ),
         children: [
-          TableRow(
-            decoration: BoxDecoration(color: Colors.grey.shade200),
-            children: const [
-              Padding(
-                padding: EdgeInsets.all(8),
-                child: Text(
-                  'タイトル',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.all(8),
-                child: Text(
-                  '宛先',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.all(8),
-                child: Text(
-                  'カテゴリ',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.all(8),
-                child: Text(
-                  '送信日',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              SizedBox(),
-            ],
-          ),
           for (final n in _notifications)
             TableRow(
               children: [
                 Padding(
                   padding: const EdgeInsets.all(8),
                   child: InkWell(
-                    onTap: () {
-                      _showNotificationDetail(context, n);
-                    },
+                    onTap: () => _showNotificationDetail(context, n),
                     child: Text(
                       n.title,
                       style: const TextStyle(
@@ -484,7 +413,7 @@ class _AdminMailListState extends State<AdminMailList> {
                   child: Text(
                     n.sendFlag != null
                         ? "${n.sendFlag!.year}/${n.sendFlag!.month.toString().padLeft(2, '0')}/${n.sendFlag!.day.toString().padLeft(2, '0')}"
-                        : "-",
+                        : '-',
                   ),
                 ),
                 IconButton(

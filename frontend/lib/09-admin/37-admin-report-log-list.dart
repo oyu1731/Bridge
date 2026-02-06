@@ -187,7 +187,7 @@ class _AdminReportLogListState extends State<AdminReportLogList> {
         children: [
           Expanded(flex: 3, child: Center(child: Text('通報日'))),
           Expanded(flex: 2, child: Center(child: Text('通報者'))),
-          Expanded(flex: 2, child: Center(child: Text('非通報者'))),
+          Expanded(flex: 2, child: Center(child: Text('被通報者'))),
           Expanded(flex: 3, child: Center(child: Text('対象スレッド'))),
           Expanded(flex: 4, child: Center(child: Text('対象レス'))),
           Expanded(flex: 1, child: Center(child: Text('通報数'))),

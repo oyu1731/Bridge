@@ -55,6 +55,32 @@ class PhoneNumberFormatter extends TextInputFormatter {
   }
 }
 
+// 郵便番号フォーマッター
+class PostcodeFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.length > 7) return oldValue;
+
+    String formatted;
+    if (digits.length >= 4) {
+      formatted = '${digits.substring(0, 3)}-${digits.substring(3)}';
+    } else {
+      formatted = digits;
+    }
+
+    int selectionIndex = newValue.selection.baseOffset;
+    if (digits.length >= 4 && selectionIndex > 3) selectionIndex++;
+    if (selectionIndex > formatted.length) selectionIndex = formatted.length;
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: selectionIndex),
+    );
+  }
+}
+
 class _CompanyInputPageState extends State<CompanyInputPage> {
   final _formKey = GlobalKey<FormState>();
 
@@ -201,9 +227,11 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(
-                          padding: EdgeInsets.only(top: 14),
-                          child: Icon(Icons.email_outlined, color: cyanDark),
+                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
+                          child: Icon(
+                            Icons.email_outlined,
+                            color: cyanDark,
+                          )
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -213,11 +241,10 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                               border: OutlineInputBorder(),
                               labelText: 'メールアドレス',
                             ),
+                            keyboardType: TextInputType.emailAddress,
                             validator: (v) {
-                              if (v == null || v.isEmpty)
-                                return 'メールアドレスを入力してください';
-                              if (!v.contains('@'))
-                                return '正しいメールアドレスを入力してください';
+                              if (v == null || v.isEmpty) return 'メールアドレスを入力してください';
+                              if (!v.contains('@')) return '形式が不正です';
                               return null;
                             },
                           ),
@@ -225,23 +252,23 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                       ],
                     ),
                     const SizedBox(height: 20),
-
-                    // パスワード
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(
-                          padding: EdgeInsets.only(top: 14),
-                          child: Icon(Icons.lock_outline, color: cyanDark),
+                        Padding(padding: EdgeInsetsGeometry.only(top: 14),
+                          child: Icon(
+                            Icons.lock_outline,
+                            color: cyanDark,
+                          )
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: TextFormField(
                             controller: _passwordController,
-                            obscureText: _obscurePassword,
                             decoration: InputDecoration(
                               border: const OutlineInputBorder(),
                               labelText: 'パスワード',
+                              hintText: '英数字８文字以上で入力してください',
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword
@@ -256,11 +283,23 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                                 },
                               ),
                             ),
-                            validator:
-                                (v) =>
-                                    (v == null || v.length < 8)
-                                        ? '8文字以上で入力してください'
-                                        : null,
+                            obscureText: _obscurePassword,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'パスワードを入力してください';
+                              }
+                              if (value.length > 255) {
+                                return 'パスワードは255文字以内で入力してください';
+                              }
+                              final regex = RegExp(r'^[a-zA-Z0-9._]+$');
+                              if (!regex.hasMatch(value)) {
+                                return '使用できない文字が含まれています。\nパスワードに使用できるのは英数字、ピリオド、アンダースコアのみです。';
+                              }
+                              if (value.length < 8) {
+                                return 'パスワードは8文字以上で入力してください';
+                              }
+                              return null;
+                            },
                           ),
                         ),
                       ],
@@ -321,62 +360,46 @@ class _CompanyInputPageState extends State<CompanyInputPage> {
                             controller: _postcodeController,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
-                              labelText: '郵便番号（例: 1000001）',
+                              labelText: '郵便番号（例: 160-0000）',
                             ),
                             keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
+                            inputFormatters: [PostcodeFormatter()],
                             validator: (v) {
-                              if (v == null || v.isEmpty)
-                                return '郵便番号を入力してください';
-                              if (v.length != 7) return '7桁の郵便番号を入力してください';
+                              if (v == null || v.isEmpty) return '郵便番号を入力してください';
+                              String digitsOnly = v.replaceAll('-', '');
+                              if (digitsOnly.length != 7 || !RegExp(r'^\d{7}$').hasMatch(digitsOnly)) return '7桁の数字で郵便番号を入力してください';
                               return null;
                             },
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         Container(
                           margin: const EdgeInsets.only(top: 6),
                           child: ElevatedButton(
-                            onPressed:
-                                _isFetchingAddress
-                                    ? null
-                                    : () async {
-                                      final postcode = _postcodeController.text;
-                                      if (postcode.length != 7) return;
+                            onPressed: _isFetchingAddress ? null : () async {
+                              final postcode = _postcodeController.text;
+                              String digitsOnly = postcode.replaceAll('-', '');
+                              if (digitsOnly.length != 7) return;
 
                                       setState(() {
                                         _isFetchingAddress = true;
                                       });
 
-                                      try {
-                                        final address =
-                                            await _fetchAddressFromPostcode(
-                                              postcode,
-                                            );
-                                        if (address != null) {
-                                          _addressController.text =
-                                              address['allAddress'] ??
-                                              '${address['prefecture'] ?? ''}${address['city'] ?? ''}${address['town'] ?? ''}';
-                                        } else {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text('住所が見つかりませんでした'),
-                                            ),
-                                          );
-                                        }
-                                      } catch (e) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text('住所取得エラー: $e'),
-                                          ),
-                                        );
-                                      }
+                              try {
+                                final address = await _fetchAddressFromPostcode(digitsOnly);
+                                if (address != null) {
+                                  _addressController.text =
+                                    address['allAddress'] ?? '${address['prefecture'] ?? ''}${address['city'] ?? ''}${address['town'] ?? ''}';
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('住所が見つかりませんでした')),
+                                  );
+                                }
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('住所取得エラー: $e')),
+                                );
+                              }
 
                                       setState(() {
                                         _isFetchingAddress = false;

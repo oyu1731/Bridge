@@ -168,6 +168,8 @@ public class UserService {
         // 3. 企業ユーザーの場合のみ企業情報 + サブスクリプション保存
         if (userDto.getType() == 3) {
             logger.info("createUser called: email={} type={}", userDto.getEmail(), userDto.getType());
+            
+            user.setPlanStatus("プレミアム");
 
             Company company = new Company();
             company.setName(userDto.getCompanyName());
@@ -248,7 +250,32 @@ public class UserService {
 
     // プロフィール編集
     @Transactional
-    public UserDto updateUserProfile(Integer userId, Map<String, Object> body) {
+    public UserDto updateUserProfile(Integer userId,UserDto dto, Map<String, Object> body) {
+        // ===== バリデーション =====
+        if (dto.getNickname() == null || dto.getNickname().trim().isEmpty()) {
+            throw new IllegalArgumentException("ニックネームを入力してください");
+        }
+        if (dto.getEmail() == null || dto.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("メールアドレスを入力してください");
+        }
+        if (dto.getPhoneNumber() == null || dto.getPhoneNumber().trim().isEmpty()) {
+            throw new IllegalArgumentException("電話番号を入力してください");
+        }
+        if (userRepository.findById(userId).orElseThrow().getType() == 2) {
+            if (dto.getSocietyHistory() == null) {
+                throw new IllegalArgumentException("社会人歴を入力してください");
+            }
+        }
+        // 企業の場合、追加のバリデーション
+        if (userRepository.findById(userId).orElseThrow().getType() == 3) {
+            if (dto.getCompanyAddress() == null || dto.getCompanyAddress().trim().isEmpty()) {
+                throw new IllegalArgumentException("住所を入力してください");
+            }
+            if (dto.getCompanyDescription() == null || dto.getCompanyDescription().trim().isEmpty()) {
+                throw new IllegalArgumentException("詳細を入力してください");
+            }
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -560,6 +587,17 @@ public class UserService {
             Subscription subscription = latestSubscription.get();
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime endDate = subscription.getEndDate();
+
+            // Defensive: endDate が null の場合は無効扱いにして無料に更新
+            if (endDate == null) {
+                logger.warn("Subscription endDate is null for subscriptionId={}, userId={}. Marking as free.", subscription.getId(), userId);
+                user.setPlanStatus("無料");
+                userRepository.save(user);
+                result.put("status", "invalid_subscription");
+                result.put("planStatus", "無料");
+                result.put("message", "サブスクリプションの終了日が不明なため、無料に更新しました。");
+                return result;
+            }
 
             // 5. 有効期限が切れている場合
             if (endDate.isBefore(now)) {

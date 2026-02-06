@@ -8,6 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/image_crop_dialog.dart';
+import 'package:bridge/config/postcodejp_api.dart';
+import 'package:flutter/services.dart';
 import '../06-company/photo_api_client.dart';
 import 'user_api_client.dart';
 import 'company_photo_modal.dart';
@@ -33,17 +35,22 @@ class CompanyProfileEditPage extends StatefulWidget {
 }
 
 class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
+  final _formKey = GlobalKey<FormState>();
   Map<String, dynamic> userData = {};
   List<Industry> industries = [];
   final _nicknameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _phoneNumberController = TextEditingController();
   final _companyAddressController = TextEditingController();
+  final _postcodeController = TextEditingController();
   final _companyDescriptionController = TextEditingController();
   int? _iconPhotoId;
   String? _iconUrl;
   bool _uploadingIcon = false;
 
+  bool _isFetchingAddress = false;
+  bool _obscurePassword = true;
   bool _isSaving = false;
 
   @override
@@ -57,6 +64,7 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
   void dispose() {
     _nicknameController.dispose();
     _emailController.dispose();
+    _passwordController.dispose();
     _phoneNumberController.dispose();
     _companyAddressController.dispose();
     _companyDescriptionController.dispose();
@@ -185,10 +193,12 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: BridgeHeader(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Column(
@@ -275,11 +285,48 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
               Column(
                 children: [
                   const SizedBox(height: 16),
-                  Text(
-                    '選択中の企業写真',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
+                    _buildLabel("メールアドレス"),
+                    _buildTextField(_emailController, validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'メールアドレスを入力してください';
+                      final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                      if (!emailRegex.hasMatch(v)) return '有効なメールアドレスを入力してください';
+                      return null;
+                    }),
+                    const SizedBox(height: 20),
+                    _buildLabel('パスワード（変更する場合）'),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: EdgeInsetsGeometry.only(top: 14),
+                          child: Icon(Icons.lock_outline, color: AppTheme.cyanDark),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _passwordController,
+                            decoration: InputDecoration(
+                              border: const OutlineInputBorder(),
+                              labelText: '新しいパスワード',
+                              hintText: '英数字８文字以上で入力してください（空のままなら変更しません）',
+                              suffixIcon: IconButton(
+                                icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: AppTheme.cyanDark),
+                                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                              ),
+                            ),
+                            obscureText: _obscurePassword,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) return null;
+                              if (value.length < 8) return 'パスワードは8文字以上である必要があります';
+                              if (value.length > 255) return 'パスワードは255文字以内で入力してください';
+                              final regex = RegExp(r'^[a-zA-Z0-9._]+$');
+                              if (!regex.hasMatch(value)) return '使用できるのは英数字・.・_ のみです';
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   Image.network(
                     _companyPhotoUrl!,
                     width: 120,
@@ -290,34 +337,40 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
               ),
             const SizedBox(height: 30),
             _buildLabel("企業名"),
-            _buildTextField(_nicknameController),
-            const SizedBox(height: 20),
-            _buildLabel("メールアドレス"),
-            _buildTextField(_emailController),
+            _buildTextField(_nicknameController, validator: (v) => v == null || v.trim().isEmpty ? 'ニックネームを入力してください' : null),
             const SizedBox(height: 20),
             _buildLabel("電話番号"),
-            _buildTextField(_phoneNumberController),
+            _buildTextField(_phoneNumberController, validator: (v) => v == null || v.trim().isEmpty ? '電話番号を入力してください' : null),
             const SizedBox(height: 20),
             _buildLabel("住所"),
-            _buildTextField(_companyAddressController),
+            _buildTextField(_companyAddressController, validator: (v) => v == null || v.trim().isEmpty ? '住所を入力してください' : null),
             const SizedBox(height: 20),
             _buildLabel("詳細"),
-            _buildTextField(_companyDescriptionController, maxLines: 5),
+            _buildTextField(_companyDescriptionController, maxLines: 5, validator: (v) => v == null || v.trim().isEmpty ? '詳細を入力してください' : null),
             const SizedBox(height: 30),
             _buildLabel("所属業界"),
-            Column(
-              children:
-                  industries.map((industry) {
-                    return CheckboxListTile(
-                      title: Text(industry.name),
-                      value: industry.isSelected,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          industry.isSelected = value ?? false;
-                        });
-                      },
-                    );
-                  }).toList(),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: AppTheme.textCyanDark),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                children: industries.map((industry) {
+                  return CheckboxListTile(
+                    title: Text(
+                      industry.name,
+                      style: const TextStyle(color: AppTheme.textCyanDark),
+                    ),
+                    value: industry.isSelected,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        industry.isSelected = value ?? false;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
             ),
             const SizedBox(height: 30),
             Center(
@@ -326,22 +379,25 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
                   backgroundColor: Colors.orangeAccent[400],
                   foregroundColor: Colors.white,
                 ),
-                onPressed:
-                    _isSaving
-                        ? null
-                        : () async {
-                          setState(() => _isSaving = true);
-                          await _updateUserProfile();
-                          setState(() => _isSaving = false);
-                        },
-                child:
-                    _isSaving
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('編集', style: TextStyle(fontSize: 16)),
+                onPressed: _isSaving
+                    ? null
+                    : () async {
+                        if (!_formKey.currentState!.validate()) return;
+                        setState(() => _isSaving = true);
+                        await _updateUserProfile();
+                        setState(() => _isSaving = false);
+                      },
+                child: _isSaving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('編集',
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),),
               ),
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -357,12 +413,21 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, {int maxLines = 1}) {
+  Widget _buildTextField(TextEditingController controller, {int maxLines = 1, String? Function(String?)? validator}) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
+      validator: validator,
       decoration: InputDecoration(
-        border: OutlineInputBorder(),
+        border: OutlineInputBorder(
+          borderSide: const BorderSide(color: AppTheme.textCyanDark),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: AppTheme.textCyanDark),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: AppTheme.textCyanDark, width: 2),
+        ),
         contentPadding: const EdgeInsets.all(12),
       ),
     );
@@ -390,6 +455,9 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
       'companyDescription': _companyDescriptionController.text,
       'icon': _iconPhotoId,
     };
+    if (_passwordController.text.isNotEmpty) {
+      updatedData['password'] = _passwordController.text;
+    }
 
     final userUpdateUrl = '${ApiConfig.baseUrl}/api/users/$userId/profile';
     final userUpdateResponse = await http.put(

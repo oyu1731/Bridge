@@ -99,7 +99,7 @@ class _AdminThreadDetailState extends State<AdminThreadDetail> {
   // -------------------------
   void _connectWebSocket() {
     _channel = WebSocketChannel.connect(
-      Uri.parse(ApiConfig.chatWebSocketUrl(widget.threadId)),
+      Uri.parse(ApiConfig.chatWebSocketUrl(int.parse(widget.threadId))),
     );
 
     _channel.stream.listen((data) {
