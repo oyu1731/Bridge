@@ -13,6 +13,16 @@ class AppTheme {
   static const Color lightGray = Color(0xFFF5F5F5);
   static const Color primaryOrange = Color(0xFFFFA000);
 
+  static LinearGradient get headerGradient {
+    return const LinearGradient(
+      colors: [cyanDark, cyanMedium],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+  }
+
+  static const Color navBackgroundColor = Color(0xFFFFF3E0); // Light orange background for nav
+
   static ThemeData get theme {
     return ThemeData(
       useMaterial3: true,

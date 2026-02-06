@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:bridge/main.dart';
+import '../style.dart';
 
 // AI・クイズ
 import 'package:bridge/07-ai-training/21-ai-training-list.dart';
@@ -334,7 +335,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                                   '$greeting、$nicknameさん。',
                                   style: const TextStyle(
                                     fontSize: 11,
-                                    color: Color(0xFF424242),
+                                    color: AppTheme.textCyanDark,
                                     fontWeight: FontWeight.w500,
                                   ),
                                   maxLines: 1,
@@ -380,14 +381,14 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                                 width: 28,
                                 height: 28,
                                 child: IconButton(
-                                  tooltip: 'メール一覧',
+                                  tooltip: 'お知らせ一覧',
                                   onPressed: () {
                                     _showNotificationDialog(context);
                                   },
                                   icon: const Icon(
                                     Icons.notifications_outlined,
                                     size: 16,
-                                    color: Color(0xFF1976D2),
+                                    color: Color(0xFF616161),
                                   ),
                                   padding: EdgeInsets.zero,
                                 ),
@@ -445,7 +446,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                                 '$greeting、$nicknameさん。',
                                 style: const TextStyle(
                                   fontSize: 14,
-                                  color: Color(0xFF424242),
+                                  color: AppTheme.textCyanDark,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -479,13 +480,13 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                               const SizedBox(width: 8),
                               if (!isAdmin)
                                 IconButton(
-                                  tooltip: 'メール一覧',
+                                  tooltip: 'お知らせ一覧',
                                   onPressed: () {
                                     _showNotificationDialog(context);
                                   },
                                   icon: const Icon(
                                     Icons.notifications_none_outlined,
-                                    color: Color(0xFF1976D2),
+                                    color: AppTheme.accentOrange,
                                   ),
                                 ),
                             ],
@@ -588,7 +589,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                       );
                       buttons.add(SizedBox(width: space));
                       buttons.add(
-                        _nav('メール一覧', () {
+                        _nav('お知らせ一覧', () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (_) => AdminMailList()),
@@ -657,21 +658,21 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
     return TextButton(
       onPressed: onPressed,
       style: TextButton.styleFrom(
-        backgroundColor: const Color(0xFFF5F5F5),
+        foregroundColor: AppTheme.textCyanDark,
         padding: EdgeInsets.symmetric(
           horizontal: small ? 12 : 18,
           vertical: small ? 6 : 8,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(25),
+          side: const BorderSide(color: AppTheme.borderGray, width: 1),
+        ),
+        textStyle: TextStyle(
           fontSize: small ? 11 : 13,
           fontWeight: FontWeight.w600,
-          color: const Color(0xFF424242),
         ),
       ),
+      child: Text(text),
     );
   }
 

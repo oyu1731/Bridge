@@ -252,6 +252,17 @@ class _AdminAccountListState extends State<AdminAccountList> {
   }
 
   Widget _buildUserCards() {
+    if (_users.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'アカウントが見つかりません',
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+        ),
+      );
+    }
     return Column(
       children:
           _users.map((user) {

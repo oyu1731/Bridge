@@ -57,7 +57,7 @@ class _AdminHomeState extends State<AdminHome> {
                   );
                 }),
                 SizedBox(width: 20),
-                _buildButton('メール一覧', buttonWidth, buttonHeight, () {
+                _buildButton('お知らせ一覧', buttonWidth, buttonHeight, () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => AdminMailList()),

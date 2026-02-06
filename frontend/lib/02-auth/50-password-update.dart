@@ -155,7 +155,7 @@ class _PasswordUpdatePageState extends State<PasswordUpdatePage> {
               child: Form(
                 key: _formKey,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const SizedBox(height: 28),
                     const Text(
@@ -201,15 +201,16 @@ class _PasswordUpdatePageState extends State<PasswordUpdatePage> {
                     const SizedBox(height: 24),
 
                     if (_errorMessage != null)
-                      Text(
-                        _errorMessage!,
-                        style: const TextStyle(color: Colors.orange),
+                      Center(
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.orange),
+                        ),
                       ),
 
                     const SizedBox(height: 24),
 
-                    Align(
-                      alignment: Alignment.centerRight,
+                    Center(
                       child: ElevatedButton(
                         onPressed: _isSaving ? null : _onSubmit,
                         child: _isSaving
@@ -239,14 +240,23 @@ class _PasswordUpdatePageState extends State<PasswordUpdatePage> {
       children: [
         Text(label, style: const TextStyle(color: AppTheme.textCyanDark)),
         const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          obscureText: obscure,
-          validator: validator ?? _validatePassword,
-          decoration: InputDecoration(
-            suffixIcon: IconButton(
-              icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
-              onPressed: toggle,
+        SizedBox(
+          width: 600,
+          child: TextFormField(
+            controller: controller,
+            obscureText: obscure,
+            validator: validator ?? _validatePassword,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  obscure ? Icons.visibility_off : Icons.visibility,
+                  color: AppTheme.textCyanDark,
+                ),
+                onPressed: toggle,
+              ),
             ),
           ),
         ),

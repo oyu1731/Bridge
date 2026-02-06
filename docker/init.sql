@@ -348,17 +348,6 @@ INSERT INTO photos (photo_path, user_id) VALUES
 -- users
 -- companies
 INSERT INTO companies (name, address, phone_number, description, plan_status, is_withdrawn, created_at, photo_id) VALUES
-<<<<<<< HEAD
-('株式会社Bridge', '東京都渋谷区', '03-1234-5678', 'IT企業です', 1, FALSE, NOW(), 1);
-
--- users
-INSERT INTO users (nickname, type, password, phone_number, email, company_id, report_count, plan_status, is_withdrawn, created_at, society_history, icon, announcement_deletion, token) VALUES
-('学生ユーザー', 1, 'hashed_password_student', '090-1111-2222', 'student@example.com', NULL, 0, '無料', FALSE, NOW(), NULL, 1, 1, 50),
-('社会人ユーザー', 2, 'hashed_password_worker', '080-3333-4444', 'worker@example.com', NULL, 0, '無料', FALSE, NOW(), 5, 2, 1, 50),
-('企業ユーザー', 3, 'hashed_password_company', '070-5555-6666', 'company@example.com', 1, 0, '無料', FALSE, NOW(), NULL, 3, 1, 50),
-('管理者ユーザー', 4, 'hashed_password_admin', '060-7777-8888', 'admin@example.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50);
-
-=======
 ('株式会社ヤマシタ産業', '東京都渋谷区', '070-5555-5555', '株式会社ヤマシタ産業 は、1978年（昭和53年）創業の総合商社・製造サポート企業です。\n\n創業以来、地域の産業発展とお客様のビジネス成功を第一に考え、物流・資材・機械設備の供給から、製造現場の改善提案まで幅広いサービスを提供しています。\n\n当社は主に以下の事業を展開しています：\n・産業資材の販売\n・物流・在庫管理サービス\n・機械装備の導入支援・保守サービス\n\n私たちは「信頼」「品質」「スピード」を行動指針として、長年培ってきたノウハウとネットワークを生かし、地域社会と企業の成長に貢献しています。', 1, FALSE, NOW(), 2),
 ('バイデンウィンド株式会社', '大阪府大阪市', '070-6666-6666', 'バイデンウィンド株式会社は、再生可能エネルギー分野に特化した企業です。\n\n主に風力発電事業を展開しており、環境に優しいエネルギーソリューションを提供しています。\n当社の主な事業内容は以下の通りです：\n・風力発電所の企画、設計、建設、運営\n・再生可能エネルギーに関するコンサルティングサービス\n・地域社会との連携による環境保護活動\n\n私たちは、持続可能な社会の実現に向けて、革新的な技術とサービスを提供し、クリーンエネルギーの普及に貢献しています。',1, FALSE, NOW(), 4),
 ('退会済み企業', '愛知県名古屋市', '070-5555-6666', '退会済み企業の説明文です。企業一覧に表示され、投稿されていた記事も残ります。', 1, TRUE, NOW(), 3),
@@ -425,29 +414,27 @@ INSERT INTO users (nickname, type, password, phone_number, email, company_id, re
 ('飛翔ツーリズム担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '011-999-9999', 'hisho@example.com', 19, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
 ('大地アグリ担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '0985-10-1010', 'daichi@example.com', 20, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL);
 -- 業界
->>>>>>> 33c5aec0af61647f2c081437913c0c68b31a70c8
 -- industries
 INSERT INTO industries (industry) VALUES
-('IT'),
-('製造業'),
-('サービス業');
+('メーカー'),
+('商社'),
+('流通・小売'),
+('金融'),
+('サービス・インフラ'),
+('ソフトウェア・通信'),
+('広告・出版・マスコミ'),
+('官公庁・公社・団体');
 
 -- subscriptions
 INSERT INTO subscriptions (user_id, plan_name, start_date, end_date, is_plan_status, created_at) VALUES
-(1, 'プレミアム', NOW(), '2026-01-01 00:00:00', TRUE, NOW()),
-(2, 'プレミアム', NOW(), '2026-01-01 00:00:00', TRUE, NOW());
+(1, '学生プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(6, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(11, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(12, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(13, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW());
 
 -- articles
 INSERT INTO articles (title, description, company_id, is_deleted, total_likes, created_at, photo1_id, photo2_id, photo3_id) VALUES
-<<<<<<< HEAD
-('記事タイトル1', '記事説明1', 1, FALSE, 10, NOW(), 1, NULL, NULL),
-('記事タイトル2', '記事説明2', 1, FALSE, 5, NOW(), NULL, 2, NULL);
-
--- threads
-INSERT INTO threads (user_id, title, type, description, entry_criteria, industry, last_update_date, is_deleted, created_at) VALUES
-(1, '公式スレッド', 1, '公式スレッドの説明', 1, 'IT', NOW(), FALSE, NOW()),
-(2, '非公式スレッド', 2, '非公式スレッドの説明', 2, '製造業', NOW(), FALSE, NOW());
-=======
 ('会社説明会のお知らせ', 'みなさんこんにちは！当社ではオンライン会社説明会を随時開催中です。\n-----２月のスケジュール-----\n・５日（月）11:00～12:30\n・７日（水）10:00～11:30\n・１５日（木）11:00～12:30\n・２０日（火）13:00～14:30\n・２３日（金）10:00～11:30\n\n本社採用サイトからエントリーをお願いいたします。\nurl=httqs://www.yamashita_sangyou.recruit \n\n\n皆様のご参加お待ちしています！', 1, FALSE, 0, NOW(), 12, 13, 14),  -- photo1_id=12, photo2_id=13, photo3_id=14
 ('スレッドを開設しました', 'みなさんこんにちは。本日「バイデンウィンド（株）」のスレッドを開設しました。\n\n就職活動に関する質問等、採用担当の者がお答えします！\n採用には一切影響いたしませんので、お気軽にご参加ください。\nみなさんの投稿お待ちしています！', 2, FALSE, 0, NOW(), 15, NULL, NULL),  -- photo1_id=15
 ('AI・機械学習技術セミナーのご案内', 'テック・イノベーション株式会社では、最先端のAI・機械学習技術に関するセミナーを開催いたします。\n業界の第一線の専門家による講演会を予定しており、参加者には特別な情報をお得にご提供いたします。\nご興味のある方は、ぜひお気軽にお申し込みください。', 4, FALSE, 0, NOW(), 16, NULL, NULL),  -- photo1_id=16
@@ -484,21 +471,57 @@ INSERT INTO threads (user_id, title, type, description, entry_criteria, industry
 ('産地直送！スマート農業マルシェ開催', '大地アグリの農場から、朝採れの野菜を直接お届けします！\n今週末、駅前広場にて「スマート農業マルシェ」を開催。\n甘いトマトや新鮮なレタスの販売に加え、最新ドローンの操作体験も実施。\nテクノロジーが育てた力強い野菜の味を、ぜひ会場で体験してください。', 20, FALSE, 0, NOW(), 67, NULL, NULL);
 
 -- entry_criteria: 1=全員、2=学生のみ。3=社会人のみ
-
+-- 非公式スレッド:type=2,userid=各ユーザー,
+-- threads
 INSERT INTO threads (user_id, title, type, description, entry_criteria, last_update_date, is_deleted, created_at) VALUES
--- 公式スレッド:type=1,userid=14(管理者)
+-- 公式スレッド:type=1,userid=7(管理者)
 (14, '学生×社会人スレッド', 1, 'こちらは、学生と社会人の公式スレッドです。どなたでも参加できます。', 1, NOW(), FALSE, NOW()),
 (14, '学生スレッド', 1, 'こちらは、学生の方のみの公式スレッドです。学生の方はどなたでも参加できます。', 2, NOW(), FALSE, NOW()),
 (14, '社会人スレッド', 1, 'こちらは、社会人の方のみの公式スレッドです。社会人の方はどなたでも参加できます。', 3, NOW(), FALSE, NOW()),
--- 非公式スレッド:type=2,userid=各ユーザー,
-(2, '27卒の就活相談室', 2, '27卒の学生同士で就活について情報交換や相談ができる場です。気軽に参加してください！', 2, NOW(), FALSE, NOW()),
 (4, '就活って何から始めたらいいですか？', 2, '27卒の文系です。まだ希望業界も定まっておらず焦っています。経験談などあれば教えてください！', 2, NOW(), FALSE, NOW()),
->>>>>>> 33c5aec0af61647f2c081437913c0c68b31a70c8
+(8, '面接の練習方法を教えてください', 2, '社会人2年目です。転職活動中ですが、面接が苦手で困っています。効果的な練習方法があれば教えてください。', 3, NOW(), FALSE, NOW()),
+
+(1, '自己PRの書き方について', 2, '就活中の大学4年生です。自己PRの書き方に悩んでいます。良い例やアドバイスがあれば教えてください。', 2, NOW(), FALSE, NOW()),
+(6, '資格取得のおすすめ', 2, '社会人3年目です。キャリアアップのために資格取得を考えています。おすすめの資格や勉強法があれば教えてください。', 3, NOW(), FALSE, NOW()),
+(16, '27卒と話したい！', 3, 'このスレッドは不適切な内容を含んでいます。通報テスト用スレッドです。', 1, NOW(), TRUE, NOW()),
+(11, '株式会社ヤマシタ産業スレッド', 3, '株式会社ヤマシタ産業の採用に関する質問はこちらでどうぞ！', 5, NOW(), FALSE, NOW()),
+(12, 'バイデンウィンド株式会社スレッド', 3, 'バイデンウィンド株式会社の採用に関する質問はこちらでどうぞ！', 5, NOW(), FALSE, NOW());
 
 -- chats
 INSERT INTO chats (user_id, content, thread_id, is_deleted, deleted_at, created_at, photo_id) VALUES
-(1, 'チャットメッセージ1', 1, FALSE, NULL, NOW(), NULL),
-(2, 'チャットメッセージ2', 1, FALSE, NULL, NOW(), NULL);
+(8, '最近就活の早期化が進みすぎだと思う。', 1, FALSE, NULL, NOW(), NULL),
+(3, '27卒に人気の業界ってどこ？やっぱりITかな。', 1, FALSE, NULL, NOW(), NULL),
+(5, '私は金融業界を志望してるよ。安定してるし、将来性もあるからね。', 1, FALSE, NULL, NOW(), NULL),
+(1, 'インフル流行ってて怖い。オンライン面接にしてくれてる企業嬉しい', 2, FALSE, NULL, NOW(), NULL),
+(4, '就活のモチベがないんだよなー特にやりたいこともないし。', 2, FALSE, NULL, NOW(), NULL),
+
+(2, 'わかる気がする。別に働かずに済むなら働かないもんな～', 2, FALSE, NULL, NOW(), NULL),
+(8, '残業やばくて転職したいけど、そんな時間すらない。', 3, FALSE, NULL, NOW(), NULL),
+(6, 'それなら体壊す前に辞めてしまうのも手だと思う。健康第一。', 3, FALSE, NULL, NOW(), NULL),
+(7, 'ほんとにそう。体壊してからじゃ遅いよ～', 3, FALSE, NULL, NOW(), NULL),
+(4, '私は自己分析から始めたよ。自分の強み弱みを理解するのが大事かなって。', 4, FALSE, NULL, NOW(), NULL),
+
+(1, '自己分析ってどうやるの？本とか読むの？', 4, FALSE, NULL, NOW(), NULL),
+(5, '私は友達とか家族に自分の良いところ聞いたりしたよ。意外な発見があるかも。', 4, FALSE, NULL, NOW(), NULL),
+(2, 'あとは、過去の経験を振り返ってみるのもいいよ。成功体験とか失敗体験とか。', 4, FALSE, NULL, NOW(), NULL),
+(6, '答えを暗記するのはあんまりおすすめしないな～', 5, FALSE, NULL, NOW(), NULL),
+(2, 'それこそ、ここのAI練習に面接練習あるからやってみたらいい。', 5, FALSE, NULL, NOW(), NULL),
+
+(3, '俺もたまーにやってる！色々フィードバックくれるからいいよ', 5, FALSE, NULL, NOW(), NULL),
+(8, '確かに繰り返し練習するのが一番効果的かも。', 5, FALSE, NULL, NOW(), NULL),
+(2, '自分の話したいことエピソードやアピールポイントをちゃんと固めておくことかな。', 5, FALSE, NULL, NOW(), NULL),
+(1, 'そもそも自己PRと自分の強みって何が違うの？', 6, FALSE, NULL, NOW(), NULL),
+(7, '自己PRは具体的なエピソードを交えた方がいい。サークル、ゼミ、バイト何でもいいから経験を話すべき。', 6, FALSE, NULL, NOW(), NULL),
+
+(2, '私は資格勉強のこと話した！自分が一番頑張ったものをいえばいいよ。', 6, FALSE, NULL, NOW(), NULL),
+(6, '資格は業界によるけど、IT系なら基本情報技術者とか持ってると有利かも。', 7, FALSE, NULL, NOW(), NULL),
+(7, '社会人になるとなかなか勉強する時間取れないから、計画的に進めるのが大事だよね。', 7, FALSE, NULL, NOW(), NULL),
+(16, '27卒の理系です！同じ卒業年度の方としたいです！可能な限り、選考状況など共有してくれるとモチベになります！', 8, FALSE, NULL, NOW(), NULL),
+(3, '文系27卒です！よろしくお願いします', 8, FALSE, NULL, NOW(), NULL),
+
+(4, '27卒理系です。今内定2社です。', 8, FALSE, NULL, NOW(), NULL),
+(2, '私は商社志望で今3社から内定もらってるよ！', 8, FALSE, NULL, NOW(), NULL),
+(16, 'いいね～！SNS交換しよー！', 8, FALSE, NULL, NOW(), NULL);
 
 -- quiz_questions
 INSERT INTO quiz_questions (question, is_answer, expanation) VALUES
@@ -620,21 +643,13 @@ INSERT INTO articles_tag (article_id, tag_id, creation_date) VALUES
 (1, 1, NOW()), -- 記事1 に「説明会開催中」
 (1, 8, NOW()), -- 記事1 に「会社紹介」
 (2, 14, NOW()), -- 記事2 に「スレッド開設」
-<<<<<<< HEAD
-(2, 2, NOW()); -- 記事2 に「会社員の日常」
-=======
 -- 追加分
 (11, 7, NOW()), (12, 8, NOW()), (13, 8, NOW()), (15, 13, NOW()),
 (17, 13, NOW()), (18, 8, NOW()), (21, 13, NOW()), (23, 3, NOW());
->>>>>>> 33c5aec0af61647f2c081437913c0c68b31a70c8
 
 -- industry_relations
 INSERT INTO industry_relations (type, user_id, target_id, created_at) VALUES
 (1, 1, 1, NOW()),
-<<<<<<< HEAD
-(2, 2, 2, NOW()),
-(3, 3, 1, NOW());
-=======
 (1, 1, 3, NOW()),
 (1, 2, 2, NOW()),
 (1, 3, 1, NOW()),
@@ -806,6 +821,5 @@ UPDATE articles SET total_likes = 3 WHERE id = 29;
 UPDATE articles SET total_likes = 15 WHERE id = 30;
 UPDATE articles SET total_likes = 20 WHERE id = 31;
 UPDATE articles SET total_likes = 15 WHERE id = 32;
->>>>>>> 33c5aec0af61647f2c081437913c0c68b31a70c8
 
 SET FOREIGN_KEY_CHECKS = 1;

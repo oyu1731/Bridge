@@ -247,8 +247,7 @@ public class UserService {
 
     // プロフィール編集
     @Transactional
-<<<<<<< HEAD
-    public UserDto updateUserProfile(Integer userId, UserDto dto) {
+    public UserDto updateUserProfile(Integer userId,UserDto dto, Map<String, Object> body) {
         // ===== バリデーション =====
         if (dto.getNickname() == null || dto.getNickname().trim().isEmpty()) {
             throw new IllegalArgumentException("ニックネームを入力してください");
@@ -274,9 +273,6 @@ public class UserService {
             }
         }
 
-=======
-    public UserDto updateUserProfile(Integer userId, Map<String, Object> body) {
->>>>>>> 33c5aec0af61647f2c081437913c0c68b31a70c8
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 

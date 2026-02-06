@@ -8,6 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/image_crop_dialog.dart';
+import 'package:bridge/config/postcodejp_api.dart';
+import 'package:flutter/services.dart';
 import '../06-company/photo_api_client.dart';
 import 'user_api_client.dart';
 import 'company_photo_modal.dart';
@@ -38,13 +40,17 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
   List<Industry> industries = [];
   final _nicknameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _phoneNumberController = TextEditingController();
   final _companyAddressController = TextEditingController();
+  final _postcodeController = TextEditingController();
   final _companyDescriptionController = TextEditingController();
   int? _iconPhotoId;
   String? _iconUrl;
   bool _uploadingIcon = false;
 
+  bool _isFetchingAddress = false;
+  bool _obscurePassword = true;
   bool _isSaving = false;
 
   @override
@@ -58,6 +64,7 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
   void dispose() {
     _nicknameController.dispose();
     _emailController.dispose();
+    _passwordController.dispose();
     _phoneNumberController.dispose();
     _companyAddressController.dispose();
     _companyDescriptionController.dispose();
@@ -278,11 +285,48 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
               Column(
                 children: [
                   const SizedBox(height: 16),
-                  Text(
-                    '選択中の企業写真',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
+                    _buildLabel("メールアドレス"),
+                    _buildTextField(_emailController, validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'メールアドレスを入力してください';
+                      final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                      if (!emailRegex.hasMatch(v)) return '有効なメールアドレスを入力してください';
+                      return null;
+                    }),
+                    const SizedBox(height: 20),
+                    _buildLabel('パスワード（変更する場合）'),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: EdgeInsetsGeometry.only(top: 14),
+                          child: Icon(Icons.lock_outline, color: AppTheme.cyanDark),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _passwordController,
+                            decoration: InputDecoration(
+                              border: const OutlineInputBorder(),
+                              labelText: '新しいパスワード',
+                              hintText: '英数字８文字以上で入力してください（空のままなら変更しません）',
+                              suffixIcon: IconButton(
+                                icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: AppTheme.cyanDark),
+                                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                              ),
+                            ),
+                            obscureText: _obscurePassword,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) return null;
+                              if (value.length < 8) return 'パスワードは8文字以上である必要があります';
+                              if (value.length > 255) return 'パスワードは255文字以内で入力してください';
+                              final regex = RegExp(r'^[a-zA-Z0-9._]+$');
+                              if (!regex.hasMatch(value)) return '使用できるのは英数字・.・_ のみです';
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   Image.network(
                     _companyPhotoUrl!,
                     width: 120,
@@ -294,14 +338,6 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
             const SizedBox(height: 30),
             _buildLabel("企業名"),
             _buildTextField(_nicknameController, validator: (v) => v == null || v.trim().isEmpty ? 'ニックネームを入力してください' : null),
-            const SizedBox(height: 20),
-            _buildLabel("メールアドレス"),
-            _buildTextField(_emailController, validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'メールアドレスを入力してください';
-              final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-              if (!emailRegex.hasMatch(v)) return '有効なメールアドレスを入力してください';
-              return null;
-            }),
             const SizedBox(height: 20),
             _buildLabel("電話番号"),
             _buildTextField(_phoneNumberController, validator: (v) => v == null || v.trim().isEmpty ? '電話番号を入力してください' : null),
@@ -419,6 +455,9 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
       'companyDescription': _companyDescriptionController.text,
       'icon': _iconPhotoId,
     };
+    if (_passwordController.text.isNotEmpty) {
+      updatedData['password'] = _passwordController.text;
+    }
 
     final userUpdateUrl = '${ApiConfig.baseUrl}/api/users/$userId/profile';
     final userUpdateResponse = await http.put(

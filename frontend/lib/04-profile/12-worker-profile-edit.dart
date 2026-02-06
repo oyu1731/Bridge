@@ -36,6 +36,7 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
   List<Industry> industries = [];
   final _nicknameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _phoneNumberController = TextEditingController();
   final _societyHistoryController = TextEditingController();
   int? _iconPhotoId;
@@ -43,6 +44,7 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
   bool _uploadingIcon = false;
 
   bool _isSaving = false; // 保存中フラグ
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -55,6 +57,7 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
   void dispose() {
     _nicknameController.dispose();
     _emailController.dispose();
+    _passwordController.dispose();
     _phoneNumberController.dispose();
     _societyHistoryController.dispose();
     super.dispose();
@@ -251,19 +254,34 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
             }),
             const SizedBox(height: 20),
             _buildLabel("現職業界"),
-            Column(
-              children:
-                  industries.map((industry) {
-                    return CheckboxListTile(
-                      title: Text(industry.name),
-                      value: industry.isSelected,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          industry.isSelected = value ?? false;
-                        });
-                      },
-                    );
-                  }).toList(),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: AppTheme.cyanDark,
+                  width: 1.0,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                children: industries.map((industry) {
+                  return CheckboxListTile(
+                    title: Text(
+                      industry.name,
+                      style: const TextStyle(
+                        color: AppTheme.textCyanDark,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    value: industry.isSelected,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        industry.isSelected = value ?? false;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
             ),
             const SizedBox(height: 30),
             Center(
@@ -361,6 +379,9 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
       'desiredIndustries': selectedIndustryIds,
       'icon': _iconPhotoId,
     };
+    if (_passwordController.text.isNotEmpty) {
+      updatedData['password'] = _passwordController.text;
+    }
 
     final url = '${ApiConfig.baseUrl}/api/users/$userId/profile';
     final response = await http.put(
