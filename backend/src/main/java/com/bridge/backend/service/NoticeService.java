@@ -83,6 +83,10 @@ public class NoticeService {
 
             d.totalCount = ((Number) r[11]).intValue();
 
+            d.fromUserDeleted = r[12] != null && ((Boolean) r[12]);
+
+            d.toUserDeleted = r[13] != null && ((Boolean) r[13]);
+
             return d;
         }).toList();
     }

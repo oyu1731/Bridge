@@ -1,6 +1,7 @@
 package com.bridge.backend.service;
 
 import com.bridge.backend.dto.CompanyDTO;
+import com.bridge.backend.dto.CompanySignUpRequest;
 import com.bridge.backend.entity.Company;
 import com.bridge.backend.entity.Photo;
 import com.bridge.backend.entity.User;
@@ -12,30 +13,20 @@ import com.bridge.backend.repository.UserRepository;
 import com.bridge.backend.repository.IndustryRelationRepository;
 import com.bridge.backend.repository.IndustryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class CompanyService {
-        /**
-         * 企業のphotoIdのみ更新
-         */
-        public boolean updateCompanyPhotoId(Integer companyId, Integer photoId) {
-            Optional<Company> companyOpt = companyRepository.findByIdAndIsWithdrawnFalse(companyId);
-            if (companyOpt.isPresent()) {
-                Company company = companyOpt.get();
-                company.setPhotoId(photoId);
-                companyRepository.save(company);
-                return true;
-            }
-            return false;
-        }
-    
     @Autowired
     private CompanyRepository companyRepository;
     
@@ -50,6 +41,8 @@ public class CompanyService {
     
     @Autowired
     private IndustryRepository industryRepository;
+    
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     
     /**
      * すべての企業を取得（退会していない企業のみ）
@@ -210,5 +203,98 @@ public class CompanyService {
         }
 
         return dto;
+    }
+
+    /**
+     * 企業のphotoIdのみ更新
+     */
+    public boolean updateCompanyPhotoId(Integer companyId, Integer photoId) {
+        Optional<Company> companyOpt = companyRepository.findByIdAndIsWithdrawnFalse(companyId);
+        if (companyOpt.isPresent()) {
+            Company company = companyOpt.get();
+            company.setPhotoId(photoId);
+            companyRepository.save(company);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 企業と企業ユーザーを同一トランザクション内で登録
+     * 
+     * @param request 企業ユーザー登録リクエスト
+     * @return 登録された企業ユーザー情報を含むマップ
+     * @throws Exception メール重複や入力エラー時
+     */
+    @Transactional
+    public Map<String, Object> registerCompanyWithUser(CompanySignUpRequest request) throws Exception {
+        // Step 1: メール重複チェック
+        Optional<User> existingUser = userRepository.findByEmail(request.getUserEmail());
+        if (existingUser.isPresent()) {
+            throw new Exception("このメールアドレスは既に登録されています");
+        }
+        
+        // Step 2: 企業レコードを作成・保存
+        Company company = new Company();
+        company.setName(request.getCompanyName());
+        company.setAddress(request.getCompanyAddress());
+        company.setPhoneNumber(request.getCompanyPhoneNumber());
+        company.setDescription(request.getCompanyDescription());
+        company.setPhotoId(parsePhotoId(request.getCompanyPhotoId()));
+        company.setPlanStatus(1);
+        company.setIsWithdrawn(false);
+        company.setCreatedAt(LocalDateTime.now());
+        
+        Company savedCompany = companyRepository.save(company);
+        System.out.println("✅ 企業レコード作成: companyId=" + savedCompany.getId() + ", name=" + savedCompany.getName());
+        
+        // Step 3: 企業ユーザーレコードを作成
+        // type=3 は企業ユーザーを示す
+        User companyUser = new User();
+        companyUser.setNickname(request.getUserNickname());
+        companyUser.setEmail(request.getUserEmail());
+        companyUser.setPassword(passwordEncoder.encode(request.getUserPassword()));
+        companyUser.setPhoneNumber(request.getUserPhoneNumber());
+        companyUser.setType(3);  // type: 3 = 企業ユーザー
+        
+        // Step 4: ★重要★ company_id を明示的にセット
+        companyUser.setCompanyId(savedCompany.getId());
+        companyUser.setPlanStatus("企業プレミアム");
+        companyUser.setToken(50);
+        companyUser.setIcon(null);
+        companyUser.setReportCount(0);
+        companyUser.setAnnouncementDeletion(1);
+        companyUser.setIsWithdrawn(false);
+        companyUser.setCreatedAt(LocalDateTime.now());
+        
+        User savedUser = userRepository.save(companyUser);
+        System.out.println("✅ 企業ユーザー作成: userId=" + savedUser.getId() 
+            + ", companyId=" + savedUser.getCompanyId() 
+            + ", type=" + savedUser.getType());
+        
+        // Step 5: レスポンスを構築
+        Map<String, Object> result = new HashMap<>();
+        result.put("userId", savedUser.getId());
+        result.put("companyId", savedCompany.getId());
+        result.put("email", savedUser.getEmail());
+        result.put("nickname", savedUser.getNickname());
+        result.put("type", savedUser.getType());
+        result.put("companyName", savedCompany.getName());
+        
+        return result;
+    }
+    
+    /**
+     * PhotoId をパース（文字列から Integer に）
+     */
+    private Integer parsePhotoId(String photoIdStr) {
+        if (photoIdStr == null || photoIdStr.isEmpty()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(photoIdStr);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

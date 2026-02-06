@@ -1,0 +1,5 @@
+FROM mysql:8.0
+
+# COPY the custom my.cnf and ensure permissions are correct so MySQL will read it
+COPY mysql/my.cnf /etc/mysql/conf.d/my.cnf
+RUN chmod 644 /etc/mysql/conf.d/my.cnf

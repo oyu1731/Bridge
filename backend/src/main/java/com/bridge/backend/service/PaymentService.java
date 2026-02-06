@@ -57,6 +57,7 @@ public class PaymentService {
                         map.put("nickname", user.getNickname());
                         map.put("email", user.getEmail());
                         map.put("type", user.getType());
+                        map.put("companyId", user.getCompanyId());
                         map.put("planStatus", user.getPlanStatus());
                         return map;
                     })
@@ -75,6 +76,7 @@ public class PaymentService {
                             map.put("nickname", user.getNickname());
                             map.put("email", user.getEmail());
                             map.put("type", user.getType());
+                            map.put("companyId", user.getCompanyId());
                             map.put("planStatus", user.getPlanStatus());
                             return map;
                         })

@@ -13,7 +13,9 @@ public class AdminNoticeLogDto {
     public LocalDateTime createdAt;
     public String threadTitle;
     public String chatContent;
-    public Boolean threadDeleted;   // ← 追加
-    public Boolean chatDeleted;     // ← 追加
+    public Boolean threadDeleted;
+    public Boolean chatDeleted;
     public Integer totalCount;
+    public Boolean fromUserDeleted;
+    public Boolean toUserDeleted;
 }
