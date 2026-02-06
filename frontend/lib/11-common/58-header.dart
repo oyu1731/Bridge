@@ -197,9 +197,23 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         final isAdmin = userInfo['isAdmin'] == true;
         final userId = userInfo['userId'];
 
-        // print(
-        //   '【ヘッダーデバッグ】accountType=$accountType, isAdmin=$isAdmin, userId=$userId',
-        // );
+        // 退会済み・削除済みチェック
+        final isWithdrawn =
+            userInfo['is_withdrawn'] == 1 || userInfo['is_withdrawn'] == true;
+        final isDeleted =
+            userInfo['is_deleted'] == 1 ||
+            userInfo['is_deleted'] == true ||
+            userInfo['is_deleted'] == '0x01';
+        if (isWithdrawn || isDeleted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(
+              context,
+            ).pushNamedAndRemoveUntil('/home', (route) => false);
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('アカウントが無効です。トップページに戻ります。')));
+          });
+        }
 
         final greetings = ['こんにちは', 'いらっしゃいませ', 'ようこそ', 'お帰りなさい'];
         final greeting =
@@ -208,10 +222,6 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         // =========================
         // 🏢 企業アカウントならプランチェック
         // =========================
-        // print('🔍 ヘッダー: プランチェック開始');
-        // print('   accountType=$accountType, userId=$userId');
-        // print('   _shownAlertUserIds=$_shownAlertUserIds');
-
         if (accountType == '企業' &&
             userId != null &&
             !_shownAlertUserIds.contains(userId)) {
@@ -221,11 +231,13 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                 if (!_shownAlertUserIds.contains(alertKey)) {
                   if (status == null) {
                     // ❌ DB登録なし → トップに戻す
-                    print('❌ プラン状態がnull（DB登録なし） → ログイン画面へ遷移');
+                    print('❌ プラン状態がnull（DB登録なし） → ホーム画面へ遷移');
                     _shownAlertUserIds.add(alertKey);
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const SignInPage()),
+                        MaterialPageRoute(
+                          builder: (_) => MyHomePage(title: 'Bridge'),
+                        ),
                         (route) => false,
                       );
                     });
