@@ -154,7 +154,7 @@ class _WerewolfGameScreenState extends State<WerewolfGameScreen> {
     _inactivityTimer?.cancel();
     _inactivityTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       final elapsed = DateTime.now().difference(_lastActiveAt).inSeconds;
-      if (elapsed >= 60 && !_inactiveHandled && _isAlive) {
+      if (elapsed >= 180 && !_inactiveHandled && _isAlive) {
         _inactiveHandled = true;
         _handleInactivity();
       }
@@ -1111,6 +1111,35 @@ class _WerewolfGameScreenState extends State<WerewolfGameScreen> {
             'timestamp': DateTime.now().toIso8601String(),
           });
         });
+
+        // 1日目の夜のみ、人狼チームに仲間リストを専用表示
+        if (_myRole == 'WEREWOLF' && _currentCycle <= 1) {
+          final match = RegExp(r'仲間の人狼:\s*ユーザーID\s*([0-9,\s]+)')
+              .firstMatch(roleMessage);
+          if (match != null) {
+            final ids = match.group(1)!
+                .split(RegExp(r'[\s,]+'))
+                .where((s) => s.isNotEmpty)
+                .map((s) => int.tryParse(s))
+                .whereType<int>()
+                .toList();
+            if (ids.isNotEmpty) {
+              final names = <String>[];
+              for (final id in ids) {
+                names.add(await _getUserLabel(id));
+              }
+              if (mounted) {
+                setState(() {
+                  _botMessages.add({
+                    'text': '🐺 仲間の人狼: ${names.join(', ')}',
+                    'isUser': false,
+                    'timestamp': DateTime.now().toIso8601String(),
+                  });
+                });
+              }
+            }
+          }
+        }
         
         print('✅ 役職取得: $_myRole');
       }
@@ -1561,6 +1590,9 @@ class _WerewolfGameScreenState extends State<WerewolfGameScreen> {
         int? killedUserId = data['killedUserId'] != null
             ? int.tryParse(data['killedUserId'].toString())
             : null;
+        int? protectedUserId = data['protectedUserId'] != null
+            ? int.tryParse(data['protectedUserId'].toString())
+            : null;
         
         // ゲーム情報から議論時間を取得
         final gameInfoResponse = await http.get(
@@ -1582,6 +1614,12 @@ class _WerewolfGameScreenState extends State<WerewolfGameScreen> {
             nightMessage = nightMessage.replaceAll('ユーザーID $targetId', label);
             killedUserId ??= targetId;
           }
+        }
+
+        // 護衛成功メッセージをユーザー名付きに変換
+        if (protectedUserId != null && nightMessage.contains('護衛が成功しました')) {
+          final name = await _getUserLabel(protectedUserId);
+          nightMessage = '夜が明けました。\n$name は騎士に護衛されていたため、人狼の襲撃は失敗しました。';
         }
 
         // 結果をボットメッセージとして表示
@@ -1617,6 +1655,7 @@ class _WerewolfGameScreenState extends State<WerewolfGameScreen> {
         _sendGameEvent('NIGHT_RESULT', {
           'message': nightMessage,
           'killedUserId': killedUserId,
+          'protectedUserId': protectedUserId,
         });
       }
     } catch (e) {

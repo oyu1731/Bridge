@@ -46,6 +46,7 @@ public class WerewolfGame {
     private Map<Integer, Integer> nightActions;  // 夜の行動 (userId -> targetUserId)
     private Integer lastExecutedUserId;          // 直近の処刑ユーザーID
     private Integer lastKilledUserId;            // 直近の襲撃ユーザーID
+    private Integer lastProtectedUserId;         // 直近の護衛ユーザーID
     
     public WerewolfGame(Integer threadId, Integer gameMasterId, List<Integer> participants) {
         this.threadId = threadId;
@@ -159,6 +160,14 @@ public class WerewolfGame {
 
     public void setLastKilledUserId(Integer lastKilledUserId) {
         this.lastKilledUserId = lastKilledUserId;
+    }
+
+    public Integer getLastProtectedUserId() {
+        return lastProtectedUserId;
+    }
+
+    public void setLastProtectedUserId(Integer lastProtectedUserId) {
+        this.lastProtectedUserId = lastProtectedUserId;
     }
     
     public int getParticipantCount() {
