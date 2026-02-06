@@ -128,40 +128,35 @@ class _ThreadListState extends State<ThreadList> {
   }
 
   Future<void> _fetchThreads() async {
-  try {
-    final threads = await ThreadApiClient.getAllThreads();
-    //スレッド表示絞り込み
-    bool canView(Thread t) {
-      // userType 未取得（未ログイン or セッション不整合）
-      if (userType == null) {
-        return t.entryCriteria == 1; // 全員OKのみ表示
+    try {
+      final threads = await ThreadApiClient.getAllThreads();
+      //スレッド表示絞り込み
+      bool canView(Thread t) {
+        // userType 未取得（未ログイン or セッション不整合）
+        if (userType == null) {
+          return t.entryCriteria == 1; // 全員OKのみ表示
+        }
+
+        if (t.entryCriteria == 1) return true;
+        if (userType == 1 && t.entryCriteria == 2) return true;
+        if (userType == 2 && t.entryCriteria == 3) return true;
+        return false;
       }
 
-      if (t.entryCriteria == 1) return true;
-      if (userType == 1 && t.entryCriteria == 2) return true;
-      if (userType == 2 && t.entryCriteria == 3) return true;
-      return false;
-    }
+      //公式スレッド
+      final official = threads.where((t) => t.type == 1 && canView(t)).toList();
+      //非公式スレッド
+      final filtered = threads.where((t) => t.type == 2 && canView(t)).toList();
 
+      //並び替え（新しい順）
+      filtered.sort((a, b) {
+        final aDate = a.lastCommentDate ?? DateTime(2000);
+        final bDate = b.lastCommentDate ?? DateTime(2000);
+        return bDate.compareTo(aDate);
+      });
 
-    //公式スレッド
-    final official = threads
-      .where((t) => t.type == 1 && canView(t))
-      .toList();
-    //非公式スレッド
-    final filtered = threads
-      .where((t) => t.type == 2 && canView(t))
-      .toList();
-
-    //並び替え（新しい順）
-    filtered.sort((a, b) {
-      final aDate = a.lastCommentDate ?? DateTime(2000);
-      final bDate = b.lastCommentDate ?? DateTime(2000);
-      return bDate.compareTo(aDate);
-    });
-
-    //上位5件
-    final top5 = filtered.take(5).toList();
+      //上位5件
+      final top5 = filtered.take(5).toList();
 
       setState(() {
         officialThreads = official;
@@ -190,44 +185,42 @@ class _ThreadListState extends State<ThreadList> {
             Column(
               children:
                   officialThreads.map((thread) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => ThreadOfficialDetail(
-                                  thread: {
-                                    'id': thread.id,
-                                    'title': thread.title,
-                                  },
-                                ),
-                          ),
-                        );
-                      },
-                      child: Card(
-                        color: Colors.white, // 背景を白に設定
-                        margin: EdgeInsets.symmetric(vertical: 6),
-                        elevation: 2,
-                        child: ListTile(
-                          title: Text(
-                            thread.title,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                    return Card(
+                      color: Colors.white, // 背景を白に設定
+                      margin: EdgeInsets.symmetric(vertical: 6),
+                      elevation: 2,
+                      child: ListTile(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => ThreadOfficialDetail(
+                                    thread: {
+                                      'id': thread.id,
+                                      'title': thread.title,
+                                    },
+                                  ),
                             ),
+                          );
+                        },
+                        title: Text(
+                          thread.title,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
-                          //スレッドの説明文
-                          subtitle: Text(
-                            thread.description ?? '',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: Colors.grey[700]),
-                          ),
-                          trailing: Text(
-                            thread.timeAgo,
-                            style: TextStyle(color: Colors.grey),
-                          ),
+                        ),
+                        //スレッドの説明文
+                        subtitle: Text(
+                          thread.description ?? '',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: Colors.grey[700]),
+                        ),
+                        trailing: Text(
+                          thread.timeAgo,
+                          style: TextStyle(color: Colors.grey),
                         ),
                       ),
                     );
@@ -264,48 +257,46 @@ class _ThreadListState extends State<ThreadList> {
             Column(
               children:
                   hotUnofficialThreads.map((thread) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => ThreadUnOfficialDetail(
-                                  thread: {
-                                    'id': thread.id,
-                                    'title': thread.title,
-                                  },
-                                ),
-                          ),
-                        );
-                      },
-                      child: Card(
-                        color: Colors.white, // 背景を白に設定
-                        margin: EdgeInsets.symmetric(vertical: 6),
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: ListTile(
-                          title: Text(
-                            //タイトルなし保険
-                            thread.title.isNotEmpty ? thread.title : '（タイトルなし）',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                    return Card(
+                      color: Colors.white, // 背景を白に設定
+                      margin: EdgeInsets.symmetric(vertical: 6),
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ListTile(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => ThreadUnOfficialDetail(
+                                    thread: {
+                                      'id': thread.id,
+                                      'title': thread.title,
+                                    },
+                                  ),
                             ),
+                          );
+                        },
+                        title: Text(
+                          //タイトルなし保険
+                          thread.title.isNotEmpty ? thread.title : '（タイトルなし）',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
-                          //スレッドの説明文
-                          subtitle: Text(
-                            thread.description ?? '',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: Colors.grey[700]),
-                          ),
-                          trailing: Text(
-                            thread.timeAgo,
-                            style: TextStyle(color: Colors.grey),
-                          ),
+                        ),
+                        //スレッドの説明文
+                        subtitle: Text(
+                          thread.description ?? '',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: Colors.grey[700]),
+                        ),
+                        trailing: Text(
+                          thread.timeAgo,
+                          style: TextStyle(color: Colors.grey),
                         ),
                       ),
                     );

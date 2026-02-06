@@ -25,33 +25,14 @@ bool _isGlobalErrorActive = false;
 bool _hasNavigatedToErrorPage = false;
 
 void main() async {
-  // グローバルエラーハンドリング: 画面ビルドエラー時は共通エラーページ
+  // グローバルエラーハンドリング: UI例外はログ出力のみ
+  // HTTP エラー処理は safeGet/safePost などの共通関数で行う
   ErrorWidget.builder =
       (FlutterErrorDetails details) => BridgeErrorWidget(details);
   FlutterError.onError = (FlutterErrorDetails details) {
-    int errorCode = 500;
-    final errorMsg = details.exceptionAsString().toLowerCase();
-    if (errorMsg.contains('404')) {
-      errorCode = 404;
-    } else if (errorMsg.contains('400')) {
-      errorCode = 400;
-    }
-    if (_firstGlobalErrorTime == null) {
-      _firstGlobalErrorTime = DateTime.now();
-      _isGlobalErrorActive = true;
-    }
-    if (_isGlobalErrorActive &&
-        DateTime.now().difference(_firstGlobalErrorTime!).inMilliseconds >=
-            10 &&
-        !_hasNavigatedToErrorPage) {
-      _hasNavigatedToErrorPage = true;
-      navigatorKey.currentState?.pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => CommonErrorPage(errorCode: errorCode),
-        ),
-        (route) => false,
-      );
-    }
+    // UI例外はログ出力のみ、エラーページへは遷移しない
+    debugPrint('【Flutter Error】${details.exceptionAsString()}');
+    debugPrintStack(stackTrace: details.stack);
   };
   WidgetsFlutterBinding.ensureInitialized();
 

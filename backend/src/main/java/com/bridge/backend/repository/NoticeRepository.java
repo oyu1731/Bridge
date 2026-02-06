@@ -37,11 +37,17 @@ public interface NoticeRepository extends JpaRepository<Notice, Integer> {
             ELSE COALESCE(
                 (SELECT COUNT(*) FROM notices x WHERE x.type = 2 AND x.chat_id = n.chat_id), 0
             )
-        END AS totalCount
+        END AS totalCount,
+
+        uf.is_deleted AS fromUserDeleted,
+        ut.is_deleted AS toUserDeleted
 
     FROM notices n
     LEFT JOIN threads t ON n.thread_id = t.id
     LEFT JOIN chats   c ON n.chat_id = c.id
+
+    LEFT JOIN users uf ON n.from_user_id = uf.id
+    LEFT JOIN users ut ON n.to_user_id   = ut.id
     ORDER BY n.created_at DESC
     """, nativeQuery = true)
     List<Object[]> findAdminNoticeLogs();

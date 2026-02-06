@@ -86,7 +86,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
       try {
         final res = await http.get(
           Uri.parse(
-            '${url.ApiConfig.frontendUrl}/api/v1/payment/session/$sessionId',
+            '${url.ApiConfig.baseUrl}/api/v1/payment/session/$sessionId',
           ),
         );
         if (res.statusCode == 200) {
@@ -177,7 +177,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
     if (kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.microtask(() {
-          html.window.location.replace('${ApiConfig.baseUrl}');
+          html.window.location.replace('${url.ApiConfig.frontendUrl}');
         });
       });
     } else {
@@ -316,7 +316,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
                           ),
                           SizedBox(height: isMobile ? 24 : 40),
                           ElevatedButton(
-                            onPressed: _resetUrlAndNavigateHome,
+                            onPressed: () => _resetUrlAndNavigateHome(),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                               padding: EdgeInsets.symmetric(
@@ -361,7 +361,7 @@ class PaymentCancelScreen extends StatelessWidget {
     if (kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.microtask(() {
-          html.window.location.replace('${ApiConfig.baseUrl}');
+          html.window.location.replace('${url.ApiConfig.frontendUrl}');
         });
       });
     } else {

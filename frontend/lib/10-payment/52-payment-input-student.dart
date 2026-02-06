@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:html' as html;
-import '../11-common/api_config.dart';
 import '../11-common/url.dart' as url;
 
 /// Web版 Stripe Checkout
@@ -40,12 +39,12 @@ Future<void> startWebCheckout({
   payload['successUrl'] = effectiveSuccessUrl;
 
   print("===== Stripe Checkout リクエスト開始 =====");
-  print("送信先: ${ApiConfig.baseUrl}/api/v1/payment/checkout-session");
+  print("送信先: ${url.ApiConfig.baseUrl}/api/v1/payment/checkout-session");
   print("送信データ(JSON): ${jsonEncode(payload)}");
 
   try {
     final response = await http.post(
-      Uri.parse("${ApiConfig.baseUrl}/api/v1/payment/checkout-session"),
+      Uri.parse("${url.ApiConfig.baseUrl}/api/v1/payment/checkout-session"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(payload),
     );

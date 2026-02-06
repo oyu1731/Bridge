@@ -37,6 +37,27 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/signin');
       }
+      return;
+    }
+    final userData = jsonDecode(userJson);
+
+    // 退会済み・削除済みチェック
+    final bool isWithdrawn = userData['is_withdrawn'] == true;
+    final bool isDeleted = userData['isDeleted'] == true;
+
+    if (isWithdrawn || isDeleted) {
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/home', (route) => false);
+        // 遷移後にSnackBar表示（WidgetsBindingで遅延実行）
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('アカウントが無効です。トップページに戻ります。')));
+        });
+      }
+      return;
     }
   }
 
@@ -45,9 +66,9 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
       // デモ用: 固定のユーザー情報を使用
       // email: company@example.com, password: hashed_password_company
       // このユーザーのcompanyIdを取得
-      
+
       final prefs = await SharedPreferences.getInstance();
-      
+
       // サインイン情報からcompanyIdを取得
       final userDataString = prefs.getString('current_user');
       if (userDataString == null) {
@@ -57,10 +78,10 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
         });
         return;
       }
-      
+
       final userData = jsonDecode(userDataString);
-      final int? companyId = userData['companyId'];
-      
+      final int? companyId = userData['companyId'] ?? userData['company_id'];
+
       if (companyId == null) {
         setState(() {
           _error = '企業アカウントでログインしてください。';
@@ -68,11 +89,11 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
         });
         return;
       }
-      
+
       setState(() {
         _currentCompanyId = companyId;
       });
-      
+
       // companyIdを取得後に記事を読み込む
       _loadArticles();
     } catch (e) {
@@ -99,8 +120,10 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
 
     try {
       // ログイン中の企業の記事のみ取得
-      List<ArticleDTO> articles = await ArticleApiClient.getArticlesByCompanyId(_currentCompanyId!);
-      
+      List<ArticleDTO> articles = await ArticleApiClient.getArticlesByCompanyId(
+        _currentCompanyId!,
+      );
+
       // 作成日時順にソート（新しい順）
       articles.sort((a, b) {
         if (a.createdAt == null && b.createdAt == null) return 0;
@@ -126,35 +149,36 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: BridgeHeader(),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : _error != null
+      body:
+          _isLoading
+              ? Center(child: CircularProgressIndicator())
+              : _error != null
               ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'エラーが発生しました',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'エラーが発生しました',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                      SizedBox(height: 8),
-                      Text(_error!),
-                      SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadArticles,
-                        child: Text('再読み込み'),
-                      ),
-                    ],
-                  ),
-                )
-              : SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      _buildSearchBar(),
-                      _buildArticleList(),
-                    ],
-                  ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(_error!),
+                    SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _loadArticles,
+                      child: Text('再読み込み'),
+                    ),
+                  ],
                 ),
+              )
+              : SingleChildScrollView(
+                child: Column(
+                  children: [_buildSearchBar(), _buildArticleList()],
+                ),
+              ),
     );
   }
 
@@ -189,12 +213,12 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
                 controller: _searchController,
                 decoration: InputDecoration(
                   hintText: '記事検索',
-                  hintStyle: TextStyle(
-                    color: Color(0xFF9E9E9E),
-                    fontSize: 14,
-                  ),
+                  hintStyle: TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                 ),
                 style: TextStyle(fontSize: 14),
                 onSubmitted: (_) => _filterArticles(),
@@ -212,11 +236,7 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
                     bottomRight: Radius.circular(8),
                   ),
                 ),
-                child: Icon(
-                  Icons.search,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: Icon(Icons.search, color: Colors.white, size: 20),
               ),
             ),
           ],
@@ -245,30 +265,27 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
               SizedBox(height: 4),
               Text(
                 '${_filteredArticles.length}件の記事',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF757575),
-                ),
+                style: TextStyle(fontSize: 14, color: Color(0xFF757575)),
               ),
             ],
           ),
           const SizedBox(height: 16),
           _filteredArticles.isEmpty
               ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32.0),
-                    child: Text(
-                      '記事がありません',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF757575),
-                      ),
-                    ),
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Text(
+                    '記事がありません',
+                    style: TextStyle(fontSize: 16, color: Color(0xFF757575)),
                   ),
-                )
-              : Column(
-                  children: _filteredArticles.map((article) => _buildArticleCard(article)).toList(),
                 ),
+              )
+              : Column(
+                children:
+                    _filteredArticles
+                        .map((article) => _buildArticleCard(article))
+                        .toList(),
+              ),
         ],
       ),
     );
@@ -312,27 +329,17 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
                 if (article.createdAt != null)
                   Text(
                     article.createdAt!.substring(0, 10),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF757575),
-                    ),
+                    style: TextStyle(fontSize: 12, color: Color(0xFF757575)),
                   ),
                 Spacer(),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.favorite,
-                      size: 14,
-                      color: Colors.red,
-                    ),
+                    Icon(Icons.favorite, size: 14, color: Colors.red),
                     SizedBox(width: 4),
                     Text(
                       '${article.totalLikes ?? 0}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF757575),
-                      ),
+                      style: TextStyle(fontSize: 12, color: Color(0xFF757575)),
                     ),
                   ],
                 ),
@@ -344,23 +351,27 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
               Wrap(
                 spacing: 6,
                 runSpacing: 4,
-                children: article.tags!.map((tag) {
-                  return Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFE3F2FD),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '#$tag',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF1976D2),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  );
-                }).toList(),
+                children:
+                    article.tags!.map((tag) {
+                      return Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFE3F2FD),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '#$tag',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF1976D2),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      );
+                    }).toList(),
               ),
             SizedBox(height: 20),
             // ボタン行
@@ -392,18 +403,13 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
         backgroundColor: color,
         foregroundColor: Colors.white,
         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         elevation: 2,
         shadowColor: color.withOpacity(0.3),
       ),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -414,14 +420,28 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
       if (query.isEmpty) {
         _filteredArticles = List.from(_articles);
       } else {
-        _filteredArticles = _articles.where((article) {
-          final lowerQuery = query.toLowerCase();
-          final titleMatch = article.title.toLowerCase().contains(lowerQuery);
-          final descriptionMatch = article.description.toLowerCase().contains(lowerQuery);
-          final companyMatch = article.companyName?.toLowerCase().contains(lowerQuery) ?? false;
-          final tagsMatch = article.tags?.any((tag) => tag.toLowerCase().contains(lowerQuery)) ?? false;
-          return titleMatch || descriptionMatch || companyMatch || tagsMatch;
-        }).toList();
+        _filteredArticles =
+            _articles.where((article) {
+              final lowerQuery = query.toLowerCase();
+              final titleMatch = article.title.toLowerCase().contains(
+                lowerQuery,
+              );
+              final descriptionMatch = article.description
+                  .toLowerCase()
+                  .contains(lowerQuery);
+              final companyMatch =
+                  article.companyName?.toLowerCase().contains(lowerQuery) ??
+                  false;
+              final tagsMatch =
+                  article.tags?.any(
+                    (tag) => tag.toLowerCase().contains(lowerQuery),
+                  ) ??
+                  false;
+              return titleMatch ||
+                  descriptionMatch ||
+                  companyMatch ||
+                  tagsMatch;
+            }).toList();
       }
     });
   }
@@ -430,12 +450,13 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ArticleDetailPage(
-          articleTitle: article.title,
-          articleId: article.id.toString(),
-          companyName: article.companyName,
-          description: article.description,
-        ),
+        builder:
+            (context) => ArticleDetailPage(
+              articleTitle: article.title,
+              articleId: article.id.toString(),
+              companyName: article.companyName,
+              description: article.description,
+            ),
       ),
     );
   }
@@ -444,16 +465,17 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ArticleEditPage(
-          articleId: article.id.toString(),
-          initialTitle: article.title,
-          initialTags: article.tags ?? [],
-          initialImages: [], // 既存画像があれば設定
-          initialContent: article.description,
-        ),
+        builder:
+            (context) => ArticleEditPage(
+              articleId: article.id.toString(),
+              initialTitle: article.title,
+              initialTags: article.tags ?? [],
+              initialImages: [], // 既存画像があれば設定
+              initialContent: article.description,
+            ),
       ),
     );
-    
+
     // 編集画面から戻ってきたら記事一覧を再読み込み
     _loadArticles();
   }
