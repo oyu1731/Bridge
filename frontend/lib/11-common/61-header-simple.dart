@@ -29,7 +29,7 @@ class BridgeHeaderSimple extends StatelessWidget
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: Image.asset(
-                  '../lib/01-images/Bridge-logo.png',
+                  'lib/01-images/Bridge-logo.png',
                   height: 50,
                   width: 100,
                   fit: BoxFit.contain,

@@ -412,7 +412,9 @@ INSERT INTO users (nickname, type, password, phone_number, email, company_id, re
 ('平和エネルギー担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '076-777-7777', 'heiwa@example.com', 17, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
 ('慈愛メディカル担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '092-888-8888', 'jiai@example.com', 18, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
 ('飛翔ツーリズム担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '011-999-9999', 'hisho@example.com', 19, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
-('大地アグリ担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '0985-10-1010', 'daichi@example.com', 20, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL);
+('大地アグリ担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '0985-10-1010', 'daichi@example.com', 20, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+-- admin追加
+('admin', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-0001', 'admin@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL);
 -- 業界
 -- industries
 INSERT INTO industries (industry) VALUES

@@ -628,7 +628,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     child: Center(
                       child: Image.asset(
-                        'lib/01-images/Bridge-logo.png',
+                        'lib/01-images/bridge-logo.png',
                         height: isSmallScreen ? 70 : 90,
                         width: isSmallScreen ? 160 : 200,
                         fit: BoxFit.contain,
