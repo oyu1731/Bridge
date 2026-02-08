@@ -29,6 +29,8 @@ dependencies:
   image: ^4.1.7
   file_picker: ^10.3.7
   payjp_flutter: ^0.7.7 # Pay.jp決済用
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
 
 dev_dependencies:
   flutter_test:

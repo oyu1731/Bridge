@@ -46,6 +46,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
   bool _isLoadingArticles = false;
   String? _errorMessage;
   bool _hasSearched = false; // 検索が実行されたかどうかを管理
+  Set<int> _activeCompanyIds = {};
 
   // PC用横スクロールのコントローラと設定（ループ用）
   final ScrollController _companyScrollController = ScrollController();
@@ -88,6 +89,8 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
       });
       setState(() {
         _filteredCompanies = filtered;
+        _activeCompanyIds =
+            filtered.where((c) => c.id != null).map((c) => c.id!).toSet();
         _isLoading = false;
         _hasSearched = false; // 初期データは注目企業として表示
       });
@@ -207,9 +210,24 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     });
 
     try {
+      if (_activeCompanyIds.isEmpty) {
+        final companies = await CompanyApiClient.getAllCompanies();
+        final activeCompanies =
+            companies.where((c) => c.isWithdrawn != true).toList();
+        _activeCompanyIds =
+            activeCompanies
+                .where((c) => c.id != null)
+                .map((c) => c.id!)
+                .toSet();
+      }
+
       final articles = await ArticleApiClient.getAllArticles();
       // 削除済み記事を除外
-      final filtered = articles.where((a) => a.isDeleted != true).toList();
+      final filtered =
+          articles
+              .where((a) => a.isDeleted != true)
+              .where((a) => _activeCompanyIds.contains(a.companyId))
+              .toList();
       // 最終更新日時順にソート（注目記事として表示）
       filtered.sort((a, b) {
         if (a.createdAt == null && b.createdAt == null) return 0;

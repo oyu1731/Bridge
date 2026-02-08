@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../11-common/58-header.dart';
 import '18-article-detail.dart';
 import '16-article-list.dart';
@@ -41,6 +45,9 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
   List<ArticleDTO> _featuredArticles = [];
   bool _isLoading = true;
   String? _error;
+  LatLng? _companyLatLng;
+  bool _isGeocoding = false;
+  String? _mapError;
 
   // 自動ループ用コントローラ/タイマー
   PageController? _featuredPageController;
@@ -65,6 +72,7 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
         _featuredArticles = filtered.take(5).toList();
         _isLoading = false;
       });
+      _geocodeAddress(company?.address);
       // 記事取得後に自動スクロールをセットアップ
       _setupFeaturedAutoScroll();
     } catch (e) {
@@ -95,6 +103,51 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
         curve: Curves.easeInOut,
       );
     });
+  }
+
+  Future<void> _geocodeAddress(String? address) async {
+    if (address == null || address.trim().isEmpty) return;
+    if (_isGeocoding) return;
+    setState(() {
+      _isGeocoding = true;
+      _mapError = null;
+    });
+    try {
+      final uri = Uri.https('nominatim.openstreetmap.org', '/search', {
+        'format': 'json',
+        'q': address,
+        'limit': '1',
+      });
+      final response = await http.get(
+        uri,
+        headers: {'User-Agent': 'bridge-app/1.0 (contact: dev@bridge.local)'},
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Geocoding failed: ${response.statusCode}');
+      }
+      final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+      if (data.isEmpty) {
+        throw Exception('No location found');
+      }
+      final lat = double.tryParse(data.first['lat']?.toString() ?? '');
+      final lon = double.tryParse(data.first['lon']?.toString() ?? '');
+      if (lat == null || lon == null) {
+        throw Exception('Invalid coordinates');
+      }
+      setState(() {
+        _companyLatLng = LatLng(lat, lon);
+      });
+    } catch (e) {
+      setState(() {
+        _mapError = '地図を取得できませんでした';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGeocoding = false;
+        });
+      }
+    }
   }
 
   String _formatDate(String? dateString) {
@@ -312,7 +365,6 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
 
     return Container(
       padding: EdgeInsets.all(20),
-      height: isMobile ? null : 400,
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Color(0xFFE0E0E0)),
@@ -435,6 +487,63 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
                 ],
               ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCompanyMap({bool isMobile = false}) {
+    final mapHeight = isMobile ? 220.0 : 260.0;
+    return Container(
+      width: double.infinity,
+      height: mapHeight,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Color(0xFFE0E0E0)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child:
+            _companyLatLng == null
+                ? Center(
+                  child: Text(
+                    _isGeocoding
+                        ? '地図を読み込み中...'
+                        : (_mapError ?? '位置情報が見つかりませんでした'),
+                    style: TextStyle(fontSize: 14, color: Color(0xFF757575)),
+                  ),
+                )
+                : FlutterMap(
+                  options: MapOptions(
+                    initialCenter: _companyLatLng!,
+                    initialZoom: 15,
+                    interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+                    ),
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      subdomains: const ['a', 'b', 'c'],
+                      userAgentPackageName: 'com.bridge.app',
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: _companyLatLng!,
+                          width: 40,
+                          height: 40,
+                          child: Icon(
+                            Icons.location_pin,
+                            color: Colors.red,
+                            size: 36,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
       ),
     );
   }
@@ -574,6 +683,17 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
                               ),
                               SizedBox(height: 16),
                               _buildCompanyInfoTable(),
+                              SizedBox(height: 24),
+                              Text(
+                                '所在地（地図）',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF424242),
+                                ),
+                              ),
+                              SizedBox(height: 12),
+                              _buildCompanyMap(isMobile: true),
                               SizedBox(height: 32),
                             ],
                           ),
@@ -628,6 +748,17 @@ class _CompanyDetailPageState extends State<CompanyDetailPage> {
                                 ),
                                 SizedBox(height: 24),
                                 _buildCompanyInfoTable(),
+                                SizedBox(height: 24),
+                                Text(
+                                  '所在地（地図）',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF424242),
+                                  ),
+                                ),
+                                SizedBox(height: 12),
+                                _buildCompanyMap(),
                                 SizedBox(height: 24),
                               ],
                             ),

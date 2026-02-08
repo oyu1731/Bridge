@@ -184,7 +184,9 @@ class UserProfileEditControllerTest {
                 "industry_ids", List.of(1,2),
                 "image_path", "img.png"
         );
-        Mockito.doThrow(new RuntimeException("User not found")).when(userService).updateUserProfile(99, req);
+        Mockito.doThrow(new RuntimeException("User not found"))
+                .when(userService)
+                .updateUserProfile(Mockito.eq(99), Mockito.any(com.bridge.backend.dto.UserDto.class), Mockito.eq(req));
         mockMvc.perform(put("/api/users/99/profile")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)))
@@ -203,7 +205,9 @@ class UserProfileEditControllerTest {
                 "industry_ids", List.of(1,2),
                 "image_path", "img.png"
         );
-        Mockito.doThrow(new RuntimeException("DB error")).when(userService).updateUserProfile(1, req);
+        Mockito.doThrow(new RuntimeException("DB error"))
+                .when(userService)
+                .updateUserProfile(Mockito.eq(1), Mockito.any(com.bridge.backend.dto.UserDto.class), Mockito.eq(req));
         mockMvc.perform(put("/api/users/1/profile")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)))
@@ -221,7 +225,12 @@ class UserProfileEditControllerTest {
                 "industry_ids", List.of(1,2),
                 "image_path", "img.png"
         );
-        Mockito.when(userService.updateUserProfile(1, req)).thenReturn(new com.bridge.backend.dto.UserDto());
+        Mockito.when(
+                userService.updateUserProfile(
+                        Mockito.eq(1),
+                        Mockito.any(com.bridge.backend.dto.UserDto.class),
+                        Mockito.eq(req)))
+                .thenReturn(new com.bridge.backend.dto.UserDto());
         mockMvc.perform(put("/api/users/1/profile")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)))

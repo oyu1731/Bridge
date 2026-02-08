@@ -101,6 +101,9 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
   static Set<String> _shownAlertUserIds = {}; // format: "userId_planStatus"
   static Map<int, String> _cachedPlanStatus = {};
 
+  static const String _lastNotificationOpenedKeyPrefix =
+      'lastNotificationOpenedAt_';
+
   // =========================
   // 🔧 プラン状態取得
   // =========================
@@ -316,7 +319,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
                                 child: Image.asset(
-                                  'lib/01-images/bridge-logo.png',
+                                  '01-images/bridge-logo.png',
                                   height: 30,
                                   width: 50,
                                   fit: BoxFit.contain,
@@ -383,21 +386,12 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                               ),
                             ),
                             if (!isAdmin)
-                              SizedBox(
-                                width: 28,
-                                height: 28,
-                                child: IconButton(
-                                  tooltip: 'お知らせ一覧',
-                                  onPressed: () {
-                                    _showNotificationDialog(context);
-                                  },
-                                  icon: const Icon(
-                                    Icons.notifications_outlined,
-                                    size: 16,
-                                    color: Color(0xFF616161),
-                                  ),
-                                  padding: EdgeInsets.zero,
-                                ),
+                              _buildNotificationButton(
+                                context,
+                                icon: Icons.notifications_outlined,
+                                iconSize: 16,
+                                iconColor: const Color(0xFF616161),
+                                size: 28,
                               ),
                           ],
                         ),
@@ -429,7 +423,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(4),
                               child: Image.asset(
-                                'lib/01-images/bridge-logo.png',
+                                '01-images/bridge-logo.png',
                                 height: 55,
                                 width: 110,
                                 fit: BoxFit.contain,
@@ -485,15 +479,11 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                               ),
                               const SizedBox(width: 8),
                               if (!isAdmin)
-                                IconButton(
-                                  tooltip: 'お知らせ一覧',
-                                  onPressed: () {
-                                    _showNotificationDialog(context);
-                                  },
-                                  icon: const Icon(
-                                    Icons.notifications_none_outlined,
-                                    color: AppTheme.accentOrange,
-                                  ),
+                                _buildNotificationButton(
+                                  context,
+                                  icon: Icons.notifications_none_outlined,
+                                  iconColor: AppTheme.accentOrange,
+                                  size: 36,
                                 ),
                             ],
                           ),
@@ -919,32 +909,9 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
 
     final List list = jsonDecode(res.body);
 
-    final notifications =
-        list.map((e) => SimpleNotification.fromJson(e)).where((n) {
-          if (n.sendFlagInt != 2) return false;
-          // 全員
-          if (n.type == 7) return true;
+    final notifications = _filterNotifications(list, userId, type);
 
-          // 個人宛
-          if (n.type == 8 && n.userId == userId) return true;
-
-          // 学生
-          if (type == 1) {
-            return n.type == 1 || n.type == 4 || n.type == 5;
-          }
-
-          // 社会人
-          if (type == 2) {
-            return n.type == 2 || n.type == 4 || n.type == 6;
-          }
-
-          // 企業
-          if (type == 3) {
-            return n.type == 3 || n.type == 5 || n.type == 6;
-          }
-
-          return false;
-        }).toList();
+    await _saveNotificationOpenedAt(userId);
 
     showDialog(
       context: context,
@@ -1009,6 +976,164 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
               ),
             ],
           ),
+    );
+  }
+
+  List<SimpleNotification> _filterNotifications(
+    List list,
+    int userId,
+    int? type,
+  ) {
+    return list.map((e) => SimpleNotification.fromJson(e)).where((n) {
+      if (n.sendFlagInt != 2) return false;
+      // 全員
+      if (n.type == 7) return true;
+
+      // 個人宛
+      if (n.type == 8 && n.userId == userId) return true;
+
+      // 学生
+      if (type == 1) {
+        return n.type == 1 || n.type == 4 || n.type == 5;
+      }
+
+      // 社会人
+      if (type == 2) {
+        return n.type == 2 || n.type == 4 || n.type == 6;
+      }
+
+      // 企業
+      if (type == 3) {
+        return n.type == 3 || n.type == 5 || n.type == 6;
+      }
+
+      return false;
+    }).toList();
+  }
+
+  Future<void> _saveNotificationOpenedAt(int userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(
+      '$_lastNotificationOpenedKeyPrefix$userId',
+      DateTime.now().millisecondsSinceEpoch,
+    );
+  }
+
+  Future<bool> _hasNewNotifications() async {
+    final userInfo = await _getUserInfo();
+    final accountType = userInfo['accountType'];
+    if (accountType == null) return false;
+
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('current_user');
+    if (userJson == null) return false;
+    final userData = jsonDecode(userJson);
+    final userId = userData['id'];
+    if (userId == null) return false;
+
+    int? type;
+    if (accountType == '学生') type = 1;
+    if (accountType == '社会人') type = 2;
+    if (accountType == '企業') type = 3;
+
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/notifications'),
+    );
+    if (res.statusCode != 200) return false;
+
+    final List list = jsonDecode(res.body);
+    final notifications = _filterNotifications(list, userId, type);
+    if (notifications.isEmpty) return false;
+
+    final lastOpenedMillis = prefs.getInt(
+      '$_lastNotificationOpenedKeyPrefix$userId',
+    );
+    if (lastOpenedMillis == null) {
+      return true;
+    }
+    final lastOpened = DateTime.fromMillisecondsSinceEpoch(lastOpenedMillis);
+    return notifications.any(
+      (n) => n.sendFlag != null && n.sendFlag!.isAfter(lastOpened),
+    );
+  }
+
+  Widget _buildNotificationButton(
+    BuildContext context, {
+    required IconData icon,
+    double? iconSize,
+    Color? iconColor,
+    required double size,
+  }) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: FutureBuilder<bool>(
+        future: _hasNewNotifications(),
+        builder: (context, snapshot) {
+          final hasNew = snapshot.data == true;
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                tooltip: 'お知らせ一覧',
+                onPressed: () {
+                  _showNotificationDialog(context);
+                },
+                icon: Icon(icon, size: iconSize, color: iconColor),
+                padding: EdgeInsets.zero,
+              ),
+              if (hasNew) Positioned(right: 2, top: 2, child: _BlinkingDot()),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _BlinkingDot extends StatefulWidget {
+  const _BlinkingDot();
+
+  @override
+  State<_BlinkingDot> createState() => _BlinkingDotState();
+}
+
+class _BlinkingDotState extends State<_BlinkingDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _opacity = Tween<double>(
+      begin: 0.3,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity,
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: const BoxDecoration(
+          color: Colors.redAccent,
+          shape: BoxShape.circle,
+        ),
+      ),
     );
   }
 }

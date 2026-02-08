@@ -329,7 +329,17 @@ public class UserController {
 
         // DB更新
         try {
-            UserDto updatedUser = userService.updateUserProfile(userId, body);
+            UserDto dto = new UserDto();
+            dto.setNickname((String) body.get("nickname"));
+            dto.setEmail((String) body.get("email"));
+            dto.setPhoneNumber((String) body.get("phone_number"));
+            if (body.get("society_history") instanceof Integer) {
+                dto.setSocietyHistory((Integer) body.get("society_history"));
+            }
+            dto.setCompanyAddress((String) body.get("company_address"));
+            dto.setCompanyDescription((String) body.get("company_description"));
+
+            UserDto updatedUser = userService.updateUserProfile(userId, dto, body);
             return ResponseEntity.ok(updatedUser);
         } catch (RuntimeException e) {
             if (e.getMessage() != null && e.getMessage().contains("User not found")) {
