@@ -319,7 +319,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
                                 child: Image.asset(
-                                  '01-images/bridge-logo.png',
+                                  'lib/01-images/bridge-logo.png',
                                   height: 30,
                                   width: 50,
                                   fit: BoxFit.contain,
@@ -423,7 +423,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(4),
                               child: Image.asset(
-                                '01-images/bridge-logo.png',
+                                'lib/01-images/bridge-logo.png',
                                 height: 55,
                                 width: 110,
                                 fit: BoxFit.contain,

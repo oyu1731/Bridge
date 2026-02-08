@@ -571,12 +571,10 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 24, 147, 178),
         foregroundColor: Colors.white,
-        title: Text(
-          widget.title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-          ),
+        title: Image.asset(
+          'lib/01-images/bridge-logo.png',
+          height: 28,
+          fit: BoxFit.contain,
         ),
         elevation: 4,
         shadowColor: Colors.black.withOpacity(0.2),
