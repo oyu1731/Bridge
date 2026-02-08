@@ -11,7 +11,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors().and()
+            .cors().and() // WebConfigの設定を適用
             .csrf().disable()
             .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
