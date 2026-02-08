@@ -2,6 +2,7 @@ package com.bridge.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -11,6 +12,7 @@ import org.springframework.web.filter.CorsFilter;
  * 静的リソース含む全エンドポイントにCORSヘッダーを付与する設定
  */
 @Configuration
+@Profile("dev")
 public class CorsConfig {
 
     @Bean
