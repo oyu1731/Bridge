@@ -43,6 +43,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/bridgedb
       SPRING_DATASOURCE_USERNAME: bridgeuser
       SPRING_DATASOURCE_PASSWORD: bridgepass
+      SPRING_PROFILES_ACTIVE: prod
     volumes:
       - uploaded_photos:/app/uploads/photos
     networks:
