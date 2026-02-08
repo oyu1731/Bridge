@@ -24,6 +24,7 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
   bool _showCorrectionCompleteAlert = false; // 添削完了アラート表示フラグ
   final GlobalActions _globalActions = GlobalActions(); // GlobalActionsのインスタンス
   Map<String, dynamic>? _userSession; // ユーザーセッションを保持
+  int? _availableTokens; // ユーザーの保有トークン
 
   @override
   void initState() {
@@ -33,6 +34,17 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
 
   void _loadUserSession() async {
     _userSession = await _globalActions.loadUserSession();
+    if (_userSession != null) {
+      final sessionToken = _userSession!['token'];
+      if (sessionToken is int) {
+        _availableTokens = sessionToken;
+      }
+      if (_userSession!['id'] != null) {
+        final userId = _userSession!['id'] as int;
+        _availableTokens =
+            await _globalActions.fetchUserTokens(userId) ?? _availableTokens;
+      }
+    }
     setState(() {}); // UIを更新するためにsetStateを呼び出す
   }
 
@@ -48,6 +60,30 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
         onConfirm: () {},
       );
       return;
+    }
+
+    final isPremium = (_userSession?['planStatus'] ?? '無料') != '無料';
+    if (!isPremium) {
+      int? currentTokens = _availableTokens;
+      if (_userSession != null && _userSession!['id'] != null) {
+        final userId = _userSession!['id'] as int;
+        currentTokens =
+            await _globalActions.fetchUserTokens(userId) ?? currentTokens;
+        _availableTokens = currentTokens;
+      }
+
+      final int tokenCost = 5;
+      if ((currentTokens ?? 0) < tokenCost) {
+        showGenericDialog(
+          context: context,
+          type: DialogType.onlyOk,
+          title: 'トークン不足',
+          content: 'トークンがないため実行できません。',
+          confirmText: 'OK',
+          onConfirm: () {},
+        );
+        return;
+      }
     }
 
     setState(() {
@@ -70,26 +106,7 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
           _showCorrectionCompleteAlert = true; // アラート表示フラグを立てる
         });
 
-        // トークンを消費（プレミアムユーザーは除外）
-        if (_userSession != null && _userSession!['id'] != null) {
-          final isPremium = (_userSession?['planStatus'] ?? '無料') != '無料';
-          if (!isPremium) {
-            final userId = _userSession!['id'] as int;
-            final tokensToDeduct = 5; // メール添削のトークンコスト
-            final bool deducted = await _globalActions.deductUserTokens(
-              userId,
-              tokensToDeduct,
-            );
-            if (deducted) {
-              print('$tokensToDeduct トークンを消費しました。');
-              // セッションのトークン数を更新するなどの処理が必要であればここに追加
-            } else {
-              print('トークン消費に失敗しました。');
-            }
-          } else {
-            print('プレミアムユーザーのためトークン消費をスキップしました。');
-          }
-        }
+        // メール添削ではトークンを消費しない
 
         // 添削完了アラートを表示
         if (_showCorrectionCompleteAlert) {
