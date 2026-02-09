@@ -3,6 +3,7 @@ package com.bridge.backend.controller;
 import com.bridge.backend.dto.CompanyDTO;
 import com.bridge.backend.dto.CompanySignUpRequest;
 import com.bridge.backend.service.CompanyService;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,9 +39,16 @@ import java.util.Optional;
 
         // リクエスト用DTO
         public static class PhotoIdRequest {
-            private Integer photo_id;
-            public Integer getPhotoId() { return photo_id; }
-            public void setPhotoId(Integer photo_id) { this.photo_id = photo_id; }
+            @JsonProperty("photo_id")
+            private Integer photoId;
+
+            public Integer getPhotoId() {
+                return photoId;
+            }
+
+            public void setPhotoId(Integer photoId) {
+                this.photoId = photoId;
+            }
         }
     
     @Autowired
@@ -202,7 +210,7 @@ import java.util.Optional;
                 dto.setDescription("不正な入力値です");
                 return ResponseEntity.ok(dto);
             }
-            if (companyDTO.getEmail() == null || companyDTO.getEmail().trim().isEmpty()) {
+            if (companyDTO.getEmail() != null && companyDTO.getEmail().trim().isEmpty()) {
                 CompanyDTO dto = new CompanyDTO();
                 dto.setEmail(companyDTO.getEmail());
                 dto.setDescription("不正な入力値です");
