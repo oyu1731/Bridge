@@ -28,20 +28,30 @@ class _CompanyHomeState extends State<CompanyHome>
   static const Color textCyanDark = Color.fromARGB(255, 2, 44, 61);
   // API呼び出し　並び替え　上位３件に絞り込み
   Future<List<Thread>> fetchTop3UnofficialThreads() async {
+    if (userType == null) return [];
     final threads = await ThreadApiClient.getAllThreads();
-    final unofficial =
-        threads
-            .where(
-              (t) =>
-                  t.type == 2 &&
-                  (t.entryCriteria == userType || t.entryCriteria == 1),
-            )
-            .toList();
+    final List<Thread> unofficial = [];
+    bool canEnterThread({required int userType, required int entryCriteria}) {
+      if (entryCriteria == 1) return true; // 全員OK
+      if (entryCriteria == 2 && userType == 1) return true; // 学生のみ
+      if (entryCriteria == 3 && userType == 2) return true; // 社会人のみ
+      return false;
+    }
+
+    for (final t in threads) {
+      if (t.type != 2) continue; // 非公式のみ
+
+      if (canEnterThread(userType: userType!, entryCriteria: t.entryCriteria)) {
+        unofficial.add(t);
+      }
+    }
+
     unofficial.sort((a, b) {
       final aTime = a.lastCommentDate ?? DateTime(2000);
       final bTime = b.lastCommentDate ?? DateTime(2000);
-      return bTime.compareTo(aTime); // 新しい順
+      return bTime.compareTo(aTime);
     });
+
     return unofficial.take(3).toList();
   }
 
@@ -53,7 +63,7 @@ class _CompanyHomeState extends State<CompanyHome>
     if (jsonString == null) return;
     final userData = jsonDecode(jsonString);
     setState(() {
-      userType = userData['type'] + 1;
+      userType = userData['type'];
     });
   }
 
@@ -153,18 +163,7 @@ class _CompanyHomeState extends State<CompanyHome>
                 ),
               ),
             ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildTopPageTab(context),
-                Center(child: Text('タブ2の内容')),
-                Center(child: Text('タブ3の内容')),
-                Center(child: Text('タブ4の内容')),
-                Center(child: Text('タブ5の内容')),
-              ],
-            ),
-          ),
+          Expanded(child: _buildTopPageTab(context)),
         ],
       ),
     );

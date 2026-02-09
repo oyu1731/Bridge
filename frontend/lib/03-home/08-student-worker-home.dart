@@ -32,15 +32,22 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
   Map<String, dynamic>? _user;
   // API呼び出し　並び替え　上位３件に絞り込み
   Future<List<Thread>> fetchTop3UnofficialThreads() async {
+    if (userType == null) {
+      await _loadUserData();
+    }
+
+    final currentUserType = userType;
+
+    bool canViewThread(Thread t) {
+      if (t.entryCriteria == 1) return true; // 全員
+      if (currentUserType == 1 && t.entryCriteria == 2) return true; // 学生
+      if (currentUserType == 2 && t.entryCriteria == 3) return true; // 社会人
+      return false;
+    }
+
     final threads = await ThreadApiClient.getAllThreads();
     final unofficial =
-        threads
-            .where(
-              (t) =>
-                  t.type == 2 &&
-                  (t.entryCriteria == userType || t.entryCriteria == 1),
-            )
-            .toList();
+        threads.where((t) => t.type == 2 && canViewThread(t)).toList();
     unofficial.sort((a, b) {
       final aTime = a.lastCommentDate ?? DateTime(2000);
       final bTime = b.lastCommentDate ?? DateTime(2000);
@@ -57,7 +64,7 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
     if (jsonString == null) return;
     final userData = jsonDecode(jsonString);
     setState(() {
-      userType = userData['type'] + 1;
+      userType = userData['type'];
     });
   }
 
