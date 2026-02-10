@@ -15,6 +15,7 @@ import 'package:http/http.dart' as http;
 import 'package:bridge/03-home/08-student-worker-home.dart';
 import 'package:bridge/03-home/09-company-home.dart';
 import 'package:bridge/09-admin/36-admin-home.dart';
+import 'package:bridge/11-common/bridge_route_observer.dart';
 import 'package:bridge/style.dart';
 
 class SignInPage extends StatefulWidget {
@@ -190,6 +191,7 @@ class _SignInPageState extends State<SignInPage> {
                                 homePage = const MyHomePage(title: 'Bridge');
                               }
 
+                              BridgeRouteObserver.requestLogoForNextNavigation();
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(

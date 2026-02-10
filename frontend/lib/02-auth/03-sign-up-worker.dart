@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import 'package:bridge/main.dart';
 import 'package:bridge/03-home/08-student-worker-home.dart';
+import 'package:bridge/11-common/bridge_route_observer.dart';
 import 'package:bridge/style.dart';
 
 class ProfessionalInputPage extends StatefulWidget {
@@ -181,8 +182,11 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                               border: OutlineInputBorder(),
                               labelText: 'ニックネーム',
                             ),
-                            validator: (v) =>
-                                v == null || v.isEmpty ? 'ニックネームを入力してください' : null,
+                            validator:
+                                (v) =>
+                                    v == null || v.isEmpty
+                                        ? 'ニックネームを入力してください'
+                                        : null,
                           ),
                         ),
                       ],
@@ -205,7 +209,8 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                             ),
                             keyboardType: TextInputType.emailAddress,
                             validator: (v) {
-                              if (v == null || v.isEmpty) return 'メールアドレスを入力してください';
+                              if (v == null || v.isEmpty)
+                                return 'メールアドレスを入力してください';
                               if (!v.contains('@')) return '形式が不正です';
                               return null;
                             },
@@ -321,8 +326,11 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                               FilteringTextInputFormatter.digitsOnly,
                               LengthLimitingTextInputFormatter(2),
                             ],
-                            validator: (v) =>
-                                v == null || v.isEmpty ? '社会人歴を入力してください' : null,
+                            validator:
+                                (v) =>
+                                    v == null || v.isEmpty
+                                        ? '社会人歴を入力してください'
+                                        : null,
                           ),
                         ),
                       ],
@@ -433,6 +441,7 @@ class _ProfessionalInputPageState extends State<ProfessionalInputPage> {
                           if (res.statusCode == 200) {
                             final userData = jsonDecode(res.body);
                             await saveSession(userData);
+                            BridgeRouteObserver.requestLogoForNextNavigation();
                             Navigator.push(
                               context,
                               MaterialPageRoute(

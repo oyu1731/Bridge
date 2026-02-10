@@ -8,6 +8,7 @@ import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/03-home/08-student-worker-home.dart';
 import 'package:bridge/03-home/09-company-home.dart';
 import 'package:bridge/09-admin/36-admin-home.dart';
+import 'package:bridge/11-common/bridge_route_observer.dart';
 import 'package:bridge/main.dart';
 import 'package:bridge/style.dart';
 
@@ -77,9 +78,7 @@ class _PasswordUpdatePageState extends State<PasswordUpdatePage> {
       final int userId = userData['id'];
       final int userType = userData['type'];
 
-      final url = Uri.parse(
-        '${ApiConfig.baseUrl}/api/users/$userId/password',
-      );
+      final url = Uri.parse('${ApiConfig.baseUrl}/api/users/$userId/password');
 
       final response = await http.put(
         url,
@@ -111,8 +110,14 @@ class _PasswordUpdatePageState extends State<PasswordUpdatePage> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('パスワード変更', style: TextStyle(color: AppTheme.textCyanDark)),
-          content: const Text('パスワードの変更が完了しました', style: TextStyle(color: AppTheme.textCyanDark)),
+          title: const Text(
+            'パスワード変更',
+            style: TextStyle(color: AppTheme.textCyanDark),
+          ),
+          content: const Text(
+            'パスワードの変更が完了しました',
+            style: TextStyle(color: AppTheme.textCyanDark),
+          ),
           actions: [
             TextButton(
               onPressed: () {
@@ -129,6 +134,7 @@ class _PasswordUpdatePageState extends State<PasswordUpdatePage> {
                   home = const MyHomePage(title: 'Bridge');
                 }
 
+                BridgeRouteObserver.requestLogoForNextNavigation();
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (_) => home),
@@ -177,7 +183,10 @@ class _PasswordUpdatePageState extends State<PasswordUpdatePage> {
                       label: '現在のパスワード',
                       controller: _currentController,
                       obscure: _obscureCurrent,
-                      toggle: () => setState(() => _obscureCurrent = !_obscureCurrent),
+                      toggle:
+                          () => setState(
+                            () => _obscureCurrent = !_obscureCurrent,
+                          ),
                     ),
                     const SizedBox(height: 16),
 
@@ -193,9 +202,13 @@ class _PasswordUpdatePageState extends State<PasswordUpdatePage> {
                       label: '新しいパスワード（再入力）',
                       controller: _confirmController,
                       obscure: _obscureConfirm,
-                      toggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
-                      validator: (v) =>
-                          v != _newController.text ? 'パスワードが一致しません' : null,
+                      toggle:
+                          () => setState(
+                            () => _obscureConfirm = !_obscureConfirm,
+                          ),
+                      validator:
+                          (v) =>
+                              v != _newController.text ? 'パスワードが一致しません' : null,
                     ),
 
                     const SizedBox(height: 24),
@@ -213,9 +226,10 @@ class _PasswordUpdatePageState extends State<PasswordUpdatePage> {
                     Center(
                       child: ElevatedButton(
                         onPressed: _isSaving ? null : _onSubmit,
-                        child: _isSaving
-                            ? const CircularProgressIndicator()
-                            : const Text('送信'),
+                        child:
+                            _isSaving
+                                ? const CircularProgressIndicator()
+                                : const Text('送信'),
                       ),
                     ),
                   ],

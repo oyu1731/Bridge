@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:bridge/03-home/08-student-worker-home.dart';
+import 'package:bridge/11-common/bridge_route_observer.dart';
 import 'package:bridge/style.dart';
 
 class StudentInputPage extends StatefulWidget {
@@ -204,7 +205,8 @@ class _StudentInputPageState extends State<StudentInputPage> {
                             ),
                             keyboardType: TextInputType.emailAddress,
                             validator: (v) {
-                              if (v == null || v.isEmpty) return 'メールアドレスを入力してください';
+                              if (v == null || v.isEmpty)
+                                return 'メールアドレスを入力してください';
                               if (!v.contains('@')) return 'メールアドレスの形式が不正です';
                               return null;
                             },
@@ -401,6 +403,7 @@ class _StudentInputPageState extends State<StudentInputPage> {
                             if (response.statusCode == 200) {
                               final userData = jsonDecode(response.body);
                               await saveSession(userData);
+                              BridgeRouteObserver.requestLogoForNextNavigation();
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
