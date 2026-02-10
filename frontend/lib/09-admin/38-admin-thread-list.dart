@@ -175,7 +175,12 @@ class _AdminThreadListState extends State<AdminThreadList> {
                   // ★追加：戻ってきたら再取得
                   final changed = await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => ThreadUnofficialList()),
+                    MaterialPageRoute(
+                      settings: const RouteSettings(
+                        name: '/thread/unofficial-list',
+                      ),
+                      builder: (_) => ThreadUnofficialList(),
+                    ),
                   );
 
                   if (changed == true) {
@@ -198,6 +203,9 @@ class _AdminThreadListState extends State<AdminThreadList> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
+                            settings: const RouteSettings(
+                              name: '/admin/thread-detail',
+                            ),
                             builder:
                                 (_) => AdminThreadDetail(
                                   threadId: thread.thread.id,

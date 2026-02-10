@@ -207,7 +207,10 @@ class _CompanyHomeState extends State<CompanyHome>
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => ThreadList()),
+                          MaterialPageRoute(
+                            settings: const RouteSettings(name: '/thread/list'),
+                            builder: (_) => ThreadList(),
+                          ),
                         );
                       },
                       child: const Text(
@@ -248,6 +251,9 @@ class _CompanyHomeState extends State<CompanyHome>
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
+                                            settings: const RouteSettings(
+                                              name: '/thread/unofficial-detail',
+                                            ),
                                             builder:
                                                 (context) =>
                                                     ThreadUnOfficialDetail(

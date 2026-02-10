@@ -271,7 +271,10 @@ class _ThreadCreateState extends State<ThreadCreate> {
 
                     // スレッドトップページへ遷移
                     Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => ThreadList()),
+                      MaterialPageRoute(
+                        settings: const RouteSettings(name: '/thread/list'),
+                        builder: (_) => ThreadList(),
+                      ),
                     );
                   },
                   child: Text('確認'),

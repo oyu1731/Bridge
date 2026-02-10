@@ -106,24 +106,25 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
 
       return false;
     }
+
     try {
       await _loadUserData(); // ← await を付ける（超重要）
 
       final allThreads = await ThreadApiClient.getAllThreads();
 
       setState(() {
-      unofficialThreads =
-          allThreads
-              .where(
-                (t) =>
-                    t.type == 2 &&
-                    userType != null &&
-                    canViewThread(t, userType),
-              )
-              .toList();
+        unofficialThreads =
+            allThreads
+                .where(
+                  (t) =>
+                      t.type == 2 &&
+                      userType != null &&
+                      canViewThread(t, userType),
+                )
+                .toList();
 
-      filteredThreads = List.from(unofficialThreads);
-    });
+        filteredThreads = List.from(unofficialThreads);
+      });
     } catch (e) {
       print("非公式スレッドの取得に失敗: $e");
     }
@@ -178,7 +179,10 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => ThreadCreate()),
+                      MaterialPageRoute(
+                        settings: const RouteSettings(name: '/thread/create'),
+                        builder: (context) => ThreadCreate(),
+                      ),
                     );
                   },
                   child: Text('スレッド作成'),
@@ -211,44 +215,52 @@ class _ThreadUnofficialListState extends State<ThreadUnofficialList> {
 
             // 非公式スレッドの一覧
             Expanded(
-              child: filteredThreads.isEmpty
-                  ? Center(
-                      child: Text(
-                        'スレッドが見つかりません',
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: filteredThreads.length,
-                      itemBuilder: (context, index) {
-                        final thread = filteredThreads[index];
+              child:
+                  filteredThreads.isEmpty
+                      ? Center(
+                        child: Text(
+                          'スレッドが見つかりません',
+                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                        ),
+                      )
+                      : ListView.builder(
+                        itemCount: filteredThreads.length,
+                        itemBuilder: (context, index) {
+                          final thread = filteredThreads[index];
 
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ThreadUnOfficialDetail(
-                                  thread: {'id': thread.id, 'title': thread.title},
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  settings: const RouteSettings(
+                                    name: '/thread/unofficial-detail',
+                                  ),
+                                  builder:
+                                      (context) => ThreadUnOfficialDetail(
+                                        thread: {
+                                          'id': thread.id,
+                                          'title': thread.title,
+                                        },
+                                      ),
+                                ),
+                              );
+                            },
+                            child: Card(
+                              color: Colors.white,
+                              margin: EdgeInsets.symmetric(vertical: 6),
+                              elevation: 2,
+                              child: ListTile(
+                                title: Text(thread.title),
+                                trailing: Text(
+                                  thread.timeAgo,
+                                  style: TextStyle(color: Colors.grey),
                                 ),
                               ),
-                            );
-                          },
-                          child: Card(
-                            color: Colors.white,
-                            margin: EdgeInsets.symmetric(vertical: 6),
-                            elevation: 2,
-                            child: ListTile(
-                              title: Text(thread.title),
-                              trailing: Text(
-                                thread.timeAgo,
-                                style: TextStyle(color: Colors.grey),
-                              ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                          );
+                        },
+                      ),
             ),
           ],
         ),

@@ -50,6 +50,7 @@ import '../09-admin/42-admin-account-list.dart';
 
 // アイコン取得
 import '../06-company/photo_api_client.dart';
+import 'bridge_route_observer.dart';
 
 // 隠しページ
 import '99-hidden-page.dart';
@@ -175,6 +176,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
               ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
+                  _markHeaderNavigation();
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -412,6 +414,8 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                               _logoTapCount++;
                               if (_logoTapCount >= 3) {
                                 _logoTapCount = 0;
+                                _markHeaderNavigation();
+                                _markHeaderNavigation();
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -573,6 +577,9 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
+                              settings: const RouteSettings(
+                                name: '/admin/thread-list',
+                              ),
                               builder: (_) => AdminThreadList(),
                             ),
                           );
@@ -625,7 +632,12 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                         _nav('スレッド', () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => ThreadList()),
+                            MaterialPageRoute(
+                              settings: const RouteSettings(
+                                name: '/thread/list',
+                              ),
+                              builder: (_) => ThreadList(),
+                            ),
                           );
                         }, isSmall),
                       );
@@ -658,7 +670,10 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
   // ===== ナビボタン =====
   Widget _nav(String text, VoidCallback onPressed, bool small) {
     return TextButton(
-      onPressed: onPressed,
+      onPressed: () {
+        _markHeaderNavigation();
+        onPressed();
+      },
       style: TextButton.styleFrom(
         foregroundColor: AppTheme.textCyanDark,
         padding: EdgeInsets.symmetric(
@@ -810,16 +825,19 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
       case 'profile_edit':
         final type = (await _getUserInfo())['accountType'];
         if (type == '学生') {
+          _markHeaderNavigation();
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => StudentProfileEditPage()),
           );
         } else if (type == '社会人') {
+          _markHeaderNavigation();
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => WorkerProfileEditPage()),
           );
         } else if (type == '企業') {
+          _markHeaderNavigation();
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => CompanyProfileEditPage()),
@@ -828,6 +846,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         break;
 
       case 'password_change':
+        _markHeaderNavigation();
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => PasswordUpdatePage()),
@@ -835,6 +854,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         break;
 
       case 'post_article':
+        _markHeaderNavigation();
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => ArticlePostPage()),
@@ -842,6 +862,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         break;
 
       case 'article_list':
+        _markHeaderNavigation();
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => CompanyArticleListPage()),
@@ -849,6 +870,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         break;
 
       case 'plan_check':
+        _markHeaderNavigation();
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -871,6 +893,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         break;
 
       case 'withdraw':
+        _markHeaderNavigation();
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => DeleteAccountPage()),
@@ -880,6 +903,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
       case 'logout':
         final prefs = await SharedPreferences.getInstance();
         await prefs.clear();
+        _markHeaderNavigation();
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => MyHomePage(title: 'Bridge')),
@@ -887,6 +911,10 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         );
         break;
     }
+  }
+
+  void _markHeaderNavigation() {
+    BridgeRouteObserver.requestLogoForNextNavigation();
   }
 
   Future<void> _showNotificationDialog(BuildContext context) async {

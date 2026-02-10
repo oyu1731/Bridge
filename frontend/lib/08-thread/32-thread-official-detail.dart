@@ -391,7 +391,10 @@ class _ThreadOfficialDetailState extends State<ThreadOfficialDetail> {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (_) => ThreadList()),
+                      MaterialPageRoute(
+                        settings: const RouteSettings(name: '/thread/list'),
+                        builder: (_) => ThreadList(),
+                      ),
                       (route) => false,
                     );
                   });

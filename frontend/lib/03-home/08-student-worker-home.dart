@@ -228,7 +228,10 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => ThreadList()),
+                          MaterialPageRoute(
+                            settings: const RouteSettings(name: '/thread/list'),
+                            builder: (_) => ThreadList(),
+                          ),
                         );
                       },
                       child: const Text('>スレッド一覧'),
@@ -266,6 +269,9 @@ class _StudentWorkerHomeState extends State<StudentWorkerHome>
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
+                                            settings: const RouteSettings(
+                                              name: '/thread/unofficial-detail',
+                                            ),
                                             builder:
                                                 (context) =>
                                                     ThreadUnOfficialDetail(

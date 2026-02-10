@@ -2,6 +2,8 @@ import 'dart:convert'; // JSON用
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // HapticFeedback用
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bridge/11-common/bridge_page_transitions.dart';
+import 'package:bridge/11-common/bridge_route_observer.dart';
 import 'package:bridge/02-auth/02-sign-up-student.dart';
 import 'package:bridge/02-auth/03-sign-up-worker.dart';
 import 'package:bridge/02-auth/04-sign-up-company.dart';
@@ -130,6 +132,17 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color.fromARGB(255, 0, 100, 120),
         ),
+        // Temporarily disabled: logo animation on page transitions.
+        // pageTransitionsTheme: const PageTransitionsTheme(
+        //   builders: {
+        //     TargetPlatform.android: BridgeLogoPageTransitionsBuilder(),
+        //     TargetPlatform.iOS: BridgeLogoPageTransitionsBuilder(),
+        //     TargetPlatform.linux: BridgeLogoPageTransitionsBuilder(),
+        //     TargetPlatform.macOS: BridgeLogoPageTransitionsBuilder(),
+        //     TargetPlatform.windows: BridgeLogoPageTransitionsBuilder(),
+        //     TargetPlatform.fuchsia: BridgeLogoPageTransitionsBuilder(),
+        //   },
+        // ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color.fromARGB(255, 0, 100, 120),
@@ -152,6 +165,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       title: 'Bridge App',
+      navigatorObservers: [BridgeRouteObserver(navigatorKey: navigatorKey)],
       initialRoute: '/',
       onGenerateRoute: (settings) {
         switch (settings.name) {

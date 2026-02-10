@@ -138,7 +138,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
       Uri.parse(ApiConfig.chatWebSocketUrl(widget.thread['id'])),
     );
 
-    _channel.stream.listen((data) async{
+    _channel.stream.listen((data) async {
       try {
         final msg = Map<String, dynamic>.from(jsonDecode(data));
         final userId = msg['userId'].toString();
@@ -338,12 +338,9 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
 
       if (!_scrollController.hasClients) return;
 
-      _scrollController.jumpTo(
-        _scrollController.position.maxScrollExtent,
-      );
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     }
   }
-
 
   // void _scrollToBottom() {
   //   // スクロール対象があるか確認
@@ -377,7 +374,10 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (_) => ThreadList()),
+                      MaterialPageRoute(
+                        settings: const RouteSettings(name: '/thread/list'),
+                        builder: (_) => ThreadList(),
+                      ),
                       (route) => false,
                     );
                   });
@@ -467,7 +467,9 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final msg = json.decode(response.body);
-        print("メッセージ送信成功: id=${msg['id']}, content=${msg['content']}, text=$text");
+        print(
+          "メッセージ送信成功: id=${msg['id']}, content=${msg['content']}, text=$text",
+        );
         _messages.add({
           'id': msg['id'],
           'user_id': msg['userId'].toString(),
@@ -493,17 +495,18 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
         _channel.sink.add(
           json.encode({...msg, 'userIconUrl': _currentUserIconUrl}),
         );
-        
+
         // 「人狼ゲーム」メッセージの場合、募集を開始
         print("人狼ゲームチェック: text='$text', 比較結果: ${text == '人狼ゲーム'}");
         if (text == '人狼ゲーム') {
-          final threadId = widget.thread['id'] is int 
-            ? widget.thread['id'] 
-            : int.parse(widget.thread['id'].toString());
+          final threadId =
+              widget.thread['id'] is int
+                  ? widget.thread['id']
+                  : int.parse(widget.thread['id'].toString());
           print("人狼ゲーム募集を開始します: chatId=${msg['id']}, threadId=$threadId");
           await _startWerewolfRecruitment(msg['id'], threadId);
         }
-        
+
         //自動スクロール
         _scrollToBottom();
       } else if (response.statusCode == 404 || response.statusCode == 410) {
@@ -521,7 +524,9 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
   // 人狼ゲーム募集を開始
   Future<void> _startWerewolfRecruitment(int chatId, int threadId) async {
     try {
-      print("人狼ゲーム募集開始リクエスト: chatId=$chatId, threadId=$threadId, userId=$currentUserId");
+      print(
+        "人狼ゲーム募集開始リクエスト: chatId=$chatId, threadId=$threadId, userId=$currentUserId",
+      );
       final response = await http.post(
         Uri.parse('$baseUrl/chat/werewolf/start'),
         headers: {'Content-Type': 'application/json'},
@@ -667,14 +672,11 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
                     final iconUrl = msg['userIconUrl'];
                     final userType = _userTypeCache[msg['user_id']];
                     final typeLabel = _typeLabel(userType);
-                    
+
                     // 「人狼ゲーム」メッセージの場合は専用ウィジェットを表示
                     if (msg['text'] == '人狼ゲーム') {
                       return WerewolfRecruitmentWidget(
-                        message: {
-                          ...msg,
-                          'thread_id': widget.thread['id'],
-                        },
+                        message: {...msg, 'thread_id': widget.thread['id']},
                         currentUserId: currentUserId,
                         onRecruitmentEnd: () {
                           // 募集終了時の処理
@@ -682,7 +684,7 @@ class _ThreadUnOfficialDetailState extends State<ThreadUnOfficialDetail> {
                         },
                       );
                     }
-                    
+
                     return Align(
                       alignment:
                           isMe ? Alignment.centerRight : Alignment.centerLeft,
