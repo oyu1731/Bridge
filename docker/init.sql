@@ -175,7 +175,8 @@ CREATE TABLE quiz_scores (
     user_id INT(20) NOT NULL,
     score INT(2) NOT NULL,
     created_at DATETIME NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    nickname VARCHAR(100) NOT NULL
 );
 
 -- テーブル定義書_面接
@@ -431,7 +432,7 @@ INSERT INTO users (nickname, type, password, phone_number, email, company_id, re
 ('大地アグリ担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '0985-10-1010', 'daichi@example.com', 20, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
 -- admin追加
 ('admin', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-0001', 'admin@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
---プロコン用操作アカウント（１５人分、学生「無料」、社会人「プレミアム」、企業、「プレミアム」、管理者）
+-- プロコン用操作アカウント（１５人分、学生「無料」、社会人「プレミアム」、企業、「プレミアム」、管理者）
 -- 学生 (ID 35-49)
 ('学生1', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1001', 'stu_1@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
 ('学生2', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1002', 'stu_2@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
