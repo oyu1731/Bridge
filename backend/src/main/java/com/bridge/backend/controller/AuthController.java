@@ -36,22 +36,29 @@ public class AuthController {
         response.put("input", Map.of("email", emailObj, "password", passwordObj));
 
         // email型チェック
-        if (!(emailObj instanceof String)) {
+        if (!(emailObj instanceof String) || ((String) emailObj).trim().isEmpty()) {
             errors.put("email", "入力されていない項目か不正な入力値があります");
+        }
+        if (!(passwordObj instanceof String) || ((String) passwordObj).isEmpty()) {
+            errors.put("password", "入力されていない項目か不正な入力値があります");
+        }
+        if (!errors.isEmpty()) {
             response.put("errors", errors);
+            response.put("message", "入力されていない項目か不正な入力値があります");
             return ResponseEntity.badRequest().body(response);
         }
         String email = (String) emailObj;
-        String password = passwordObj instanceof String ? (String) passwordObj : null;
+        String password = (String) passwordObj;
 
         try {
             UserDto userDto = authService.signin(email, password);
             User user = userRepository.findByEmail(email).orElse(null);
-            if (user == null || !user.getEmail().equals(email) || !user.getPassword().equals(user.getPassword())) {
-                errors.put("auth", "メールアドレスかパスワードが違います");
+            if (user == null) {
+                errors.put("auth", "ユーザーの登録情報がありません");
                 response.put("errors", errors);
+                response.put("message", "ユーザーの登録情報がありません");
                 response.put("input", Map.of("email", emailObj, "password", passwordObj));
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
             _saveUserToSession(session, user);
             System.out.println("✅ サインイン: userId=" + user.getId() + ", email=" + email);
@@ -68,8 +75,16 @@ public class AuthController {
 
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
+            String exceptionMessage = e.getMessage() == null ? "" : e.getMessage();
+            if (exceptionMessage.contains("登録") || exceptionMessage.contains("見つかりません") || exceptionMessage.contains("退会")) {
+                errors.put("auth", "ユーザーの登録情報がありません");
+                response.put("errors", errors);
+                response.put("message", "ユーザーの登録情報がありません");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
             errors.put("auth", "メールアドレスかパスワードが違います");
             response.put("errors", errors);
+            response.put("message", "メールアドレスかパスワードが違います");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (Exception e) {
             errors.put("system", "Internal Server Error");

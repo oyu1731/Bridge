@@ -161,13 +161,13 @@ CREATE TABLE photos (
     user_id INT(20)
 );
 
--- テーブル定義書_一問一答
-CREATE TABLE quiz_questions (
-    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    question TEXT(100) NOT NULL,
-    is_answer BOOLEAN NOT NULL,
-    expanation TEXT(255) NOT NULL
-);
+-- -- テーブル定義書_一問一答
+-- CREATE TABLE quiz_questions (
+--     id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+--     question TEXT(100) NOT NULL,
+--     is_answer BOOLEAN NOT NULL,
+--     expanation TEXT(255) NOT NULL
+-- );
 
 -- テーブル定義書_一問一答スコア
 CREATE TABLE quiz_scores (
@@ -185,12 +185,12 @@ CREATE TABLE interviews (
     type INT(1) NOT NULL COMMENT '1=一般、2=カジュアル、3=圧迫'
 );
 
--- テーブル定義書_電話対応
-CREATE TABLE phone_exercises (
-    id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    example TEXT(255) NOT NULL,
-    difficulty INT(1) NOT NULL COMMENT '1=簡単、2=普通、3=難しい'
-);
+-- -- テーブル定義書_電話対応
+-- CREATE TABLE phone_exercises (
+--     id INT(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+--     example TEXT(255) NOT NULL,
+--     difficulty INT(1) NOT NULL COMMENT '1=簡単、2=普通、3=難しい'
+-- );
 
 -- テーブル定義書_お知らせテーブル
 CREATE TABLE notifications (
@@ -368,7 +368,23 @@ INSERT INTO companies (name, address, phone_number, description, plan_status, is
 ('平和エネルギー株式会社', '石川県金沢市', '076-777-7777', '平和エネルギー株式会社は、持続可能な社会の実現に向けて、再生可能エネルギーの普及に取り組むエネルギー企業です。太陽光、風力、地熱など、多様な自然エネルギー源を活用した発電事業を展開しています。\n\n当社は、地域と共生するエネルギープロジェクトを重視しています。発電施設の建設にあたっては、地元の環境や生態系への影響を最小限に抑える配慮を行い、地域住民との対話を大切にしています。また、エネルギーの地産地消を推進し、地域経済の活性化にも貢献しています。\n\n主な事業内容：\n・太陽光発電所の開発・運営\n・風力発電プロジェクト\n・省エネルギーコンサルティング\n・家庭向け太陽光パネル設置\n\n「自然と調和したクリーンなエネルギーで、次世代に豊かな地球を」をビジョンに掲げています。', 1, FALSE, NOW(), 35),
 ('慈愛メディカル株式会社', '福岡県福岡市', '092-888-8888', '慈愛メディカル株式会社は、医療と介護の質的向上を目指して、医療機器の販売から介護施設の運営まで総合的に展開するヘルスケア企業です。九州地方を中心に、高齢化社会の課題解決に取り組んでいます。\n\n当社は、最先端の医療テクノロジーと温かな人間的ケアの融合を目指しています。遠隔診療システムの導入や、AIを活用した健康管理アプリの開発など、デジタル技術を駆使した新しい医療・介護サービスの提供に注力しています。\n\n主な事業内容：\n・医療機器・消耗品の販売\n・介護施設の運営・管理\n・在宅医療・介護支援サービス\n・健康管理アプリの開発\n\n「医療の進歩と人間の温もりを両立させる」ことで、誰もが安心して暮らせる社会の実現を目指します。', 1, FALSE, NOW(), 36),
 ('飛翔ツーリズム株式会社', '北海道札幌市', '011-999-9999', '飛翔ツーリズム株式会社は、北海道の雄大な自然を舞台に、特別な旅の体験を提供する旅行会社です。2005年の創業以来、個人旅行から団体旅行、企業研修旅行まで、幅広いニーズに対応してきました。\n\n当社の特徴は、地元のガイドと連携した「地域密着型」のツアープログラムです。観光名所だけでなく、一般の旅行ではなかなか訪れないローカルなスポットや、地域の文化・食を体験できるプログラムを多数用意しています。また、エコツーリズムにも力を入れており、自然環境の保全に配慮した旅行を提案しています。\n\n主な事業内容：\n・国内・海外旅行の企画・手配\n・企業研修・社員旅行の企画\n・地域活性化プロジェクト\n・旅行関連Webメディアの運営\n\n「旅で人生を豊かに」をモットーに、心に残る旅の創造を続けています。', 1, FALSE, NOW(), 37),
-('大地アグリカルチャー株式会社', '宮崎県宮崎市', '0985-10-1010', '大地アグリカルチャー株式会社は、持続可能な農業の実現を目指し、スマート農業技術の開発と実践に取り組む農業法人です。宮崎県の温暖な気候を活かした野菜栽培を基盤とし、全国へ高品質な農産物を供給しています。\n\n当社は、IoTセンサーやAIを活用したデータ駆動型農業を推進しています。圃場の環境データをリアルタイムで収集・分析し、最適な水やりや施肥を実現することで、収量の向上と品質の安定化を図っています。また、植物工場での完全人工光型栽培にも挑戦し、天候に左右されない安定的な生産体制を構築しています。\n\n主な事業内容：\n・野菜の栽培・販売（露地・施設）\n・スマート農業システムの開発・販売\n・農業技術のコンサルティング\n・農業体験・教育プログラム\n\n「自然とテクノロジーの調和で、未来の農業を創る」を理念に、農業の新しい可能性を追求しています。', 1, FALSE, NOW(), 37);-- ユーザー
+('大地アグリカルチャー株式会社', '宮崎県宮崎市', '0985-10-1010', '大地アグリカルチャー株式会社は、持続可能な農業の実現を目指し、スマート農業技術の開発と実践に取り組む農業法人です。宮崎県の温暖な気候を活かした野菜栽培を基盤とし、全国へ高品質な農産物を供給しています。\n\n当社は、IoTセンサーやAIを活用したデータ駆動型農業を推進しています。圃場の環境データをリアルタイムで収集・分析し、最適な水やりや施肥を実現することで、収量の向上と品質の安定化を図っています。また、植物工場での完全人工光型栽培にも挑戦し、天候に左右されない安定的な生産体制を構築しています。\n\n主な事業内容：\n・野菜の栽培・販売（露地・施設）\n・スマート農業システムの開発・販売\n・農業技術のコンサルティング\n・農業体験・教育プログラム\n\n「自然とテクノロジーの調和で、未来の農業を創る」を理念に、農業の新しい可能性を追求しています。', 1, FALSE, NOW(), 38),
+-- プロコン用
+('テスト企業01', '東京都千代田区1-1', '03-0001-0001', 'テスト企業01の説明です', 1, FALSE, NOW(), NULL),
+('テスト企業02', '東京都千代田区1-2', '03-0001-0002', 'テスト企業02の説明です', 1, FALSE, NOW(), NULL),
+('テスト企業03', '東京都千代田区1-3', '03-0001-0003', 'テスト企業03の説明です', 1, FALSE, NOW(), NULL),
+('テスト企業04', '東京都千代田区1-4', '03-0001-0004', 'テスト企業04の説明です', 1, FALSE, NOW(), NULL),
+('テスト企業05', '東京都千代田区1-5', '03-0001-0005', 'テスト企業05の説明です', 1, FALSE, NOW(), NULL),
+('テスト企業06', '東京都千代田区1-6', '03-0001-0006', 'テスト企業06の説明です', 1, FALSE, NOW(), NULL),
+('テスト企業07', '東京都千代田区1-7', '03-0001-0007', 'テスト企業07の説明です', 1, FALSE, NOW(), NULL),
+('テスト企業08', '東京都千代田区1-8', '03-0001-0008', 'テスト企業08の説明です', 1, FALSE, NOW(), NULL),
+('テスト企業09', '東京都千代田区1-9', '03-0001-0009', 'テスト企業09の説明です', 1, FALSE, NOW(), NULL),
+('テスト企業10', '東京都千代田区1-10', '03-0001-0010', 'テスト企業10の説明です', 1, FALSE, NOW(), NULL),
+('テスト企業11', '東京都千代田区1-11', '03-0001-0011', 'テスト企業11の説明です', 1, FALSE, NOW(), NULL),
+('テスト企業12', '東京都千代田区1-12', '03-0001-0012', 'テスト企業12の説明です', 1, FALSE, NOW(), NULL),
+('テスト企業13', '東京都千代田区1-13', '03-0001-0013', 'テスト企業13の説明です', 1, FALSE, NOW(), NULL),
+('テスト企業14', '東京都千代田区1-14', '03-0001-0014', 'テスト企業14の説明です', 1, FALSE, NOW(), NULL),
+('テスト企業15', '東京都千代田区1-15', '03-0001-0015', 'テスト企業15の説明です', 1, FALSE, NOW(), NULL);
 -- users
 INSERT INTO users (nickname, type, password, phone_number, email, company_id, report_count, plan_status, is_withdrawn, created_at, society_history, icon, announcement_deletion, token, otp, otp_expires_at) VALUES
 -- 学生:type=1
@@ -414,7 +430,76 @@ INSERT INTO users (nickname, type, password, phone_number, email, company_id, re
 ('飛翔ツーリズム担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '011-999-9999', 'hisho@example.com', 19, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
 ('大地アグリ担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '0985-10-1010', 'daichi@example.com', 20, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
 -- admin追加
-('admin', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-0001', 'admin@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL);
+('admin', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-0001', 'admin@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+--プロコン用操作アカウント（１５人分、学生「無料」、社会人「プレミアム」、企業、「プレミアム」、管理者）
+-- 学生 (ID 35-49)
+('学生1', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1001', 'stu_1@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('学生2', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1002', 'stu_2@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('学生3', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1003', 'stu_3@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('学生4', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1004', 'stu_4@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('学生5', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1005', 'stu_5@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('学生6', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1006', 'stu_6@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('学生7', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1007', 'stu_7@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('学生8', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1008', 'stu_8@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('学生9', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1009', 'stu_9@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('学生10', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1010', 'stu_10@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('学生11', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1011', 'stu_11@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('学生12', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1012', 'stu_12@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('学生13', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1013', 'stu_13@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('学生14', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1014', 'stu_14@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('学生15', 1, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '090-0000-1015', 'stu_15@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+
+-- 社会人 (ID 50-64) / type=2, 社会人プレミアム
+('社会人1', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-0000-2001', 'sha_1@test.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 5, NULL, 1, 50, NULL, NULL),
+('社会人2', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-0000-2002', 'sha_2@test.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 3, NULL, 1, 50, NULL, NULL),
+('社会人3', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-0000-2003', 'sha_3@test.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 8, NULL, 1, 50, NULL, NULL),
+('社会人4', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-0000-2004', 'sha_4@test.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 2, NULL, 1, 50, NULL, NULL),
+('社会人5', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-0000-2005', 'sha_5@test.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 10, NULL, 1, 50, NULL, NULL),
+('社会人6', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-0000-2006', 'sha_6@test.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 4, NULL, 1, 50, NULL, NULL),
+('社会人7', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-0000-2007', 'sha_7@test.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 6, NULL, 1, 50, NULL, NULL),
+('社会人8', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-0000-2008', 'sha_8@test.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 1, NULL, 1, 50, NULL, NULL),
+('社会人9', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-0000-2009', 'sha_9@test.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 12, NULL, 1, 50, NULL, NULL),
+('社会人10', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-0000-2010', 'sha_10@test.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 5, NULL, 1, 50, NULL, NULL),
+('社会人11', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-0000-2011', 'sha_11@test.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 7, NULL, 1, 50, NULL, NULL),
+('社会人12', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-0000-2012', 'sha_12@test.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 3, NULL, 1, 50, NULL, NULL),
+('社会人13', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-0000-2013', 'sha_13@test.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 9, NULL, 1, 50, NULL, NULL),
+('社会人14', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-0000-2014', 'sha_14@test.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 4, NULL, 1, 50, NULL, NULL),
+('社会人15', 2, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '080-0000-2015', 'sha_15@test.com', NULL, 0, '社会人プレミアム', FALSE, NOW(), 6, NULL, 1, 50, NULL, NULL),
+
+-- 企業担当 (ID 65-79) / type=3, 企業プレミアム, company_id=21-35を順に紐付け
+('企業1担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-3001', 'co_1@test.com', 21, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('企業2担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-3002', 'co_2@test.com', 22, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('企業3担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-3003', 'co_3@test.com', 23, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('企業4担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-3004', 'co_4@test.com', 24, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('企業5担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-3005', 'co_5@test.com', 25, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('企業6担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-3006', 'co_6@test.com', 26, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('企業7担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-3007', 'co_7@test.com', 27, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('企業8担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-3008', 'co_8@test.com', 28, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('企業9担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-3009', 'co_9@test.com', 29, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('企業10担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-3010', 'co_10@test.com', 30, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('企業11担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-3011', 'co_11@test.com', 31, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('企業12担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-3012', 'co_12@test.com', 32, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('企業13担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-3013', 'co_13@test.com', 33, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('企業14担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-3014', 'co_14@test.com', 34, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('企業15担当', 3, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '070-0000-3015', 'co_15@test.com', 35, 0, '企業プレミアム', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+
+-- 管理者 (ID 80-94) / type=4, 無料
+('管理者1', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4001', 'ad_1@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('管理者2', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4002', 'ad_2@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('管理者3', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4003', 'ad_3@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('管理者4', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4004', 'ad_4@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('管理者5', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4005', 'ad_5@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('管理者6', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4006', 'ad_6@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('管理者7', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4007', 'ad_7@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('管理者8', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4008', 'ad_8@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('管理者9', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4009', 'ad_9@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('管理者10', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4010', 'ad_10@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('管理者11', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4011', 'ad_11@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('管理者12', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4012', 'ad_12@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('管理者13', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4013', 'ad_13@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('管理者14', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4014', 'ad_14@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
+('管理者15', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4015', 'ad_15@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL);
+
 -- 業界
 -- industries
 INSERT INTO industries (industry) VALUES
@@ -433,7 +518,40 @@ INSERT INTO subscriptions (user_id, plan_name, start_date, end_date, is_plan_sta
 (6, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
 (11, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
 (12, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
-(13, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW());
+(13, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+-- プロコン用
+-- 社会人プレミアム (ID 50-64)１ヶ月
+(50, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 MONTH, TRUE, NOW()),
+(51, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 MONTH, TRUE, NOW()),
+(52, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 MONTH, TRUE, NOW()),
+(53, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 MONTH, TRUE, NOW()),
+(54, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 MONTH, TRUE, NOW()),
+(55, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 MONTH, TRUE, NOW()),
+(56, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 MONTH, TRUE, NOW()),
+(57, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 MONTH, TRUE, NOW()),
+(58, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 MONTH, TRUE, NOW()),
+(59, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 MONTH, TRUE, NOW()),
+(60, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 MONTH, TRUE, NOW()),
+(61, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 MONTH, TRUE, NOW()),
+(62, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 MONTH, TRUE, NOW()),
+(63, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 MONTH, TRUE, NOW()),
+(64, '社会人プレミアム', NOW(), NOW() + INTERVAL 1 MONTH, TRUE, NOW()),
+-- 企業
+(65, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(66, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(67, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(68, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(69, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(70, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(71, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(72, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(73, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(74, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(75, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(76, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(77, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(78, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW()),
+(79, '企業プレミアム', NOW(), NOW() + INTERVAL 1 YEAR, TRUE, NOW());
 
 -- articles
 INSERT INTO articles (title, description, company_id, is_deleted, total_likes, created_at, photo1_id, photo2_id, photo3_id) VALUES
@@ -530,20 +648,27 @@ INSERT INTO chats (user_id, content, thread_id, is_deleted, deleted_at, created_
 (2, '私は商社志望で今3社から内定もらってるよ！', 8, FALSE, NULL, NOW(), NULL),
 (16, 'いいね～！SNS交換しよー！', 8, FALSE, NULL, NOW(), NULL);
 
--- quiz_questions
-INSERT INTO quiz_questions (question, is_answer, expanation) VALUES
-('問題1', TRUE, '解説1'),
-('問題2', FALSE, '解説2');
+-- -- quiz_questions
+-- INSERT INTO quiz_questions (question, is_answer, expanation) VALUES
+-- ('問題1', TRUE, '解説1'),
+-- ('問題2', FALSE, '解説2');
 
 -- quiz_scores
-INSERT INTO quiz_scores (user_id, score, created_at) VALUES
-(1, 80, NOW()),
-(2, 90, NOW());
-
+INSERT INTO quiz_scores (user_id, score, created_at, nickname) VALUES
+(1, 24, NOW(),'佐々木一郎'),
+(2, 12, NOW(),'安藤花子'),
+(3, 51, NOW(),'理系くん'),
+(4, 2, NOW(),'文系ちゃん'),
+(5, 15, NOW(),'いとー'),
+(6, 27, NOW(),'松井二郎'),
+(7, 9, NOW(),'キャリア女子'),
+(8, 21, NOW(),'転職マン'),
+(9, 4, NOW(),'残業三昧くん'),
+(10, 33, NOW(),'新卒ちゃん');
 
 -- interviews 初期データ挿入
 INSERT INTO interviews (question, type) VALUES
--- 一般質問 20問
+-- 一般質問
 ('自己紹介をお願いします。', 1),
 ('あなたの強みと弱みを教えてください。', 1),
 ('学生時代に力を入れたことは何ですか？', 1),
@@ -564,8 +689,28 @@ INSERT INTO interviews (question, type) VALUES
 ('学生時代の趣味や特技について教えてください。', 1),
 ('仕事を通して実現したいことは何ですか？', 1),
 ('チーム内での役割について意識していることは何ですか？', 1),
+('数ある企業の中で、なぜ「この業界」なのですか？', 1),
+('逆質問はありますか？（私に聞きたいことは何ですか？）', 1),
+('意見が対立した際、どのように収束させますか？', 1),
+('自分とは異なる価値観を持つ人と働く際、何を意識しますか？', 1),
+('これまでに既存の仕組みを改善した経験はありますか？', 1),
+('挫折した際、どのようにして立ち直りましたか？', 1),
+('人から受けて嬉しかったアドバイスは何ですか？', 1),
+('あなたが定義する「成功」とは何ですか？', 1),
+('企業を選ぶ際、最も重視する軸は何ですか？', 1),
+('入社後に具体的に携わりたいプロジェクトはありますか？', 1),
+('これまでの最大の成果と、その要因を教えてください。', 1),
+('優先順位をつける際、どのような基準で判断しますか？', 1),
+('新しい技術や知識を習得する際、自分なりの工夫はありますか？', 1),
+('変化の激しい環境に対して、どのように適応しますか？', 1),
+('理想のリーダー像を教えてください。', 1),
+('当社のビジョンについて、共感するポイントはどこですか？', 1),
+('仕事を通じて社会にどのような貢献をしたいですか？', 1),
+('自身の生産性を高めるために行っていることはありますか？', 1),
+('入社後、1ヶ月以内に成し遂げたいことは何ですか？', 1),
+('倫理的に難しい判断を迫られたらどうしますか？', 1),
 
--- カジュアル質問 20問
+-- カジュアル質問
 ('最近ハマっていることは何ですか？', 2),
 ('休日の過ごし方を教えてください。', 2),
 ('最近読んだ本や記事で印象に残ったことは？', 2),
@@ -586,8 +731,28 @@ INSERT INTO interviews (question, type) VALUES
 ('最近挑戦してみたいことは何ですか？', 2),
 ('自分の長所を活かせる場面はどんなときですか？', 2),
 ('働く上で大切にしていることは何ですか？', 2),
+('一番好きな食べ物、または勝負飯は何ですか？', 2),
+('今までに行った旅行先で、一番印象に残っている場所は？', 2),
+('自分は「朝型」ですか、それとも「夜型」ですか？', 2),
+('ついついやってしまう「癖」や「習慣」はありますか？', 2),
+('子供の頃の夢は何でしたか？', 2),
+('誰にも負けない小さな特技はありますか？', 2),
+('人生で影響を受けたインフルエンサーや著名人は？', 2),
+('毎日欠かさずチェックしているアプリはありますか？', 2),
+('最近あった「小さな幸せ」を教えてください。', 2),
+('もし宝くじで1億円当たったら、まず何をしますか？', 2),
+('一番好きな季節とその理由を教えてください。', 2),
+('インドア派ですか、それともアウトドア派ですか？', 2),
+('一番リラックスできる場所はどこですか？', 2),
+('自分の中で密かに誇りに思っていることは？', 2),
+('物事を決めるときは「直感派」ですか「論理派」ですか？', 2),
+('ストレスが溜まったときのおすすめの解消法は？', 2),
+('長年集めているものや、コレクションはありますか？', 2),
+('人から言われて意外だった第一印象はありますか？', 2),
+('理想の上司を有名人に例えると誰ですか？', 2),
+('10年後の自分へメッセージを送るとしたら何と言いますか？', 2),
 
--- 圧迫質問 20問
+-- 圧迫質問
 ('なぜ他の候補者よりあなたを採用すべきですか？', 3),
 ('あなたの弱みは致命的だと思いませんか？', 3),
 ('この会社で結果を出せる自信はありますか？', 3),
@@ -607,13 +772,32 @@ INSERT INTO interviews (question, type) VALUES
 ('上司の指示に納得できない場合どうしますか？', 3),
 ('他の社員に比べて経験不足では？', 3),
 ('この業界でやっていける自信はありますか？', 3),
-('あなたの計画は非現実的ではありませんか？', 3);
+('あなたの計画は非現実的ではありませんか？', 3),
+('あなたのキャリアプランは、当社でなくても実現可能では？', 3),
+('正直に言って、今の回答は少し論理性に欠けませんか？', 3),
+('もし希望していない部署に配属されたら、やる気を失いませんか？', 3),
+('あなたのこれまでの成長スピードは、遅いとは思いませんか？', 3),
+('当社の社風には合わない気がしますが、どう説得しますか？', 3),
+('あなたの強みは、当社のレベルでは「普通」ではありませんか？', 3),
+('学業（または前職）の成績が芳しくないようですが、理由は？', 3),
+('厳しい指摘を受けたとき、感情的にならずに対処できますか？', 3),
+('当社を採用見送りにした場合、あなたは後悔すると思いますか？', 3),
+('あなたの発言には具体性が足りないように感じますが、いかがですか？', 3),
+('もし「明日までにこれを終わらせろ」と無理な指示を受けたら？', 3),
+('挫折経験が少ないようですが、困難に直面して折れませんか？', 3),
+('あなたのスキルセットは、今のトレンドからズレていませんか？', 3),
+('なぜ今の大学（または会社）を選んだのですか？妥協ではありませんか？', 3),
+('チームが失敗したとき、自分の責任をどう認識しますか？', 3),
+('給与に見合うだけの働きを、具体的にどう示してくれますか？', 3),
+('あなたが採用されたとして、周囲の社員にどうメリットを与えますか？', 3),
+('回答がマニュアル通りに聞こえますが、本音はどうですか？', 3),
+('これまでで一番「逃げ出したい」と思った瞬間はどう乗り切りましたか？', 3),
+('あなたが今日話したことの中で、一つだけ嘘があるとしたら何ですか？', 3);
 
-
--- phone_exercises
-INSERT INTO phone_exercises (example, difficulty) VALUES
-('電話対応例題1', 1),
-('電話対応例題2', 2);
+-- -- phone_exercises
+-- INSERT INTO phone_exercises (example, difficulty) VALUES
+-- ('電話対応例題1', 1),
+-- ('電話対応例題2', 2);
 
 -- notifications
 INSERT INTO notifications (type, title, content, user_id, created_at, reservation_time, send_flag, send_flag_int, category, is_deleted) VALUES
@@ -701,7 +885,27 @@ INSERT INTO industry_relations (type, user_id, target_id, created_at) VALUES
 (3, 30, 5, NOW()), -- 平和エネ
 (3, 31, 5, NOW()), -- 慈愛メディ
 (3, 32, 5, NOW()), -- 飛翔ツー
-(3, 33, 1, NOW()); -- 大地アグリ (メーカー)
+(3, 33, 1, NOW()), -- 大地アグリ (メーカー)
+-- プロコン用
+-- 学生
+(1, 35, 1, NOW()), (1, 36, 2, NOW()), (1, 37, 3, NOW()), (1, 38, 4, NOW()), (1, 39, 5, NOW()),
+(1, 40, 6, NOW()), (1, 41, 7, NOW()), (1, 42, 8, NOW()), (1, 43, 1, NOW()), (1, 44, 2, NOW()),
+(1, 45, 3, NOW()), (1, 46, 4, NOW()), (1, 47, 5, NOW()), (1, 48, 6, NOW()), (1, 49, 7, NOW()),
+
+-- 社会人 (ID 50-64)
+(2, 50, 8, NOW()), (2, 51, 1, NOW()), (2, 52, 2, NOW()), (2, 53, 3, NOW()), (2, 54, 8, NOW()), 
+(2, 55, 1, NOW()), (2, 56, 2, NOW()), (2, 57, 3, NOW()), (2, 58, 4, NOW()), (2, 59, 5, NOW()), 
+(2, 60, 6, NOW()), (2, 61, 7, NOW()), (2, 62, 8, NOW()), (2, 63, 1, NOW()), (2, 64, 2, NOW()), 
+
+-- 企業担当 (ID 65-79)
+(3, 65, 3, NOW()), (3, 66, 4, NOW()), (3, 67, 5, NOW()), (3, 68, 6, NOW()),(3, 69, 7, NOW()), 
+(3, 70, 8, NOW()), (3, 71, 1, NOW()), (3, 72, 2, NOW()), (3, 73, 3, NOW()),(3, 74, 4, NOW()), 
+(3, 75, 5, NOW()), (3, 76, 6, NOW()), (3, 77, 7, NOW()), (3, 78, 8, NOW()),(3, 79, 1, NOW()), 
+
+-- 管理者 (ID 80-94)
+(4, 80, 2, NOW()), (4, 81, 3, NOW()), (4, 82, 4, NOW()), (4, 83, 5, NOW()),(4, 84, 8, NOW()), 
+(4, 85, 1, NOW()), (4, 86, 2, NOW()), (4, 87, 3, NOW()), (4, 88, 4, NOW()),(4, 89, 5, NOW()), 
+(4, 90, 6, NOW()), (4, 91, 7, NOW()), (4, 92, 8, NOW()), (4, 93, 1, NOW()),(4, 94, 2, NOW()), 
 
 -- article_likes テーブルにいいねデータを追加
 INSERT INTO article_likes (article_id, user_id, created_at) VALUES

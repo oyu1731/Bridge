@@ -412,7 +412,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                               }
                               _lastTapTime = now;
                               _logoTapCount++;
-                              if (_logoTapCount >= 3) {
+                              if (_logoTapCount >= 10) {
                                 _logoTapCount = 0;
                                 _markHeaderNavigation();
                                 _markHeaderNavigation();

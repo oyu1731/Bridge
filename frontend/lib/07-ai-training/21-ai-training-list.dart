@@ -655,10 +655,17 @@ class _AiTrainingListPageState extends State<AiTrainingListPage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 28),
+              ],
+            ),
 
-                // 矢印アイコン
-                Container(
+            // 矢印アイコン（カード内に固定）
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 12,
+              child: Center(
+                child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
@@ -670,7 +677,7 @@ class _AiTrainingListPageState extends State<AiTrainingListPage> {
                     color: Colors.white,
                   ),
                 ),
-              ],
+              ),
             ),
 
             // トークン不足時のオーバーレイ

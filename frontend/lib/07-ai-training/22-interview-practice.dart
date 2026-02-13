@@ -291,7 +291,16 @@ class _InterviewPracticeState extends State<InterviewPractice> {
                     const SizedBox(height: 12),
                     _dropdown(
                       "業界",
-                      ["IT", "商社", "広告", "メーカー"],
+                      [
+                        'メーカー',
+                        '商社',
+                        '流通・小売',
+                        '金融',
+                        'サービス・インフラ',
+                        'ソフトウェア・通信',
+                        '広告・出版・マスコミ',
+                        '官公庁・公社・団体',
+                      ],
                       selectedIndustry,
                       (v) {
                         setModalState(() => selectedIndustry = v);
@@ -890,12 +899,12 @@ class _InterviewScreenState extends State<InterviewScreen> {
   // 面接官の画像リスト
   final List<String> _interviewerImages = [
     'lib/01-images/mensetukan.png',
-    'lib/01-images/mensetukan1.png',
-    'lib/01-images/mensetukan2.png',
-    'lib/01-images/mensetukan3.png',
-    'lib/01-images/mensetukan4.png',
-    'lib/01-images/mensetukan5.png',
-    'lib/01-images/mensetukan6.png',
+    // 'lib/01-images/mensetukan1.png',
+    // 'lib/01-images/mensetukan2.png',
+    // 'lib/01-images/mensetukan3.png',
+    // 'lib/01-images/mensetukan4.png',
+    // 'lib/01-images/mensetukan5.png',
+    // 'lib/01-images/mensetukan6.png',
   ];
 
   void _loadUserSession() async {
