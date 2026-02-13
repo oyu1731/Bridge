@@ -253,6 +253,15 @@ public class UserController {
             @RequestBody Map<String, Object> body) {
         Map<String, Object> response = new java.util.HashMap<>();
         Map<String, String> errors = new java.util.HashMap<>();
+
+        // Support both camelCase and snake_case input keys from clients.
+        if (!body.containsKey("phone_number") && body.get("phoneNumber") instanceof String) {
+            body.put("phone_number", body.get("phoneNumber"));
+        }
+        if (!body.containsKey("industry_ids") && body.get("desiredIndustries") instanceof java.util.List) {
+            body.put("industry_ids", body.get("desiredIndustries"));
+        }
+
         response.put("input", body);
 
         // id型チェック

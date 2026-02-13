@@ -80,13 +80,8 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
       final companies = await CompanyApiClient.getAllCompanies();
       // 退会済み企業を除外
       final filtered = companies.where((c) => c.isWithdrawn != true).toList();
-      // 最終更新日時順にソート（注目企業として表示）
-      filtered.sort((a, b) {
-        if (a.createdAt == null && b.createdAt == null) return 0;
-        if (a.createdAt == null) return 1;
-        if (b.createdAt == null) return -1;
-        return b.createdAt!.compareTo(a.createdAt!);
-      });
+      // 写真ありを優先し、同条件内は最終更新日時順
+      _sortCompaniesByPhotoAndDate(filtered);
       setState(() {
         _filteredCompanies = filtered;
         _activeCompanyIds =
@@ -291,6 +286,8 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
         results = _applyFilters(results);
       }
 
+      _sortCompaniesByPhotoAndDate(results);
+
       print('最終結果: ${results.length}件'); // デバッグログ
       setState(() {
         _filteredCompanies = results;
@@ -353,6 +350,21 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     }
 
     return filtered;
+  }
+
+  void _sortCompaniesByPhotoAndDate(List<CompanyDTO> companies) {
+    companies.sort((a, b) {
+      final aHasPhoto =
+          (a.photoPath != null && a.photoPath!.isNotEmpty) || a.photoId != null;
+      final bHasPhoto =
+          (b.photoPath != null && b.photoPath!.isNotEmpty) || b.photoId != null;
+
+      if (aHasPhoto != bHasPhoto) return aHasPhoto ? -1 : 1;
+      if (a.createdAt == null && b.createdAt == null) return 0;
+      if (a.createdAt == null) return 1;
+      if (b.createdAt == null) return -1;
+      return b.createdAt!.compareTo(a.createdAt!);
+    });
   }
 
   // エリア選択処理

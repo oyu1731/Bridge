@@ -171,15 +171,41 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
     if (response.statusCode == 200) {
       final List<dynamic> selectedIndustriesData = jsonDecode(response.body);
 
+      final List<int> selectedIndustryIds =
+          selectedIndustriesData
+              .map((e) {
+                if (e is int) {
+                  return e;
+                }
+                if (e is Map) {
+                  final dynamic idValue = e['id'] ?? e['industry_id'];
+                  if (idValue != null) {
+                    return int.tryParse(idValue.toString());
+                  }
+                }
+                return null;
+              })
+              .whereType<int>()
+              .toList();
+
       final List<String> selectedIndustryNames =
-          selectedIndustriesData.map((e) {
-            return e['industry'].toString();
-          }).toList();
+          selectedIndustryIds.isEmpty
+              ? selectedIndustriesData
+                  .map((e) {
+                    if (e is Map && e['industry'] != null) {
+                      return e['industry'].toString();
+                    }
+                    return '';
+                  })
+                  .where((name) => name.isNotEmpty)
+                  .toList()
+              : <String>[];
 
       if (!mounted) return;
       setState(() {
         for (var industry in industries) {
-          if (selectedIndustryNames.contains(industry.name)) {
+          if (selectedIndustryIds.contains(industry.id) ||
+              selectedIndustryNames.contains(industry.name)) {
             industry.isSelected = true;
           }
         }
@@ -199,99 +225,104 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Column(
-                children: [
-                  Text(
-                    "プロフィールアイコン",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppTheme.textCyanDark,
-                    ),
-                  ),
-                  Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 55,
-                        backgroundColor: Colors.grey.shade200,
-                        child:
-                            _iconUrl != null
-                                ? CircleAvatar(
-                                  radius: 52,
-                                  backgroundImage: NetworkImage(_iconUrl!),
-                                )
-                                : Icon(
-                                  Icons.person,
-                                  size: 60,
-                                  color: Colors.grey[600],
-                                ),
+            children: [
+              Center(
+                child: Column(
+                  children: [
+                    Text(
+                      "プロフィールアイコン",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppTheme.textCyanDark,
                       ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: InkWell(
-                          onTap: _uploadingIcon ? null : _pickAndUploadIcon,
-                          child: CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Colors.blueAccent,
-                            child:
-                                _uploadingIcon
-                                    ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
+                    ),
+                    Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 55,
+                          backgroundColor: Colors.grey.shade200,
+                          child:
+                              _iconUrl != null
+                                  ? CircleAvatar(
+                                    radius: 52,
+                                    backgroundImage: NetworkImage(_iconUrl!),
+                                  )
+                                  : Icon(
+                                    Icons.person,
+                                    size: 60,
+                                    color: Colors.grey[600],
+                                  ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: InkWell(
+                            onTap: _uploadingIcon ? null : _pickAndUploadIcon,
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Colors.blueAccent,
+                              child:
+                                  _uploadingIcon
+                                      ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                      : const Icon(
+                                        Icons.camera_alt,
+                                        size: 20,
                                         color: Colors.white,
                                       ),
-                                    )
-                                    : const Icon(
-                                      Icons.camera_alt,
-                                      size: 20,
-                                      color: Colors.white,
-                                    ),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 30),
-            // 企業写真追加ボタン（常に表示、アップロード時にphoto_id/photoUrlを上書き）
-            Center(
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.add_a_photo),
-                label: const Text('企業写真追加'),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (context) => CompanyPhotoModal(
-                          onPhotoUploaded: (photoId, photoUrl) {
-                            setState(() {
-                              _companyPhotoId = photoId;
-                              _companyPhotoUrl = photoUrl;
-                            });
-                          },
-                        ),
-                  );
-                },
+              const SizedBox(height: 30),
+              // 企業写真追加ボタン（常に表示、アップロード時にphoto_id/photoUrlを上書き）
+              Center(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.add_a_photo),
+                  label: const Text('企業写真追加'),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder:
+                          (context) => CompanyPhotoModal(
+                            onPhotoUploaded: (photoId, photoUrl) {
+                              setState(() {
+                                _companyPhotoId = photoId;
+                                _companyPhotoUrl = photoUrl;
+                              });
+                            },
+                          ),
+                    );
+                  },
+                ),
               ),
-            ),
-            if (_companyPhotoUrl != null)
-              Column(
-                children: [
-                  const SizedBox(height: 16),
+              if (_companyPhotoUrl != null)
+                Column(
+                  children: [
+                    const SizedBox(height: 16),
                     _buildLabel("メールアドレス"),
-                    _buildTextField(_emailController, validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'メールアドレスを入力してください';
-                      final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-                      if (!emailRegex.hasMatch(v)) return '有効なメールアドレスを入力してください';
-                      return null;
-                    }),
+                    _buildTextField(
+                      _emailController,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty)
+                          return 'メールアドレスを入力してください';
+                        final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                        if (!emailRegex.hasMatch(v))
+                          return '有効なメールアドレスを入力してください';
+                        return null;
+                      },
+                    ),
                     const SizedBox(height: 20),
                     _buildLabel('パスワード（変更する場合）'),
                     Row(
@@ -299,7 +330,10 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
                       children: [
                         Padding(
                           padding: EdgeInsetsGeometry.only(top: 14),
-                          child: Icon(Icons.lock_outline, color: AppTheme.cyanDark),
+                          child: Icon(
+                            Icons.lock_outline,
+                            color: AppTheme.cyanDark,
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -310,94 +344,129 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
                               labelText: '新しいパスワード',
                               hintText: '英数字８文字以上で入力してください（空のままなら変更しません）',
                               suffixIcon: IconButton(
-                                icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: AppTheme.cyanDark),
-                                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: AppTheme.cyanDark,
+                                ),
+                                onPressed:
+                                    () => setState(
+                                      () =>
+                                          _obscurePassword = !_obscurePassword,
+                                    ),
                               ),
                             ),
                             obscureText: _obscurePassword,
                             validator: (value) {
                               if (value == null || value.isEmpty) return null;
-                              if (value.length < 8) return 'パスワードは8文字以上である必要があります';
-                              if (value.length > 255) return 'パスワードは255文字以内で入力してください';
+                              if (value.length < 8)
+                                return 'パスワードは8文字以上である必要があります';
+                              if (value.length > 255)
+                                return 'パスワードは255文字以内で入力してください';
                               final regex = RegExp(r'^[a-zA-Z0-9._]+$');
-                              if (!regex.hasMatch(value)) return '使用できるのは英数字・.・_ のみです';
+                              if (!regex.hasMatch(value))
+                                return '使用できるのは英数字・.・_ のみです';
                               return null;
                             },
                           ),
                         ),
                       ],
                     ),
-                  Image.network(
-                    _companyPhotoUrl!,
-                    width: 120,
-                    height: 120,
-                    fit: BoxFit.cover,
-                  ),
-                ],
-              ),
-            const SizedBox(height: 30),
-            _buildLabel("企業名"),
-            _buildTextField(_nicknameController, validator: (v) => v == null || v.trim().isEmpty ? 'ニックネームを入力してください' : null),
-            const SizedBox(height: 20),
-            _buildLabel("電話番号"),
-            _buildTextField(_phoneNumberController, validator: (v) => v == null || v.trim().isEmpty ? '電話番号を入力してください' : null),
-            const SizedBox(height: 20),
-            _buildLabel("住所"),
-            _buildTextField(_companyAddressController, validator: (v) => v == null || v.trim().isEmpty ? '住所を入力してください' : null),
-            const SizedBox(height: 20),
-            _buildLabel("詳細"),
-            _buildTextField(_companyDescriptionController, maxLines: 5, validator: (v) => v == null || v.trim().isEmpty ? '詳細を入力してください' : null),
-            const SizedBox(height: 30),
-            _buildLabel("所属業界"),
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: AppTheme.textCyanDark),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                children: industries.map((industry) {
-                  return CheckboxListTile(
-                    title: Text(
-                      industry.name,
-                      style: const TextStyle(color: AppTheme.textCyanDark),
+                    Image.network(
+                      _companyPhotoUrl!,
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.cover,
                     ),
-                    value: industry.isSelected,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        industry.isSelected = value ?? false;
-                      });
-                    },
-                  );
-                }).toList(),
-              ),
-            ),
-            const SizedBox(height: 30),
-            Center(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orangeAccent[400],
-                  foregroundColor: Colors.white,
+                  ],
                 ),
-                onPressed: _isSaving
-                    ? null
-                    : () async {
-                        if (!_formKey.currentState!.validate()) return;
-                        setState(() => _isSaving = true);
-                        await _updateUserProfile();
-                        setState(() => _isSaving = false);
-                      },
-                child: _isSaving
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('編集',
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),),
+              const SizedBox(height: 30),
+              _buildLabel("企業名"),
+              _buildTextField(
+                _nicknameController,
+                validator:
+                    (v) =>
+                        v == null || v.trim().isEmpty
+                            ? 'ニックネームを入力してください'
+                            : null,
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              _buildLabel("電話番号"),
+              _buildTextField(
+                _phoneNumberController,
+                validator:
+                    (v) =>
+                        v == null || v.trim().isEmpty ? '電話番号を入力してください' : null,
+              ),
+              const SizedBox(height: 20),
+              _buildLabel("住所"),
+              _buildTextField(
+                _companyAddressController,
+                validator:
+                    (v) => v == null || v.trim().isEmpty ? '住所を入力してください' : null,
+              ),
+              const SizedBox(height: 20),
+              _buildLabel("詳細"),
+              _buildTextField(
+                _companyDescriptionController,
+                maxLines: 5,
+                validator:
+                    (v) => v == null || v.trim().isEmpty ? '詳細を入力してください' : null,
+              ),
+              const SizedBox(height: 30),
+              _buildLabel("所属業界"),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppTheme.textCyanDark),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  children:
+                      industries.map((industry) {
+                        return CheckboxListTile(
+                          title: Text(
+                            industry.name,
+                            style: const TextStyle(
+                              color: AppTheme.textCyanDark,
+                            ),
+                          ),
+                          value: industry.isSelected,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              industry.isSelected = value ?? false;
+                            });
+                          },
+                        );
+                      }).toList(),
+                ),
+              ),
+              const SizedBox(height: 30),
+              Center(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orangeAccent[400],
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed:
+                      _isSaving
+                          ? null
+                          : () async {
+                            if (!_formKey.currentState!.validate()) return;
+                            setState(() => _isSaving = true);
+                            await _updateUserProfile();
+                            setState(() => _isSaving = false);
+                          },
+                  child:
+                      _isSaving
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('編集', style: TextStyle(fontSize: 16)),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -413,7 +482,11 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, {int maxLines = 1, String? Function(String?)? validator}) {
+  Widget _buildTextField(
+    TextEditingController controller, {
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
