@@ -10,8 +10,6 @@ import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/password")
-//@CrossOrigin(origins = "*")
-@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
 public class PasswordResetController {
 
     @Autowired

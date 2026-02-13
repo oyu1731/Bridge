@@ -33,7 +33,6 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestController
 @RequestMapping("/api/chat")
-@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
 public class ChatController {
 
     private final ChatService chatService;

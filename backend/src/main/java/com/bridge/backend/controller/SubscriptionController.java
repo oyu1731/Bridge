@@ -12,7 +12,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/subscriptions")
-@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
 public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;

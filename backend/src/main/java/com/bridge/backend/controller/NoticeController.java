@@ -15,7 +15,6 @@ import java.util.List; // ← これが必要
 
 @RestController
 @RequestMapping("/api/notice")
-@CrossOrigin(origins = "http://localhost:xxxx", allowCredentials = "true")
 public class NoticeController {
 
     private final NoticeRepository noticeRepository;
