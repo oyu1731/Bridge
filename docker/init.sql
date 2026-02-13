@@ -906,7 +906,7 @@ INSERT INTO industry_relations (type, user_id, target_id, created_at) VALUES
 -- 管理者 (ID 80-94)
 (4, 80, 2, NOW()), (4, 81, 3, NOW()), (4, 82, 4, NOW()), (4, 83, 5, NOW()),(4, 84, 8, NOW()), 
 (4, 85, 1, NOW()), (4, 86, 2, NOW()), (4, 87, 3, NOW()), (4, 88, 4, NOW()),(4, 89, 5, NOW()), 
-(4, 90, 6, NOW()), (4, 91, 7, NOW()), (4, 92, 8, NOW()), (4, 93, 1, NOW()),(4, 94, 2, NOW()), 
+(4, 90, 6, NOW()), (4, 91, 7, NOW()), (4, 92, 8, NOW()), (4, 93, 1, NOW()),(4, 94, 2, NOW());
 
 -- article_likes テーブルにいいねデータを追加
 INSERT INTO article_likes (article_id, user_id, created_at) VALUES
