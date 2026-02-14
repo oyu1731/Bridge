@@ -258,6 +258,15 @@ public class UserController {
         if (!body.containsKey("phone_number") && body.get("phoneNumber") instanceof String) {
             body.put("phone_number", body.get("phoneNumber"));
         }
+        if (!body.containsKey("society_history") && body.get("societyHistory") instanceof Integer) {
+            body.put("society_history", body.get("societyHistory"));
+        }
+        if (!body.containsKey("company_address") && body.get("companyAddress") instanceof String) {
+            body.put("company_address", body.get("companyAddress"));
+        }
+        if (!body.containsKey("company_description") && body.get("companyDescription") instanceof String) {
+            body.put("company_description", body.get("companyDescription"));
+        }
         if (!body.containsKey("industry_ids") && body.get("desiredIndustries") instanceof java.util.List) {
             body.put("industry_ids", body.get("desiredIndustries"));
         }
