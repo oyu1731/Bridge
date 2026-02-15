@@ -104,6 +104,13 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
 
   static const String _lastNotificationOpenedKeyPrefix =
       'lastNotificationOpenedAt_';
+  static const List<String> _greetings = [
+    'こんにちは',
+    'いらっしゃいませ',
+    'ようこそ',
+    'お帰りなさい',
+  ];
+  static int _greetingIndex = Random().nextInt(_greetings.length);
 
   // =========================
   // 🔧 プラン状態取得
@@ -221,9 +228,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
           });
         }
 
-        final greetings = ['こんにちは', 'いらっしゃいませ', 'ようこそ', 'お帰りなさい'];
-        final greeting =
-            greetings[DateTime.now().millisecond % greetings.length];
+        final greeting = _greetings[_greetingIndex];
 
         // =========================
         // 🏢 企業アカウントならプランチェック
@@ -671,6 +676,9 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
   Widget _nav(String text, VoidCallback onPressed, bool small) {
     return TextButton(
       onPressed: () {
+        if (_shouldRotateGreetingOnHeaderNav(text)) {
+          _greetingIndex = (_greetingIndex + 1) % _greetings.length;
+        }
         _markHeaderNavigation();
         onPressed();
       },
@@ -691,6 +699,14 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
       ),
       child: Text(text),
     );
+  }
+
+  bool _shouldRotateGreetingOnHeaderNav(String text) {
+    return text == 'TOPページ' ||
+        text == 'AI練習' ||
+        text == '1問1答' ||
+        text == 'スレッド' ||
+        text == '企業情報';
   }
 
   // ===== プロフィールメニュー =====

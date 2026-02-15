@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:bridge/11-common/58-header.dart';
 import 'package:bridge/11-common/59-global-method.dart';
 import 'package:bridge/11-common/60-ScreenWrapper.dart';
-import 'package:http/http.dart' as http; // HTTP リクエストのため追加
-import 'dart:convert'; // JSON エンコード/デコードのため追加
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '28-quiz-question.dart';
-import 'dart:js' as js; // JavaScript との連携のため追加
 import '../06-company/photo_api_client.dart';
+import 'package:cached_network_image/cached_network_image.dart'; // 追加
 
 class CourseSelectionScreen extends StatefulWidget {
   const CourseSelectionScreen({super.key});
@@ -17,8 +17,6 @@ class CourseSelectionScreen extends StatefulWidget {
 }
 
 class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
-  // 状態変数はVoiceSettingDialogに移動するため削除
-
   @override
   void initState() {
     super.initState();
@@ -46,7 +44,6 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
               ),
               const SizedBox(height: 30),
 
-              // --- 各コースカード ---
               _buildCourseCard(
                 context,
                 'お好みコース',
@@ -85,18 +82,16 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
               ),
 
               const SizedBox(height: 40),
-
-              // --- ランキングボタン（区切り線を入れて強調） ---
               const Divider(thickness: 1, color: Colors.grey),
               const SizedBox(height: 20),
               _buildCourseCard(
                 context,
                 'ランキング',
                 '全国のユーザーと正答数を競いましょう！\n上位入賞を目指して頑張ってください',
-                Icons.emoji_events, // トロフィーアイコン
-                Colors.amber.shade700, // ゴールドっぽい色
+                Icons.emoji_events,
+                Colors.amber.shade700,
                 () => _openRanking(context),
-                isRanking: true, // デザインを少し変えるためのフラグ
+                isRanking: true,
               ),
               const SizedBox(height: 20),
             ],
@@ -116,14 +111,14 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
     bool isRanking = false,
   }) {
     return Card(
-      elevation: isRanking ? 8 : 4, // ランキングは少し影を強くして目立たせる
+      elevation: isRanking ? 8 : 4,
       shadowColor: isRanking ? color.withOpacity(0.4) : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side:
             isRanking
                 ? BorderSide(color: color.withOpacity(0.5), width: 2)
-                : BorderSide.none, // ランキングは枠線をつける
+                : BorderSide.none,
       ),
       child: InkWell(
         onTap: onTap,
@@ -201,7 +196,6 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
     );
   }
 
-  // ランキング画面へ遷移
   void _openRanking(BuildContext context) {
     Navigator.push(
       context,
@@ -210,6 +204,7 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
   }
 }
 
+// ================= 改良版 RankingScreen =================
 class RankingScreen extends StatefulWidget {
   const RankingScreen({super.key});
 
@@ -217,15 +212,27 @@ class RankingScreen extends StatefulWidget {
   State<RankingScreen> createState() => _RankingScreenState();
 }
 
-class _RankingScreenState extends State<RankingScreen> {
+class _RankingScreenState extends State<RankingScreen>
+    with SingleTickerProviderStateMixin {
   List<Map<String, dynamic>> _rankingData = [];
   bool _isLoading = true;
   String _errorMessage = '';
+  late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
     _fetchRankingData();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchRankingData() async {
@@ -245,51 +252,48 @@ class _RankingScreenState extends State<RankingScreen> {
           utf8.decode(response.bodyBytes),
         );
 
-        final List<Map<String, dynamic>> temp = [];
-
-        for (final item in jsonResponse) {
-          String iconPath = '';
-
-          // user_idからユーザー情報を取得
-          if (item['userId'] != null) {
-            try {
-              final userResponse = await http.get(
-                Uri.parse('${ApiConfig.baseUrl}/api/users/${item['userId']}'),
-                headers: {'Content-Type': 'application/json'},
-              );
-
-              if (userResponse.statusCode == 200) {
-                final userData = json.decode(
-                  utf8.decode(userResponse.bodyBytes),
-                );
-
-                // icon_idを取得
-                if (userData['icon'] != null) {
-                  final photo = await PhotoApiClient.getPhotoById(
-                    userData['icon'],
+        // 各ユーザーのアイコン情報を並列取得
+        final futures =
+            jsonResponse.map((item) async {
+              String iconPath = '';
+              if (item['userId'] != null) {
+                try {
+                  final userResponse = await http.get(
+                    Uri.parse(
+                      '${ApiConfig.baseUrl}/api/users/${item['userId']}',
+                    ),
+                    headers: {'Content-Type': 'application/json'},
                   );
-                  if (photo?.photoPath?.isNotEmpty == true) {
-                    iconPath = photo!.photoPath!;
+                  if (userResponse.statusCode == 200) {
+                    final userData = json.decode(
+                      utf8.decode(userResponse.bodyBytes),
+                    );
+                    if (userData['icon'] != null) {
+                      final photo = await PhotoApiClient.getPhotoById(
+                        userData['icon'],
+                      );
+                      if (photo?.photoPath?.isNotEmpty == true) {
+                        iconPath = photo!.photoPath!;
+                      }
+                    }
                   }
+                } catch (e) {
+                  // アイコン取得失敗は無視
                 }
               }
-            } catch (e) {
-              // エラーの場合はアイコン取得をスキップ
-            }
-          }
+              return {
+                'name': item['nickname'] ?? '名無し',
+                'score': item['score'] ?? 0,
+                'iconPath': iconPath,
+                'avatarColor': GlobalActions.getColorFromName(
+                  item['nickname'] ?? '名無し',
+                ),
+              };
+            }).toList();
 
-          temp.add({
-            'name': item['nickname'] ?? '名無し',
-            'score': item['score'] ?? 0,
-            'iconPath': iconPath,
-            'avatarColor': GlobalActions.getColorFromName(
-              item['nickname'] ?? '名無し',
-            ),
-          });
-        }
-
+        final results = await Future.wait(futures);
         setState(() {
-          _rankingData = temp;
+          _rankingData = results;
         });
       } else {
         _errorMessage = 'ランキングデータの取得に失敗しました: ${response.statusCode}';
@@ -305,206 +309,362 @@ class _RankingScreenState extends State<RankingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 600;
+
     return ScreenWrapper(
       appBar: BridgeHeader(),
-      backgroundColor: Colors.grey[50],
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(bottom: BorderSide(color: Colors.black12)),
-            ),
-            child: Column(
-              children: [
-                const Icon(
-                  Icons.emoji_events_outlined,
-                  size: 40,
-                  color: Colors.amber,
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  '正解数ランキング',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                Text(
-                  'Top 10 Players',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ],
-            ),
+      backgroundColor: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.grey[50]!, Colors.white],
           ),
-          Expanded(
-            child:
-                _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _errorMessage.isNotEmpty
-                    ? Center(child: Text('エラー: $_errorMessage'))
-                    : RefreshIndicator(
-                      // 引っ張って更新機能を追加
-                      onRefresh: _fetchRankingData,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _rankingData.length,
-                        itemBuilder: (context, index) {
-                          final data = _rankingData[index];
-                          final rank = index + 1;
-                          return _buildRankingItem(
-                            rank: rank,
-                            iconPath: data['iconPath'],
-                            name: data['name'],
-                            score: data['score'],
-                            avatarColor: data['avatarColor'],
-                          );
-                        },
-                      ),
-                    ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context); // ランキング画面を閉じて前の画面（コース選択）に戻る
-              },
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(50), // ボタンの高さを設定
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+        ),
+        child: Column(
+          children: [
+            // ヘッダー部分
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: const Text('コース選択に戻る', style: TextStyle(fontSize: 18)),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.emoji_events,
+                    size: 50,
+                    color: Colors.amber.shade700,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '正解数ランキング',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  Text(
+                    'Top 10 Players',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
+              ),
             ),
+            Expanded(
+              child:
+                  _isLoading
+                      ? _buildLoading()
+                      : _errorMessage.isNotEmpty
+                      ? _buildError()
+                      : _rankingData.isEmpty
+                      ? _buildEmpty()
+                      : RefreshIndicator(
+                        onRefresh: _fetchRankingData,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            return ListView.builder(
+                              padding: EdgeInsets.symmetric(
+                                horizontal:
+                                    isSmallScreen ? 16 : screenWidth * 0.2,
+                                vertical: 16,
+                              ),
+                              itemCount: _rankingData.length,
+                              itemBuilder: (context, index) {
+                                final data = _rankingData[index];
+                                final rank = index + 1;
+                                return _buildAnimatedRankingItem(
+                                  rank: rank,
+                                  iconPath: data['iconPath'],
+                                  name: data['name'],
+                                  score: data['score'],
+                                  avatarColor: data['avatarColor'],
+                                  isSmallScreen: isSmallScreen,
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+            ),
+            // 戻るボタン
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  backgroundColor: Colors.blue.shade700,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('コース選択に戻る', style: TextStyle(fontSize: 18)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoading() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+          ),
+          const SizedBox(height: 16),
+          Text('ランキングを読み込み中...', style: TextStyle(color: Colors.grey[600])),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildError() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 60, color: Colors.red.shade300),
+          const SizedBox(height: 16),
+          Text(
+            'エラーが発生しました',
+            style: TextStyle(fontSize: 18, color: Colors.grey[800]),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _errorMessage,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _fetchRankingData,
+            child: const Text('再試行'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildRankingItem({
+  Widget _buildEmpty() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.emoji_events_outlined, size: 80, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            'ランキングデータがありません',
+            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnimatedRankingItem({
     required int rank,
     required String name,
     required int score,
     required Color avatarColor,
     required String iconPath,
+    required bool isSmallScreen,
   }) {
-    Color? rankColor;
-    IconData? rankIcon;
-    double elevation = 1;
-    double scale = 1.0;
+    // 順位に応じた色とアイコン
+    Color rankColor;
+    IconData rankIcon;
+    double baseElevation;
 
-    switch (rank) {
-      case 1:
-        rankColor = const Color(0xFFFFD700);
-        rankIcon = Icons.workspace_premium;
-        elevation = 4;
-        scale = 1.05;
-        break;
-      case 2:
-        rankColor = const Color(0xFFC0C0C0);
-        rankIcon = Icons.looks_two;
-        elevation = 3;
-        break;
-      case 3:
-        rankColor = const Color(0xFFCD7F32);
-        rankIcon = Icons.looks_3;
-        elevation = 2;
-        break;
-      default:
-        rankColor = Colors.grey[400];
-        elevation = 0.5;
+    if (rank == 1) {
+      rankColor = const Color(0xFFFFD700);
+      rankIcon = Icons.stars;
+      baseElevation = 8;
+    } else if (rank == 2) {
+      rankColor = const Color(0xFFC0C0C0);
+      rankIcon = Icons.star;
+      baseElevation = 6;
+    } else if (rank == 3) {
+      rankColor = const Color(0xFFCD7F32);
+      rankIcon = Icons.star_half;
+      baseElevation = 4;
+    } else {
+      rankColor = Colors.grey.shade400;
+      rankIcon = Icons.circle;
+      baseElevation = 2;
     }
 
-    return Transform.scale(
-      scale: scale,
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        elevation: elevation,
-        shadowColor: rank <= 3 ? rankColor!.withOpacity(0.4) : null,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side:
-              rank <= 3
-                  ? BorderSide(color: rankColor!, width: 1.5)
-                  : BorderSide.none,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 40,
-                child:
-                    rank <= 3
-                        ? Icon(rankIcon, color: rankColor, size: 32)
-                        : Text(
-                          '$rank',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-              ),
-              const SizedBox(width: 12),
-
-              // ===== アイコン表示（ここが本題）=====
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: avatarColor.withOpacity(0.2),
-                backgroundImage:
-                    iconPath.isNotEmpty ? NetworkImage(iconPath) : null,
-                child:
-                    iconPath.isEmpty
-                        ? Text(
-                          name.isNotEmpty ? name.substring(0, 1) : '?',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        )
-                        : null,
-              ),
-              const SizedBox(width: 16),
-
-              Expanded(
-                child: Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: rank <= 3 ? FontWeight.bold : FontWeight.normal,
-                    color: Colors.black87,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+    return TweenAnimationBuilder(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: Duration(milliseconds: 300 + (rank * 50)),
+      curve: Curves.easeOut,
+      child: MouseRegion(
+        onEnter: (_) => _animationController.forward(),
+        onExit: (_) => _animationController.reverse(),
+        child: AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            final elevation = baseElevation + _animationController.value * 4;
+            final scale = 1.0 + _animationController.value * 0.02;
+            return Transform.scale(
+              scale: scale,
+              child: Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                elevation: elevation,
+                shadowColor: rank <= 3 ? rankColor.withOpacity(0.3) : null,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side:
+                      rank <= 3
+                          ? BorderSide(color: rankColor, width: 2)
+                          : BorderSide.none,
                 ),
-              ),
+                child: Container(
+                  decoration:
+                      rank <= 3
+                          ? BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: LinearGradient(
+                              colors: [
+                                rankColor.withOpacity(0.1),
+                                Colors.transparent,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          )
+                          : null,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        // 順位バッジ
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: rankColor.withOpacity(0.2),
+                          ),
+                          child: Center(
+                            child:
+                                rank <= 3
+                                    ? Icon(rankIcon, color: rankColor, size: 24)
+                                    : Text(
+                                      '$rank',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
 
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '$score問',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
+                        // アバター
+                        CircleAvatar(
+                          radius: isSmallScreen ? 20 : 24,
+                          backgroundColor: avatarColor.withOpacity(0.2),
+                          backgroundImage:
+                              iconPath.isNotEmpty
+                                  ? CachedNetworkImageProvider(iconPath)
+                                  : null,
+                          child:
+                              iconPath.isEmpty
+                                  ? Text(
+                                    name.isNotEmpty
+                                        ? name.substring(0, 1)
+                                        : '?',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: isSmallScreen ? 16 : 18,
+                                    ),
+                                  )
+                                  : null,
+                        ),
+                        const SizedBox(width: 16),
+
+                        // 名前
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 16 : 18,
+                              fontWeight:
+                                  rank <= 3
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                              color: Colors.black87,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+
+                        // スコア + プログレスバー
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.check_circle,
+                                  size: 16,
+                                  color: Colors.green.shade400,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '$score',
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 18 : 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            SizedBox(
+                              width: 80,
+                              child: LinearProgressIndicator(
+                                value: score / 100, // 仮の最大値100として表示
+                                backgroundColor: Colors.grey.shade200,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  rank <= 3 ? rankColor : Colors.blue.shade300,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  Text(
-                    '正解',
-                    style: TextStyle(fontSize: 10, color: Colors.grey[500]),
-                  ),
-                ],
+                ),
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

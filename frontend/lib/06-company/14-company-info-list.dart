@@ -364,8 +364,14 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
   }
 
   bool _hasCompanyPhoto(CompanyDTO company) {
-    return (company.photoPath != null && company.photoPath!.isNotEmpty) ||
-        company.photoId != null;
+    return company.photoPath != null && company.photoPath!.isNotEmpty;
+  }
+
+  List<CompanyDTO> get _displayCompanies {
+    if (_hasSearched) {
+      return _filteredCompanies;
+    }
+    return _filteredCompanies.take(10).toList();
   }
 
   void _sortCompaniesByPhotoAndDate(List<CompanyDTO> companies) {
@@ -664,10 +670,10 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       padding: EdgeInsets.zero,
-                      itemCount: _filteredCompanies.length,
+                      itemCount: _displayCompanies.length,
                       itemBuilder: (context, index) {
                         return _buildCompanyCard(
-                          _filteredCompanies[index],
+                          _displayCompanies[index],
                           true,
                         );
                       },
@@ -744,10 +750,10 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
               controller: _companyScrollController,
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.symmetric(horizontal: 8),
-              itemCount: _filteredCompanies.length,
+              itemCount: _displayCompanies.length,
               itemBuilder: (context, index) {
                 return _buildCompanyCard(
-                  _filteredCompanies[index],
+                  _displayCompanies[index],
                   isSmallScreen,
                 );
               },

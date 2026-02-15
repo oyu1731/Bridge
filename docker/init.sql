@@ -344,7 +344,13 @@ INSERT INTO photos (photo_path, user_id) VALUES
 ('/uploads/photos/Heiwa_Energy_post29_no1.jpg', NULL),          -- ID: 64
 ('/uploads/photos/Jiai_Medical_post30_no1.jpg', NULL),          -- ID: 65
 ('/uploads/photos/Hisho_Tourism_post31_no1.jpg', NULL),         -- ID: 66
-('/uploads/photos/Daichi_Agriculture_post32_no1.jpg', NULL);    -- ID: 67
+('/uploads/photos/Daichi_Agriculture_post32_no1.jpg', NULL),    -- ID: 67
+-- サンプルユーザーのアイコン用
+('/uploads/photos/icon1.jpg', NULL), -- ID: 68
+('/uploads/photos/icon2.jpg', NULL), -- ID: 69
+('/uploads/photos/icon3.jpg', NULL), -- ID: 70
+('/uploads/photos/icon4.jpg', NULL), -- ID: 71
+('/uploads/photos/icon5.jpg', NULL); -- ID: 72
 
 -- users
 -- companies
@@ -500,6 +506,13 @@ INSERT INTO users (nickname, type, password, phone_number, email, company_id, re
 ('管理者13', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4013', 'ad_13@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
 ('管理者14', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4014', 'ad_14@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL),
 ('管理者15', 4, '$2a$10$KTfBUv8s4j8qVlPrAhdtOuU6F33cQKY/wG2bFi4doiIeDVvDaKaSC', '060-0000-4015', 'ad_15@test.com', NULL, 0, '無料', FALSE, NOW(), NULL, NULL, 1, 50, NULL, NULL);
+
+-- 初期ユーザーのアイコン紐づけ
+UPDATE users SET icon = 68 WHERE nickname = '理系くん';
+UPDATE users SET icon = 69 WHERE nickname = '松井二郎';
+UPDATE users SET icon = 70 WHERE nickname = '新卒ちゃん';
+UPDATE users SET icon = 71 WHERE nickname = '残業三昧くん';
+UPDATE users SET icon = 72 WHERE nickname = '安藤花子';
 
 -- 業界
 -- industries
