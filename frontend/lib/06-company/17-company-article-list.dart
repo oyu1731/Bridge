@@ -414,15 +414,40 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
     );
   }
 
-  void _filterArticles() {
+  Future<void> _filterArticles() async {
     final query = _searchController.text.trim();
-    setState(() {
-      if (query.isEmpty) {
+    if (query.isEmpty) {
+      setState(() {
         _filteredArticles = List.from(_articles);
-      } else {
+      });
+      return;
+    }
+
+    if (_currentCompanyId == null) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final searched = await ArticleApiClient.searchArticles(
+        companyId: _currentCompanyId,
+        keyword: query,
+      );
+
+      setState(() {
+        _filteredArticles = searched;
+        _isLoading = false;
+      });
+    } catch (e) {
+      // API検索失敗時はローカルフィルターにフォールバック
+      final lowerQuery = query.toLowerCase();
+      setState(() {
         _filteredArticles =
             _articles.where((article) {
-              final lowerQuery = query.toLowerCase();
               final titleMatch = article.title.toLowerCase().contains(
                 lowerQuery,
               );
@@ -442,8 +467,9 @@ class _CompanyArticleListPageState extends State<CompanyArticleListPage> {
                   companyMatch ||
                   tagsMatch;
             }).toList();
-      }
-    });
+        _isLoading = false;
+      });
+    }
   }
 
   void _navigateToArticleDetail(ArticleDTO article) {

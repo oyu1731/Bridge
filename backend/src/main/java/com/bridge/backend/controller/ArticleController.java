@@ -49,6 +49,7 @@ public class ArticleController {
      */
     @GetMapping("/search")
     public ResponseEntity<List<ArticleDTO>> searchArticles(
+            @RequestParam(required = false) Integer companyId,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String industryIds,
             @RequestParam(required = false) String search_words,
@@ -107,6 +108,13 @@ public class ArticleController {
             }
 
             List<ArticleDTO> articles = articleService.searchArticles(effectiveKeyword, parsedIndustryIds);
+
+            // 企業IDが指定されている場合はその企業の記事のみに絞り込み
+            if (companyId != null) {
+                articles = articles.stream()
+                        .filter(a -> a.getCompanyId() != null && a.getCompanyId().equals(companyId))
+                        .toList();
+            }
             return ResponseEntity.ok(articles);
         } catch (Exception e) {
             e.printStackTrace();
