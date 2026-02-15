@@ -517,15 +517,37 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
     final userData = jsonDecode(userJson);
     final dynamic idValue = userData['id'];
     final int userId = idValue is int ? idValue : int.parse(idValue.toString());
-    int? companyId = userData['companyId'];
+    final dynamic companyIdValue =
+        userData['companyId'] ??
+        userData['company_id'] ??
+        this.userData['companyId'] ??
+        this.userData['company_id'];
+    final int? companyId =
+        companyIdValue == null
+            ? null
+            : (companyIdValue is int
+                ? companyIdValue
+                : int.tryParse(companyIdValue.toString()));
     print('プロフィール更新: companyId=$companyId, photoId=$_companyPhotoId');
+
+    final selectedIndustryIds =
+        industries
+            .where((industry) => industry.isSelected)
+            .map((industry) => industry.id)
+            .toList();
 
     final Map<String, dynamic> updatedData = {
       'nickname': _nicknameController.text,
       'email': _emailController.text,
+      'phone_number': _phoneNumberController.text,
+      'company_address': _companyAddressController.text,
+      'company_description': _companyDescriptionController.text,
+      'industry_ids': selectedIndustryIds,
+      // 後方互換: 既存API互換のため camelCase も同梱
       'phoneNumber': _phoneNumberController.text,
       'companyAddress': _companyAddressController.text,
       'companyDescription': _companyDescriptionController.text,
+      'desiredIndustries': selectedIndustryIds,
       'icon': _iconPhotoId,
     };
     if (_passwordController.text.isNotEmpty) {
@@ -538,7 +560,11 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(updatedData),
     );
+    print(
+      'ユーザープロフィールAPIレスポンス: status=${userUpdateResponse.statusCode}, body=${userUpdateResponse.body}',
+    );
 
+    bool companyPhotoSuccess = true;
     // 企業写真のphoto_idを保存
     if (companyId != null && _companyPhotoId != null) {
       final companyPhotoUrl =
@@ -552,26 +578,13 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
         '企業写真APIレスポンス: status=${companyPhotoRes.statusCode}, body=${companyPhotoRes.body}',
       );
       if (companyPhotoRes.statusCode != 200) {
+        companyPhotoSuccess = false;
         print('企業写真の保存に失敗: ${companyPhotoRes.statusCode}');
       }
     }
 
-    // 修正ポイント: name ではなく id を送信
-    final selectedIndustries =
-        industries
-            .where((industry) => industry.isSelected)
-            .map((industry) => industry.id) // ← id を送る
-            .toList();
-
-    final industriesUpdateUrl =
-        '${ApiConfig.baseUrl}/api/users/$userId/industries';
-    final industriesUpdateResponse = await http.put(
-      Uri.parse(industriesUpdateUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(selectedIndustries),
-    );
-
     // 企業プロフィール更新（企業アカウントの場合のみ）
+    bool companyProfileSuccess = true;
     if (companyId != null && userData['type'] == 3) {
       // planStatusを数値型で送信
       int planStatusValue = 1; // デフォルト: 無料
@@ -613,22 +626,17 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
       print(
         '企業プロフィールAPIレスポンス: status=${companyUpdateRes.statusCode}, body=${companyUpdateRes.body}',
       );
+      if (companyUpdateRes.statusCode != 200) {
+        companyProfileSuccess = false;
+      }
     }
 
     if (userUpdateResponse.statusCode == 200 &&
-        industriesUpdateResponse.statusCode == 200) {
-      // 現在のセッション情報を取得して、変更点のみ更新する
-      final String? currentUserJson = prefs.getString('current_user');
-      if (currentUserJson != null) {
-        Map<String, dynamic> currentUserData = jsonDecode(currentUserJson);
-
-        // 変更された項目だけを更新
-        currentUserData['nickname'] = _nicknameController.text;
-        currentUserData['email'] = _emailController.text;
-        currentUserData['phoneNumber'] = _phoneNumberController.text;
-
-        // 更新したセッション情報を保存
-        await prefs.setString('current_user', jsonEncode(currentUserData));
+        companyPhotoSuccess &&
+        companyProfileSuccess) {
+      final refreshedUserData = await _refreshSessionUser(userId);
+      if (refreshedUserData != null) {
+        await prefs.setString('current_user', jsonEncode(refreshedUserData));
       }
       showDialog(
         context: context,
@@ -654,7 +662,11 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
         builder: (BuildContext context) {
           return AlertDialog(
             title: const Text('エラー'),
-            content: const Text('プロフィールの更新に失敗しました'),
+            content: Text(
+              'プロフィールの更新に失敗しました\n'
+              'userStatus=${userUpdateResponse.statusCode}\n'
+              'userBody=${userUpdateResponse.body}',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -665,6 +677,18 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
         },
       );
     }
+  }
+
+  Future<Map<String, dynamic>?> _refreshSessionUser(int userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/users/$userId'),
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
   }
 
   Future<void> _pickAndUploadIcon() async {

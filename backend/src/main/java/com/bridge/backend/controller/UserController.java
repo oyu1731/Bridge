@@ -311,13 +311,28 @@ public class UserController {
             response.put("errors", errors);
             return ResponseEntity.badRequest().body(response);
         } else {
+            java.util.List<Integer> normalizedIndustryIds = new java.util.ArrayList<>();
             for (Object o : (java.util.List<?>)industryIdsObj) {
-                if (!(o instanceof Integer)) {
+                Integer normalizedId = null;
+                if (o instanceof Integer) {
+                    normalizedId = (Integer) o;
+                } else if (o instanceof Number) {
+                    normalizedId = ((Number) o).intValue();
+                } else if (o instanceof String) {
+                    try {
+                        normalizedId = Integer.valueOf((String) o);
+                    } catch (NumberFormatException ignored) {
+                        normalizedId = null;
+                    }
+                }
+                if (normalizedId == null) {
                     errors.put("message", "入力されていない項目か不正な入力値があります");
                     response.put("errors", errors);
                     return ResponseEntity.badRequest().body(response);
                 }
+                normalizedIndustryIds.add(normalizedId);
             }
+            body.put("industry_ids", normalizedIndustryIds);
         }
         // image_path型
         Object imagePathObj = body.get("image_path");

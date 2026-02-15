@@ -436,7 +436,8 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
     );
 
     if (response.statusCode == 200) {
-      final updatedUserData = jsonDecode(response.body);
+      final refreshedUserData = await _refreshSessionUser(userId);
+      final updatedUserData = refreshedUserData ?? jsonDecode(response.body);
       await prefs.setString('current_user', jsonEncode(updatedUserData));
 
       showDialog<bool>(
@@ -475,6 +476,18 @@ class _WorkerProfileEditPageState extends State<WorkerProfileEditPage> {
         },
       );
     }
+  }
+
+  Future<Map<String, dynamic>?> _refreshSessionUser(int userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/users/$userId'),
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
   }
 
   Future<void> _pickAndUploadIcon() async {

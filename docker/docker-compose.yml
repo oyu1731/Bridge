@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MySQLデータベースサービス
   mysql:
@@ -37,7 +35,7 @@ services:
     # ローカルの場合は8080:8080にマッピング
     # 本番環境は80:8080にマッピング
     ports:
-      - "80:8080"
+      - "8080:8080"
     depends_on:
       mysql:
         condition: service_healthy

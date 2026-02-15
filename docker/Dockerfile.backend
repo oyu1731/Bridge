@@ -1,9 +1,11 @@
-FROM eclipse-temurin:17-jdk-alpine
+FROM eclipse-temurin:17-jdk
 
 WORKDIR /app
 
 # ===== 日本語・タイムゾーン設定 =====
-RUN apk add --no-cache tzdata curl
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tzdata curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 ENV TZ=Asia/Tokyo
 ENV LANG=ja_JP.UTF-8
 ENV LC_ALL=ja_JP.UTF-8
@@ -13,11 +15,21 @@ COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
 RUN chmod +x ./mvnw
-RUN ./mvnw dependency:go-offline -B
+RUN set -eux; \
+        for i in 1 2 3; do \
+            ./mvnw -B -ntp -Dmaven.wagon.http.retryHandler.count=5 dependency:go-offline && break; \
+            echo "Maven dependency download failed (attempt $i). Retrying..."; \
+            sleep $((i * 5)); \
+        done
 
 # ===== ソースコードをコピーしてビルド =====
 COPY src ./src
-RUN ./mvnw clean package -DskipTests
+RUN set -eux; \
+        for i in 1 2 3; do \
+            ./mvnw -B -ntp -Dmaven.wagon.http.retryHandler.count=5 clean package -DskipTests && break; \
+            echo "Maven build failed (attempt $i). Retrying..."; \
+            sleep $((i * 5)); \
+        done
 
 # ===== 初期画像をコンテナにコピー（entrypoint で volume にコピーされる）=====
 RUN mkdir -p /app/initial-images

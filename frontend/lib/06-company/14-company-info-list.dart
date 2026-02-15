@@ -79,7 +79,11 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     try {
       final companies = await CompanyApiClient.getAllCompanies();
       // 退会済み企業を除外
-      final filtered = companies.where((c) => c.isWithdrawn != true).toList();
+      final filtered =
+          companies
+              .where((c) => c.isWithdrawn != true)
+              .where((c) => _hasCompanyPhoto(c))
+              .toList();
       // 写真ありを優先し、同条件内は最終更新日時順
       _sortCompaniesByPhotoAndDate(filtered);
       setState(() {
@@ -286,6 +290,13 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
         results = _applyFilters(results);
       }
 
+      // 表示対象を統一: 退会済み企業と企業写真なし企業は除外
+      results =
+          results
+              .where((company) => company.isWithdrawn != true)
+              .where((company) => _hasCompanyPhoto(company))
+              .toList();
+
       _sortCompaniesByPhotoAndDate(results);
 
       print('最終結果: ${results.length}件'); // デバッグログ
@@ -350,6 +361,11 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
     }
 
     return filtered;
+  }
+
+  bool _hasCompanyPhoto(CompanyDTO company) {
+    return (company.photoPath != null && company.photoPath!.isNotEmpty) ||
+        company.photoId != null;
   }
 
   void _sortCompaniesByPhotoAndDate(List<CompanyDTO> companies) {
