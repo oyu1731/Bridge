@@ -5,6 +5,7 @@ import 'package:bridge/11-common/59-global-method.dart';
 import 'package:bridge/11-common/60-ScreenWrapper.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:math' as math;
 import '28-quiz-question.dart';
 import '../06-company/photo_api_client.dart';
 import 'package:cached_network_image/cached_network_image.dart'; // 追加
@@ -384,7 +385,7 @@ class _RankingScreenState extends State<RankingScreen>
                                     isSmallScreen ? 16 : screenWidth * 0.2,
                                 vertical: 16,
                               ),
-                              itemCount: _rankingData.length,
+                              itemCount: math.min(_rankingData.length, 10),
                               itemBuilder: (context, index) {
                                 final data = _rankingData[index];
                                 final rank = index + 1;
@@ -513,10 +514,19 @@ class _RankingScreenState extends State<RankingScreen>
       baseElevation = 2;
     }
 
-    return TweenAnimationBuilder(
+    return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: 1),
       duration: Duration(milliseconds: 300 + (rank * 50)),
       curve: Curves.easeOut,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, (1 - value) * 16),
+            child: child,
+          ),
+        );
+      },
       child: MouseRegion(
         onEnter: (_) => _animationController.forward(),
         onExit: (_) => _animationController.reverse(),

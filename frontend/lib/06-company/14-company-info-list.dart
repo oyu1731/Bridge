@@ -368,10 +368,7 @@ class _CompanySearchPageState extends State<CompanySearchPage> {
   }
 
   List<CompanyDTO> get _displayCompanies {
-    if (_hasSearched) {
-      return _filteredCompanies;
-    }
-    return _filteredCompanies.take(10).toList();
+    return _filteredCompanies;
   }
 
   void _sortCompaniesByPhotoAndDate(List<CompanyDTO> companies) {

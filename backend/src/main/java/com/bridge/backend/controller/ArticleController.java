@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -48,6 +49,8 @@ public class ArticleController {
      */
     @GetMapping("/search")
     public ResponseEntity<List<ArticleDTO>> searchArticles(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String industryIds,
             @RequestParam(required = false) String search_words,
             @RequestParam(required = false) String industry,
             @RequestParam(required = false) String tag,
@@ -77,26 +80,33 @@ public class ArticleController {
                 dto.setTags(article.getTags());
                 return ResponseEntity.ok(java.util.Arrays.asList(dto));
             }
-            if (search_words == null) {
-                ArticleDTO dto = new ArticleDTO();
-                dto.setTitle(null);
-                dto.setDescription("不正な入力値です");
-                return ResponseEntity.ok(java.util.Arrays.asList(dto));
+
+            // フロント互換: keyword優先、未指定なら従来search_wordsを使用
+            String effectiveKeyword = (keyword != null && !keyword.trim().isEmpty())
+                    ? keyword
+                    : search_words;
+
+            // フロント互換: industryIds=1,2,3 をパース
+            List<Integer> parsedIndustryIds = null;
+            if (industryIds != null && !industryIds.trim().isEmpty()) {
+                parsedIndustryIds = new ArrayList<>();
+                for (String raw : industryIds.split(",")) {
+                    String value = raw.trim();
+                    if (value.isEmpty()) {
+                        continue;
+                    }
+                    try {
+                        parsedIndustryIds.add(Integer.valueOf(value));
+                    } catch (NumberFormatException ignored) {
+                        // 不正値は無視して続行
+                    }
+                }
+                if (parsedIndustryIds.isEmpty()) {
+                    parsedIndustryIds = null;
+                }
             }
-            if (industry == null) {
-                ArticleDTO dto = new ArticleDTO();
-                dto.setIndustry(null);
-                dto.setDescription("不正な入力値です");
-                return ResponseEntity.ok(java.util.Arrays.asList(dto));
-            }
-            if (tag == null) {
-                ArticleDTO dto = new ArticleDTO();
-                dto.setTags(null);
-                dto.setDescription("不正な入力値です");
-                return ResponseEntity.ok(java.util.Arrays.asList(dto));
-            }
-            // industryは本来List変換等が必要だが、既存ロジックを維持
-            List<ArticleDTO> articles = articleService.searchArticles(search_words, null);
+
+            List<ArticleDTO> articles = articleService.searchArticles(effectiveKeyword, parsedIndustryIds);
             return ResponseEntity.ok(articles);
         } catch (Exception e) {
             e.printStackTrace();

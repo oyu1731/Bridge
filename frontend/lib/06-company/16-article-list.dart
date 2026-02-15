@@ -822,13 +822,19 @@ class _ArticleListPageState extends State<ArticleListPage> {
   Widget _buildArticleCard(ArticleDTO article) {
     return InkWell(
       onTap: () {
+        if (article.id == null) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('記事IDが不正なため詳細を開けません')));
+          return;
+        }
         Navigator.push(
           context,
           MaterialPageRoute(
             builder:
                 (context) => ArticleDetailPage(
                   articleTitle: article.title,
-                  articleId: article.id?.toString() ?? '0',
+                  articleId: article.id!.toString(),
                   companyName: article.companyName ?? '会社名不明',
                   description: article.description,
                 ),
