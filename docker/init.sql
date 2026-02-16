@@ -813,12 +813,10 @@ INSERT INTO interviews (question, type) VALUES
 -- ('電話対応例題1', 1),
 -- ('電話対応例題2', 2);
 
--- notifications
-INSERT INTO notifications (type, title, content, user_id, created_at, reservation_time, send_flag, send_flag_int, category, is_deleted) VALUES
--- 既存のデータを一度クリア（必要に応じて）
+-- 1. 既存のデータをクリア（テーブル作成直後なら不要ですが、あっても問題ありません）
 TRUNCATE TABLE notifications;
 
--- 現実的なテストデータの挿入
+-- 2. 現実的なテストデータの挿入
 INSERT INTO notifications (
     type, title, content, user_id, created_at, reservation_time, send_flag, send_flag_int, category, is_deleted
 ) VALUES
@@ -834,7 +832,7 @@ INSERT INTO notifications (
  '就職活動を控えた学生の皆様を対象に、プロのカウンセラーによる個別相談会を開催します。参加費は無料です。詳細はマイページからご確認ください。', 
  NULL, '2026-02-16 09:00:00', NULL, '2026-02-16 09:00:00', 2, 1, FALSE),
 
--- 3. 特定のユーザーへの個別通知（送信完了：例えば登録完了通知など）
+-- 3. 特定のユーザーへの個別通知（送信完了）
 (8, 
  'プロフィール情報の確認をお願いします', 
  'ご登録いただいたプロフィール情報に一部不足がございます。設定画面より「スキル」の項目を追記いただくと、よりマッチした情報をお届けできるようになります。', 
@@ -851,7 +849,8 @@ INSERT INTO notifications (
  'Bridgeサービスロゴのリニューアルについて', 
  '本日よりBridgeのロゴが新しくなりました！より使いやすく、より繋がりやすいプラットフォームを目指して日々改善を行ってまいります。', 
  NULL, '2026-01-20 15:00:00', NULL, '2026-01-20 15:00:00', 2, 1, FALSE);
--- notices
+ 
+ -- notices
 INSERT INTO notices (from_user_id, to_user_id, type, thread_id, chat_id, created_at) VALUES
 (1, 2, 1, 1, NULL, NOW()),
 (2, 1, 2, NULL, 1, NOW());
