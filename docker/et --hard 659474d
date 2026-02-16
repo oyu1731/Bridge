@@ -1,0 +1,85 @@
+[33mb615885[m[33m ([m[1;36mHEAD -> [m[1;32mdepuroi[m[33m, [m[1;31morigin/test_depuroi[m[33m, [m[1;31morigin/depuroi[m[33m, [m[1;32mtest_depuroi[m[33m)[m HEAD@{0}: checkout: moving from test_depuroi to depuroi
+[33mb615885[m[33m ([m[1;36mHEAD -> [m[1;32mdepuroi[m[33m, [m[1;31morigin/test_depuroi[m[33m, [m[1;31morigin/depuroi[m[33m, [m[1;32mtest_depuroi[m[33m)[m HEAD@{1}: reset: moving to HEAD
+[33mb615885[m[33m ([m[1;36mHEAD -> [m[1;32mdepuroi[m[33m, [m[1;31morigin/test_depuroi[m[33m, [m[1;31morigin/depuroi[m[33m, [m[1;32mtest_depuroi[m[33m)[m HEAD@{2}: checkout: moving from tentative to test_depuroi
+[33m659474d[m[33m ([m[1;32mtentative[m[33m)[m HEAD@{3}: commit: URL設定の更新とデプロイ準備
+[33m23264fc[m[33m ([m[1;31morigin/tentative[m[33m)[m HEAD@{4}: reset: moving to HEAD
+[33m23264fc[m[33m ([m[1;31morigin/tentative[m[33m)[m HEAD@{5}: commit (merge): 企業向けプランアラート機能の追加
+[33m5055e90[m HEAD@{6}: commit: 企業向けプランアラート機能の追加
+[33m337f2e3[m HEAD@{7}: reset: moving to origin/tentative
+[33m337f2e3[m HEAD@{8}: checkout: moving from tentative to tentative
+[33m337f2e3[m HEAD@{9}: commit: 決済完了後URLリセット
+[33m891ee1b[m HEAD@{10}: commit (merge): update: 支払い機能と共通ヘッダーの修正
+[33m41cb362[m HEAD@{11}: commit: update: 支払い機能と共通ヘッダーの修正
+[33m80aba9a[m HEAD@{12}: checkout: moving from tentative to tentative
+[33m80aba9a[m HEAD@{13}: reset: moving to origin/tentative
+[33m2068b45[m HEAD@{14}: checkout: moving from test_depuroi to tentative
+[33mb615885[m[33m ([m[1;36mHEAD -> [m[1;32mdepuroi[m[33m, [m[1;31morigin/test_depuroi[m[33m, [m[1;31morigin/depuroi[m[33m, [m[1;32mtest_depuroi[m[33m)[m HEAD@{15}: commit: 面接画面修正
+[33mb0dd826[m HEAD@{16}: commit: .env修正
+[33mcdc61e3[m HEAD@{17}: commit: トンネル修正
+[33m14185ce[m HEAD@{18}: commit: 設定ファイル整理
+[33m5a627a2[m HEAD@{19}: commit: 設定修正
+[33m5866144[m HEAD@{20}: commit: なんやかんや修正
+[33mcc4fb47[m HEAD@{21}: commit: 独自ドメイン対応の設定を反映
+[33m80aba9a[m HEAD@{22}: checkout: moving from test_depuroi to test_depuroi
+[33m80aba9a[m HEAD@{23}: reset: moving to origin/tentative
+[33ma6a4c74[m HEAD@{24}: commit: feat: 接続先IPをEC2に変更しCORSを許可設定
+[33mcbeb164[m HEAD@{25}: commit: feat: 接続先IPをEC2に変更しCORSを許可設定
+[33meae0955[m HEAD@{26}: commit: feat: 接続先IPをEC2に変更しCORSを許可設定
+[33m2068b45[m HEAD@{27}: checkout: moving from tentative to test_depuroi
+[33m2068b45[m HEAD@{28}: reset: moving to origin/tentative
+[33mc3d1e0c[m HEAD@{29}: commit: サブスク関連
+[33m63c59d3[m HEAD@{30}: reset: moving to origin/tentative
+[33m63c59d3[m HEAD@{31}: reset: moving to origin/tentative
+[33m63c59d3[m HEAD@{32}: reset: moving to origin/tentative
+[33m63c59d3[m HEAD@{33}: commit: セッション関連修正
+[33m04cdb0f[m HEAD@{34}: pull origin tentative: Fast-forward
+[33m8d04f5c[m HEAD@{35}: commit: サブスク再度修正
+[33m998f12d[m HEAD@{36}: commit: サブスク再度修正
+[33m9854c4b[m HEAD@{37}: commit: 1.12修正
+[33m513f635[m HEAD@{38}: commit (merge): fix: merge conflicts
+[33m4c842fc[m HEAD@{39}: commit: 決済処理
+[33m838d160[m HEAD@{40}: reset: moving to origin/tentative
+[33m4eed301[m HEAD@{41}: reset: moving to origin/tentative
+[33md73e26b[m[33m ([m[1;32mota1128[m[33m)[m HEAD@{42}: merge ota1128: Fast-forward
+[33me786393[m[33m ([m[1;31morigin/momota[m[33m)[m HEAD@{43}: checkout: moving from ota1128 to tentative
+[33md73e26b[m[33m ([m[1;32mota1128[m[33m)[m HEAD@{44}: commit: Save local changes before switching to tentative
+[33m2587008[m[33m ([m[1;31morigin/ota1128[m[33m)[m HEAD@{45}: commit: 面接、電話修正
+[33m3a30052[m HEAD@{46}: commit: 面接、電話修正
+[33m9d71cb2[m HEAD@{47}: commit: 課金処理完成
+[33m6dc673c[m HEAD@{48}: commit: AI関連結合
+[33m2f64e4a[m HEAD@{49}: commit (merge): Merge branch 'tentative' into ota1128
+[33m0b4fda0[m HEAD@{50}: checkout: moving from tentative to ota1128
+[33me786393[m[33m ([m[1;31morigin/momota[m[33m)[m HEAD@{51}: reset: moving to HEAD
+[33me786393[m[33m ([m[1;31morigin/momota[m[33m)[m HEAD@{52}: checkout: moving from ota1128 to tentative
+[33m0b4fda0[m HEAD@{53}: commit: 作業退避: 11/28 ota
+[33m606c95c[m HEAD@{54}: commit: 作業退避: 11/28 ota
+[33mbe34fc9[m[33m ([m[1;31morigin/ota_1125[m[33m, [m[1;32mota_1125[m[33m)[m HEAD@{55}: checkout: moving from ota_1125 to ota1128
+[33mbe34fc9[m[33m ([m[1;31morigin/ota_1125[m[33m, [m[1;32mota_1125[m[33m)[m HEAD@{56}: checkout: moving from new_ota11.12 to ota_1125
+[33m3484c03[m[33m ([m[1;32mnew_ota11.12[m[33m)[m HEAD@{57}: commit: Backup local changes before OTA update
+[33m4820a47[m[33m ([m[1;31morigin/new_ota11.12[m[33m)[m HEAD@{58}: commit: ローカルのコードを丸ごとアップロード
+[33md418f65[m[33m ([m[1;32mmain[m[33m)[m HEAD@{59}: checkout: moving from main to new_ota11.12
+[33md418f65[m[33m ([m[1;32mmain[m[33m)[m HEAD@{60}: commit: ai画面
+[33m1dac446[m HEAD@{61}: reset: moving to origin/main
+[33m3813cab[m HEAD@{62}: reset: moving to HEAD
+[33m3813cab[m HEAD@{63}: commit: デバッグ機能追加（セッション）
+[33maf9746e[m HEAD@{64}: commit: initファイル修正
+[33m5305f57[m HEAD@{65}: reset: moving to origin/main
+[33m3697daa[m HEAD@{66}: commit: main.dartの位置変更
+[33m7c0ccfc[m HEAD@{67}: commit: main.dartの位置変更
+[33m9a447e5[m HEAD@{68}: reset: moving to origin/main
+[33m4fbe3c7[m HEAD@{69}: reset: moving to origin/main
+[33m4e46913[m HEAD@{70}: commit: local backup before reset
+[33m67d1056[m HEAD@{71}: reset: moving to origin/main
+[33me780450[m HEAD@{72}: reset: moving to HEAD
+[33me780450[m HEAD@{73}: commit: Add .gitkeep to all folders
+[33m550bcce[m HEAD@{74}: commit: Add empty folder with .gitkeep
+[33m16a7052[m HEAD@{75}: commit: fix: project structure and files
+[33mebdb84f[m HEAD@{76}: rebase (abort): returning to refs/heads/main
+[33m8d2b556[m HEAD@{77}: pull origin main --rebase (start): checkout 8d2b556d69a6fa72c59856a712b15611cc865adc
+[33mebdb84f[m HEAD@{78}: rebase (abort): returning to refs/heads/main
+[33mebdb84f[m HEAD@{79}: rebase (abort): returning to refs/heads/main
+[33m3637d14[m HEAD@{80}: commit: db関連
+[33mebdb84f[m HEAD@{81}: commit: db関連
+[33m8f8abcf[m HEAD@{82}: Branch: renamed refs/heads/main to refs/heads/main
+[33m8f8abcf[m HEAD@{84}: Branch: renamed refs/heads/master to refs/heads/main
+[33m8f8abcf[m HEAD@{86}: commit (initial): Initial commit: add Flutter frontend and Docker backend

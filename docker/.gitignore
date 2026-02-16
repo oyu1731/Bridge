@@ -1,0 +1,21 @@
+# Flutter
+build/
+.flutter-plugins
+.packages
+.pub-cache/
+.pub/
+.idea/
+.vscode/
+*.iml
+frontend/android/local.properties
+frontend/android/local.properties
+
+# Docker
+**/docker-compose.override.yml
+**/docker/*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+
