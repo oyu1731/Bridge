@@ -173,6 +173,24 @@ public class ArticleController {
     }
 
     /**
+     * ユーザーがいいねした未削除記事一覧を取得
+     * GET /api/articles/liked/{userId}
+     *
+     * @param userId ユーザーID
+     * @return いいねした記事一覧
+     */
+    @GetMapping("/liked/{userId}")
+    public ResponseEntity<List<ArticleDTO>> getLikedArticlesByUserId(@PathVariable Integer userId) {
+        try {
+            List<ArticleDTO> articles = articleService.getLikedArticlesByUserId(userId);
+            return ResponseEntity.ok(articles);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
      * 記事を作成
      * POST /api/articles
      * 

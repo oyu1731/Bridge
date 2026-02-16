@@ -56,6 +56,15 @@ public interface ArticleRepository extends JpaRepository<Article, Integer> {
      */
     @Query("SELECT a FROM Article a LEFT JOIN FETCH a.tags WHERE a.id = :id AND a.isDeleted = false")
     Article findByIdAndIsDeletedFalseWithTags(@Param("id") Integer id);
+
+    /**
+     * 複数IDに一致する未削除記事をタグ情報付きで取得
+     *
+     * @param ids 記事IDリスト
+     * @return 未削除記事一覧
+     */
+    @Query("SELECT DISTINCT a FROM Article a LEFT JOIN FETCH a.tags WHERE a.id IN :ids AND a.isDeleted = false")
+    List<Article> findByIdInAndIsDeletedFalseWithTags(@Param("ids") List<Integer> ids);
     
     /**
      * IDと削除フラグで記事を検索

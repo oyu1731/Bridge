@@ -20,6 +20,7 @@ import 'package:bridge/10-payment/55-plan-status.dart';
 import '../04-profile/11-student-profile-edit.dart';
 import '../04-profile/12-worker-profile-edit.dart';
 import '../04-profile/13-company-profile-edit.dart';
+import '../04-profile/14-liked-article-list.dart';
 
 // 認証
 import '../02-auth/05-sign-in.dart';
@@ -721,6 +722,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
     final items = <PopupMenuEntry<String>>[
       _menu('profile_edit', Icons.edit, 'プロフィール編集'),
       _menu('password_change', Icons.lock, 'パスワード変更'),
+      _menu('liked_articles', Icons.favorite, 'いいねした記事一覧'),
     ];
     if (accountType == '企業') {
       items.addAll([
@@ -866,6 +868,14 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => PasswordUpdatePage()),
+        );
+        break;
+
+      case 'liked_articles':
+        _markHeaderNavigation();
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LikedArticleListPage()),
         );
         break;
 

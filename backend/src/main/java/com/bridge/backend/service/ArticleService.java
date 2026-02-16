@@ -19,7 +19,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import com.bridge.backend.entity.User;
 import com.bridge.backend.entity.IndustryRelation;
@@ -173,6 +175,40 @@ public class ArticleService {
         List<Article> articles = articleRepository.findByCompanyIdAndIsDeletedFalseOrderByCreatedAtDesc(companyId);
         return articles.stream()
                 .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * ユーザーがいいねした未削除記事一覧を取得
+     *
+     * @param userId ユーザーID
+     * @return いいね済み記事のDTO一覧
+     */
+    public List<ArticleDTO> getLikedArticlesByUserId(Integer userId) {
+        List<Integer> likedArticleIds = articleLikeRepository.findArticleIdsByUserIdOrderByCreatedAtDesc(userId);
+        if (likedArticleIds == null || likedArticleIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Article> articles = articleRepository.findByIdInAndIsDeletedFalseWithTags(likedArticleIds);
+
+        Map<Integer, Integer> orderMap = new HashMap<>();
+        for (int index = 0; index < likedArticleIds.size(); index++) {
+            orderMap.put(likedArticleIds.get(index), index);
+        }
+
+        articles.sort((left, right) -> {
+            Integer leftOrder = orderMap.getOrDefault(left.getId(), Integer.MAX_VALUE);
+            Integer rightOrder = orderMap.getOrDefault(right.getId(), Integer.MAX_VALUE);
+            return leftOrder.compareTo(rightOrder);
+        });
+
+        return articles.stream()
+                .map(article -> {
+                    ArticleDTO dto = convertToDTO(article);
+                    dto.setIsLikedByUser(true);
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 

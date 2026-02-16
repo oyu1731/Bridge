@@ -1,4 +1,5 @@
 import 'dart:convert'; // JSON用
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // HapticFeedback用
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +19,7 @@ import 'package:flutter/foundation.dart' show kIsWeb; // Web判定
 import 'dart:html' as html; // WebのURL取得用
 import 'bridge_error_widget.dart';
 import '11-common/common_error_page.dart';
+import '11-common/app_logger.dart';
 import 'package:flutter/foundation.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -26,15 +28,34 @@ DateTime? _firstGlobalErrorTime;
 bool _isGlobalErrorActive = false;
 bool _hasNavigatedToErrorPage = false;
 
-void main() async {
+Future<void> main() async {
+  await runZonedGuarded(
+    () async {
+      await _bootstrapApp();
+    },
+    (error, stackTrace) {
+      AppLogger.e('【Zone Error】', error, stackTrace);
+    },
+    zoneSpecification: ZoneSpecification(
+      print: (self, parent, zone, line) {
+        AppLogger.d(line);
+      },
+    ),
+  );
+}
+
+Future<void> _bootstrapApp() async {
   // グローバルエラーハンドリング: UI例外はログ出力のみ
   // HTTP エラー処理は safeGet/safePost などの共通関数で行う
   ErrorWidget.builder =
       (FlutterErrorDetails details) => BridgeErrorWidget(details);
   FlutterError.onError = (FlutterErrorDetails details) {
     // UI例外はログ出力のみ、エラーページへは遷移しない
-    debugPrint('【Flutter Error】${details.exceptionAsString()}');
-    debugPrintStack(stackTrace: details.stack);
+    AppLogger.e(
+      '【Flutter Error】${details.exceptionAsString()}',
+      null,
+      details.stack,
+    );
   };
   WidgetsFlutterBinding.ensureInitialized();
 
