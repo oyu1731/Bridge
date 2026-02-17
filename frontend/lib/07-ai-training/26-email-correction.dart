@@ -205,18 +205,22 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
         padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
         child:
             isSmallScreen
-                ? Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // スマホ：縦積みレイアウト
-                    Flexible(flex: 2, child: _buildInputSection()),
-                    const SizedBox(height: 12),
-                    _buildCorrectionButtonSmall(),
-                    const SizedBox(height: 12),
-                    Flexible(flex: 2, child: _buildCorrectedSection()),
-                    const SizedBox(height: 12),
-                    Flexible(flex: 1, child: _buildCorrectionDetails()),
-                  ],
+                ? SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // スマホ：縦積み + ページ全体スクロール
+                      _buildInputSection(),
+                      const SizedBox(height: 12),
+                      _buildCorrectionButtonSmall(),
+                      const SizedBox(height: 12),
+                      _buildCorrectedSection(),
+                      const SizedBox(height: 12),
+                      _buildCorrectionDetails(),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
                 )
                 : Column(
                   mainAxisSize: MainAxisSize.min,
@@ -275,26 +279,54 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Flexible(
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade400),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: TextField(
-                  controller: _originalEmailController,
-                  maxLines: null,
-                  expands: true,
-                  decoration: InputDecoration(
-                    hintText: '例：\nお世話になります。\n先日の件ですが、資料送ってください。\nよろしくお願いします。',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(isSmallScreen ? 8.0 : 12.0),
-                    hintStyle: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+            isSmallScreen
+                ? SizedBox(
+                  height: 220,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: TextField(
+                      controller: _originalEmailController,
+                      maxLines: null,
+                      expands: true,
+                      decoration: InputDecoration(
+                        hintText:
+                            '例：\nお世話になります。\n先日の件ですが、資料送ってください。\nよろしくお願いします。',
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.all(
+                          isSmallScreen ? 8.0 : 12.0,
+                        ),
+                        hintStyle: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                      ),
+                      style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
+                    ),
                   ),
-                  style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
+                )
+                : Flexible(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: TextField(
+                      controller: _originalEmailController,
+                      maxLines: null,
+                      expands: true,
+                      decoration: InputDecoration(
+                        hintText:
+                            '例：\nお世話になります。\n先日の件ですが、資料送ってください。\nよろしくお願いします。',
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.all(
+                          isSmallScreen ? 8.0 : 12.0,
+                        ),
+                        hintStyle: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                      ),
+                      style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
+                    ),
+                  ),
                 ),
-              ),
-            ),
           ],
         ),
       ),
@@ -405,37 +437,76 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Flexible(
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(isSmallScreen ? 8.0 : 12.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(4),
-                  color: Colors.grey.shade50,
-                ),
-                child:
-                    _correctedEmail.isEmpty
-                        ? const Center(
-                          child: Text(
-                            '添削結果がここに表示されます',
-                            style: TextStyle(color: Colors.grey, fontSize: 14),
-                          ),
-                        )
-                        : Scrollbar(
-                          thumbVisibility: true,
-                          child: SingleChildScrollView(
-                            child: SelectableText(
-                              _correctedEmail,
-                              style: TextStyle(
-                                fontSize: isSmallScreen ? 14 : 16,
-                                height: 1.5,
+            isSmallScreen
+                ? SizedBox(
+                  height: 220,
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(isSmallScreen ? 8.0 : 12.0),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(4),
+                      color: Colors.grey.shade50,
+                    ),
+                    child:
+                        _correctedEmail.isEmpty
+                            ? const Center(
+                              child: Text(
+                                '添削結果がここに表示されます',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            )
+                            : Scrollbar(
+                              thumbVisibility: true,
+                              child: SingleChildScrollView(
+                                child: SelectableText(
+                                  _correctedEmail,
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 14 : 16,
+                                    height: 1.5,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-              ),
-            ),
+                  ),
+                )
+                : Flexible(
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(isSmallScreen ? 8.0 : 12.0),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(4),
+                      color: Colors.grey.shade50,
+                    ),
+                    child:
+                        _correctedEmail.isEmpty
+                            ? const Center(
+                              child: Text(
+                                '添削結果がここに表示されます',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            )
+                            : Scrollbar(
+                              thumbVisibility: true,
+                              child: SingleChildScrollView(
+                                child: SelectableText(
+                                  _correctedEmail,
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 14 : 16,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                  ),
+                ),
           ],
         ),
       ),
@@ -469,37 +540,73 @@ class _EmailCorrectionScreenState extends State<EmailCorrectionScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Flexible(
-              child: Container(
-                width: double.infinity,
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.3,
-                ),
-                padding: EdgeInsets.all(isSmallScreen ? 8.0 : 12.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(4),
-                  color: Colors.grey.shade50,
-                ),
-                child:
-                    _correctionDetails.isEmpty
-                        ? const Center(
-                          child: Text(
-                            '編集内容の詳細がここに表示されます',
-                            style: TextStyle(color: Colors.grey, fontSize: 14),
-                          ),
-                        )
-                        : SingleChildScrollView(
-                          child: SelectableText(
-                            _correctionDetails,
-                            style: TextStyle(
-                              fontSize: isSmallScreen ? 14 : 16,
-                              height: 1.5,
+            isSmallScreen
+                ? SizedBox(
+                  height: 180,
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(isSmallScreen ? 8.0 : 12.0),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(4),
+                      color: Colors.grey.shade50,
+                    ),
+                    child:
+                        _correctionDetails.isEmpty
+                            ? const Center(
+                              child: Text(
+                                '編集内容の詳細がここに表示されます',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            )
+                            : SingleChildScrollView(
+                              child: SelectableText(
+                                _correctionDetails,
+                                style: TextStyle(
+                                  fontSize: isSmallScreen ? 14 : 16,
+                                  height: 1.5,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-              ),
-            ),
+                  ),
+                )
+                : Flexible(
+                  child: Container(
+                    width: double.infinity,
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.3,
+                    ),
+                    padding: EdgeInsets.all(isSmallScreen ? 8.0 : 12.0),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(4),
+                      color: Colors.grey.shade50,
+                    ),
+                    child:
+                        _correctionDetails.isEmpty
+                            ? const Center(
+                              child: Text(
+                                '編集内容の詳細がここに表示されます',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            )
+                            : SingleChildScrollView(
+                              child: SelectableText(
+                                _correctionDetails,
+                                style: TextStyle(
+                                  fontSize: isSmallScreen ? 14 : 16,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ),
+                  ),
+                ),
             const SizedBox(height: 16),
             isSmallScreen
                 ? Column(

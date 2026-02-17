@@ -24,6 +24,7 @@ class _ArticleListPageState extends State<ArticleListPage> {
   String _sortOrder = 'newest'; // newest, oldest, mostLiked, leastLiked
 
   // 実際の記事データ（APIから取得）
+  List<ArticleDTO> _defaultArticles = [];
   List<ArticleDTO> _allArticles = [];
   List<ArticleDTO> _filteredArticles = [];
   List<String> _availableTags = []; // 動的タグリスト
@@ -92,6 +93,7 @@ class _ArticleListPageState extends State<ArticleListPage> {
       // 削除済み記事のみ除外（退会企業の判定は現状不可）
       final filtered = articles.where((a) => (a.isDeleted != true)).toList();
       setState(() {
+        _defaultArticles = filtered;
         _allArticles = filtered;
         _filteredArticles = filtered;
         _isLoading = false;
@@ -159,7 +161,8 @@ class _ArticleListPageState extends State<ArticleListPage> {
       return;
     }
 
-    // それ以外の場合はタグのみでローカルフィルター
+    // それ以外（空文字検索）はデフォルト一覧に戻してローカルフィルター
+    _allArticles = List.from(_defaultArticles);
     _applyLocalFilters();
   }
 
@@ -251,6 +254,7 @@ class _ArticleListPageState extends State<ArticleListPage> {
       _selectedIndustries.clear();
       _isStrictMode = false;
       _sortOrder = 'newest';
+      _allArticles = List.from(_defaultArticles);
       _filteredArticles = List.from(_allArticles);
       _applySorting();
       // _isFilterExpanded は維持して、メニューを閉じないようにする

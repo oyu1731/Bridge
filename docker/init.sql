@@ -852,7 +852,7 @@ INSERT INTO notifications (
  
  -- notices
 INSERT INTO notices (from_user_id, to_user_id, type, thread_id, chat_id, created_at) VALUES
-(1, 2, 1, 1, NULL, NOW()),
+(1, 2, 2, 1, NULL, NOW()),
 (2, 1, 2, NULL, 1, NOW());
 
 -- tag

@@ -307,80 +307,75 @@ class _CompanyProfileEditPageState extends State<CompanyProfileEditPage> {
                   },
                 ),
               ),
-              if (_companyPhotoUrl != null)
-                Column(
-                  children: [
-                    const SizedBox(height: 16),
-                    _buildLabel("メールアドレス"),
-                    _buildTextField(
-                      _emailController,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty)
-                          return 'メールアドレスを入力してください';
-                        final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-                        if (!emailRegex.hasMatch(v))
-                          return '有効なメールアドレスを入力してください';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    _buildLabel('パスワード（変更する場合）'),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: EdgeInsetsGeometry.only(top: 14),
-                          child: Icon(
-                            Icons.lock_outline,
-                            color: AppTheme.cyanDark,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _passwordController,
-                            decoration: InputDecoration(
-                              border: const OutlineInputBorder(),
-                              labelText: '新しいパスワード',
-                              hintText: '英数字８文字以上で入力してください（空のままなら変更しません）',
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                  color: AppTheme.cyanDark,
-                                ),
-                                onPressed:
-                                    () => setState(
-                                      () =>
-                                          _obscurePassword = !_obscurePassword,
-                                    ),
-                              ),
-                            ),
-                            obscureText: _obscurePassword,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) return null;
-                              if (value.length < 8)
-                                return 'パスワードは8文字以上である必要があります';
-                              if (value.length > 255)
-                                return 'パスワードは255文字以内で入力してください';
-                              final regex = RegExp(r'^[a-zA-Z0-9._]+$');
-                              if (!regex.hasMatch(value))
-                                return '使用できるのは英数字・.・_ のみです';
-                              return null;
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    Image.network(
+              if (_companyPhotoUrl != null) ...[
+                const SizedBox(height: 16),
+                Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
                       _companyPhotoUrl!,
                       width: 120,
                       height: 120,
                       fit: BoxFit.cover,
                     ),
-                  ],
+                  ),
                 ),
+              ],
+              const SizedBox(height: 20),
+              _buildLabel("メールアドレス"),
+              _buildTextField(
+                _emailController,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'メールアドレスを入力してください';
+                  final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                  if (!emailRegex.hasMatch(v)) return '有効なメールアドレスを入力してください';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              _buildLabel('パスワード（変更する場合）'),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: EdgeInsetsGeometry.only(top: 14),
+                    child: Icon(Icons.lock_outline, color: AppTheme.cyanDark),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
+                        labelText: '新しいパスワード',
+                        hintText: '英数字８文字以上で入力してください（空のままなら変更しません）',
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: AppTheme.cyanDark,
+                          ),
+                          onPressed:
+                              () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                        ),
+                      ),
+                      obscureText: _obscurePassword,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return null;
+                        if (value.length < 8) return 'パスワードは8文字以上である必要があります';
+                        if (value.length > 255) return 'パスワードは255文字以内で入力してください';
+                        final regex = RegExp(r'^[a-zA-Z0-9._]+$');
+                        if (!regex.hasMatch(value))
+                          return '使用できるのは英数字・.・_ のみです';
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 30),
               _buildLabel("企業名"),
               _buildTextField(
