@@ -852,8 +852,10 @@ INSERT INTO notifications (
  
  -- notices
 INSERT INTO notices (from_user_id, to_user_id, type, thread_id, chat_id, created_at) VALUES
-(1, 2, 2, 1, NULL, NOW()),
-(2, 1, 2, NULL, 1, NOW());
+-- ユーザー1(佐々木) が ユーザー8(転職マン) のチャット(ID:1: 「最近就活の早期化が...」)を通報
+(1, 8, 2, 1, 1, NOW()),
+-- ユーザー4(文系ちゃん) が ユーザー16(違反スゴ助) のSNS交換勧誘チャット(ID:28: 「いいね～！SNS交換しよー！」)を通報
+(4, 16, 2, 8, 28, NOW());
 
 -- tag
 INSERT INTO tag (tag) VALUES

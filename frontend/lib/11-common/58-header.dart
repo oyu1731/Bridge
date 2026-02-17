@@ -638,12 +638,7 @@ class BridgeHeader extends StatelessWidget implements PreferredSizeWidget {
                         _nav('スレッド', () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              settings: const RouteSettings(
-                                name: '/thread/list',
-                              ),
-                              builder: (_) => ThreadList(),
-                            ),
+                            MaterialPageRoute(builder: (_) => ThreadList()),
                           );
                         }, isSmall),
                       );

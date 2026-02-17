@@ -74,13 +74,15 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 600;
+
     return Scaffold(
       appBar: BridgeHeader(),
       body:
           _userData == null
               ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(isMobile ? 12 : 24),
                 child: Center(
                   child: Container(
                     constraints: const BoxConstraints(maxWidth: 1000),
@@ -107,6 +109,8 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
 
   // ====== ユーザー情報(中身は完全そのまま) ======
   Widget _buildUserInfoInner() {
+    final bool isMobile = MediaQuery.of(context).size.width < 600;
+
     String industryLabel =
         _userData!['type'] == 1
             ? '希望業界'
@@ -126,6 +130,7 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
     return Column(
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CircleAvatar(
               radius: 40,
@@ -139,204 +144,320 @@ class _AdminAccountDetailState extends State<AdminAccountDetail> {
                       : null,
             ),
             const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${_userData!['name']} <${_getAccountTypeLabel(_userData!['type'])}>',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    softWrap: true,
+                  ),
+                  Text(
+                    'アカウントID: ${_userData!['accountId']}',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  _buildAccountStatusUnderId(),
+                ],
+              ),
+            ),
+            if (!isMobile && _userData!['deleted'] != true)
+              _buildDeleteButton(),
+          ],
+        ),
+        if (isMobile && _userData!['deleted'] != true)
+          Align(alignment: Alignment.centerRight, child: _buildDeleteButton()),
+        const SizedBox(height: 24),
+        const Divider(),
+        isMobile
+            ? Column(
               children: [
-                Text(
-                  '${_userData!['name']} <${_getAccountTypeLabel(_userData!['type'])}>',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                _buildInfoRow('電話番号', _userData!['phone']),
+                _buildInfoRow('メールアドレス', _userData!['email']),
+                _buildInfoRow('パスワード', _userData!['password']),
+                _buildInfoRow('登録日', _userData!['registeredAt'].split('T')[0]),
+                if (_userData!['type'] != 4)
+                  _buildInfoRow('通報回数', _userData!['reports'].toString()),
+                _buildInfoRow(industryLabel, _userData!['industry']),
+              ],
+            )
+            : Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      _buildInfoRow('電話番号', _userData!['phone']),
+                      _buildInfoRow('メールアドレス', _userData!['email']),
+                      _buildInfoRow('パスワード', _userData!['password']),
+                    ],
+                  ),
                 ),
-                Text(
-                  'アカウントID: ${_userData!['accountId']}',
-                  style: const TextStyle(color: Colors.grey),
+                Expanded(
+                  child: Column(
+                    children: [
+                      _buildInfoRow(
+                        '登録日',
+                        _userData!['registeredAt'].split('T')[0],
+                      ),
+                      if (_userData!['type'] != 4)
+                        _buildInfoRow('通報回数', _userData!['reports'].toString()),
+                      _buildInfoRow(industryLabel, _userData!['industry']),
+                    ],
+                  ),
                 ),
               ],
             ),
-            const Spacer(), // ← 右端へ押し出す
-            // ===== 状態表示 & 削除ボタン =====
-
-            // 退会済み（ゴミ箱の前）
-            if (_userData!['withdrawn'] == true &&
-                _userData!['deleted'] != true)
-              const Padding(
-                padding: EdgeInsets.only(right: 8),
-                child: Text(
-                  '退会済み',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-
-            // 削除済みならゴミ箱の位置に表示
-            if (_userData!['deleted'] == true)
-              const Text(
-                '削除済み',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
-              )
-            else
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () async {
-                  bool ok = await showDialog(
-                    context: context,
-                    builder:
-                        (_) => AlertDialog(
-                          title: const Text('削除確認'),
-                          content: const Text('このアカウントを削除しますか？'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: const Text('キャンセル'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: const Text('削除'),
-                            ),
-                          ],
-                        ),
-                  );
-
-                  if (!ok) return;
-
-                  await http.put(
-                    Uri.parse(
-                      '${ApiConfig.baseUrl}/api/users/${widget.userId}/delete',
-                    ),
-                  );
-
-                  Navigator.pop(context, true);
-                },
-              ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        const Divider(),
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                children: [
-                  _buildInfoRow('電話番号', _userData!['phone']),
-                  _buildInfoRow('メールアドレス', _userData!['email']),
-                  _buildInfoRow('パスワード', _userData!['password']),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Column(
-                children: [
-                  _buildInfoRow(
-                    '登録日',
-                    _userData!['registeredAt'].split('T')[0],
-                  ),
-                  if (_userData!['type'] != 4)
-                    _buildInfoRow('通報回数', _userData!['reports'].toString()),
-                    
-                  _buildInfoRow(industryLabel, _userData!['industry']),
-                ],
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
 
-  Widget _buildInfoRow(String l, String v) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4),
-    child: Row(
-      children: [
-        SizedBox(
-          width: 90,
-          child: Text(l, style: const TextStyle(fontWeight: FontWeight.bold)),
-        ),
-        Expanded(child: Text(v)),
-      ],
-    ),
-  );
+  Widget _buildInfoRow(String l, String v) {
+    final bool isMobile = MediaQuery.of(context).size.width < 600;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: isMobile ? 78 : 90,
+            child: Text(l, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          Expanded(child: Text(v, softWrap: true)),
+        ],
+      ),
+    );
+  }
 
-  // ====== コメント履歴 ======
-  Widget _buildCommentHistoryTable() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('コメント履歴'),
-        const SizedBox(height: 12),
-
-        if (_commentHistory.isEmpty)
-          const Text('コメント履歴はありません')
-        else
-          Table(
-            columnWidths: const {
-              0: FlexColumnWidth(3), // スレッド名 30%
-              1: FlexColumnWidth(4.5), // コメント 50%
-              2: FlexColumnWidth(2.5), // 日付 20%
-            },
-            border: TableBorder.all(color: Colors.grey.shade400),
-            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-            children: [
-              // ===== ヘッダー =====
-              TableRow(
-                decoration: BoxDecoration(color: Colors.grey.shade200),
-                children: const [
-                  Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Center(child: Text('スレッド名')),
+  Widget _buildDeleteButton() {
+    return IconButton(
+      icon: const Icon(Icons.delete),
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+      padding: const EdgeInsets.all(6),
+      visualDensity: VisualDensity.compact,
+      splashRadius: 20,
+      onPressed: () async {
+        bool ok = await showDialog(
+          context: context,
+          builder:
+              (_) => AlertDialog(
+                title: const Text('削除確認'),
+                content: const Text('このアカウントを削除しますか？'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('キャンセル'),
                   ),
-                  Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Center(child: Text('コメント')),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Center(child: Text('日付')),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('削除'),
                   ),
                 ],
               ),
+        );
 
-              // ===== データ行 =====
-              ..._commentHistory.map(
-                (c) => TableRow(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Text(c['threadTitle'] ?? '', softWrap: true),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child:
-                          c['isDeleted'] == true
-                              ? Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(c['content'] ?? '', softWrap: true),
-                                  const SizedBox(height: 4),
-                                  const Text(
-                                    '削除済み',
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              )
-                              : Text(c['content'] ?? '', softWrap: true),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Text(c['createdAt'].split('T')[0]),
-                    ),
-                  ],
-                ),
+        if (!ok) return;
+
+        await http.put(
+          Uri.parse('${ApiConfig.baseUrl}/api/users/${widget.userId}/delete'),
+        );
+
+        Navigator.pop(context, true);
+      },
+    );
+  }
+
+  Widget _buildAccountStatusUnderId() {
+    final bool withdrawnOnly =
+        _userData!['withdrawn'] == true && _userData!['deleted'] != true;
+    final bool deleted = _userData!['deleted'] == true;
+
+    if (!withdrawnOnly && !deleted) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (withdrawnOnly)
+            const Text(
+              '退会済み',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+            ),
+          if (deleted)
+            const Text(
+              '削除済み',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDateOnly(dynamic raw) {
+    final text = '${raw ?? ''}';
+    if (text.isEmpty) return '';
+    return text.contains('T') ? text.split('T')[0] : text;
+  }
+
+  Widget _buildMobileCommentCard(Map<String, dynamic> comment) {
+    final String threadTitle = '${comment['threadTitle'] ?? ''}';
+    final String content = '${comment['content'] ?? ''}';
+    final String createdAt = _formatDateOnly(comment['createdAt']);
+    final bool isDeleted = comment['isDeleted'] == true;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'スレッド：$threadTitle',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              softWrap: true,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '内容：$content',
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+              softWrap: true,
+            ),
+            if (isDeleted) ...[
+              const SizedBox(height: 4),
+              const Text(
+                '削除済み',
+                style: TextStyle(color: Colors.red, fontSize: 12),
               ),
             ],
-          ),
-      ],
+            const SizedBox(height: 6),
+            Text('日時：$createdAt', maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ====== コメント履歴 ======
+  Widget _buildCommentHistoryTable() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isMobile = constraints.maxWidth < 600;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('コメント履歴'),
+            const SizedBox(height: 12),
+            if (_commentHistory.isEmpty)
+              const Text('コメント履歴はありません')
+            else if (isMobile)
+              Column(
+                children:
+                    _commentHistory
+                        .map((comment) => _buildMobileCommentCard(comment))
+                        .toList(),
+              )
+            else
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 640),
+                  child: Table(
+                    columnWidths: const {
+                      0: FlexColumnWidth(3), // スレッド名 30%
+                      1: FlexColumnWidth(4.5), // コメント 50%
+                      2: FlexColumnWidth(2.5), // 日付 20%
+                    },
+                    border: TableBorder.all(color: Colors.grey.shade400),
+                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                    children: [
+                      TableRow(
+                        decoration: BoxDecoration(color: Colors.grey.shade200),
+                        children: const [
+                          Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Center(child: Text('スレッド名')),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Center(child: Text('コメント')),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Center(child: Text('日付')),
+                          ),
+                        ],
+                      ),
+                      ..._commentHistory.map(
+                        (c) => TableRow(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Text(
+                                '${c['threadTitle'] ?? ''}',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: true,
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8),
+                              child:
+                                  c['isDeleted'] == true
+                                      ? Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '${c['content'] ?? ''}',
+                                            maxLines: 3,
+                                            overflow: TextOverflow.ellipsis,
+                                            softWrap: true,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          const Text(
+                                            '削除済み',
+                                            style: TextStyle(
+                                              color: Colors.red,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                      : Text(
+                                        '${c['content'] ?? ''}',
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: true,
+                                      ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Text(
+                                _formatDateOnly(c['createdAt']),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
